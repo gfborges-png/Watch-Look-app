@@ -1,52 +1,96 @@
 import { useMemo } from 'react'
 import { watches } from '../data/watches.js'
-import { LOOK_COLORS, CONTEXTS, matchWatchesToLook } from '../lib/matchEngine.js'
+import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
 
-const MAX_COLORS = 3
+function ColorRow({ colorId, onChange }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {LOOK_COLORS.map((c) => {
+        const active = colorId === c.id
+        return (
+          <button
+            key={c.id}
+            onClick={() => onChange(active ? null : c.id)}
+            title={c.label}
+            aria-label={c.label}
+            aria-pressed={active}
+            className={`h-7 w-7 shrink-0 rounded-full ring-2 transition ${
+              active ? 'ring-amber-400 scale-110' : 'ring-transparent hover:ring-white/30'
+            }`}
+            style={{ background: c.hex }}
+          />
+        )
+      })}
+    </div>
+  )
+}
 
-export default function LookMatcher({ onSelectWatch, selectedColors, onColorsChange, context, onContextChange }) {
-  const toggleColor = (id) => {
-    onColorsChange((prev) => {
-      if (prev.includes(id)) return prev.filter((c) => c !== id)
-      if (prev.length >= MAX_COLORS) return prev
-      return [...prev, id]
-    })
-  }
+function TipoRow({ tipos, tipo, onChange }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tipos.map((t) => (
+        <Chip key={t} active={tipo === t} onClick={() => onChange(tipo === t ? null : t)}>
+          {t}
+        </Chip>
+      ))}
+    </div>
+  )
+}
 
-  const results = useMemo(() => matchWatchesToLook(watches, selectedColors, context), [selectedColors, context])
+function GarmentSection({ garment, piece, onChange }) {
+  const setColor = (colorId) => onChange({ ...piece, colorId })
+  const setTipo = (tipo) => onChange({ ...piece, tipo })
 
-  const hasSelection = selectedColors.length > 0
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-semibold text-neutral-100">{garment.label}</p>
+        {garment.optional && (
+          <div className="flex gap-1.5">
+            <Chip active={piece.enabled} onClick={() => onChange({ ...piece, enabled: true })}>
+              Com jaqueta
+            </Chip>
+            <Chip active={!piece.enabled} onClick={() => onChange({ enabled: false, colorId: null, tipo: null })}>
+              Sem jaqueta
+            </Chip>
+          </div>
+        )}
+      </div>
+
+      {(!garment.optional || piece.enabled) && (
+        <div className="space-y-2.5">
+          <ColorRow colorId={piece.colorId} onChange={setColor} />
+          <TipoRow tipos={garment.tipos} tipo={piece.tipo} onChange={setTipo} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function LookMatcher({ onSelectWatch, outfit, onOutfitChange, context, onContextChange }) {
+  const results = useMemo(() => matchWatchesToLook(watches, outfit, context), [outfit, context])
+
+  const hasSelection = GARMENTS.some((g) => {
+    const piece = outfit[g.key]
+    return (!g.optional || piece.enabled) && piece.colorId
+  })
   const topResults = hasSelection ? results.filter((r) => r.score > 0).slice(0, 5) : []
 
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-          Cores do seu look de hoje <span className="text-neutral-600">(até {MAX_COLORS})</span>
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {LOOK_COLORS.map((c) => {
-            const active = selectedColors.includes(c.id)
-            return (
-              <button
-                key={c.id}
-                onClick={() => toggleColor(c.id)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  active
-                    ? 'bg-amber-400 text-neutral-950'
-                    : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
-                }`}
-              >
-                <span
-                  className="h-3 w-3 rounded-full ring-1 ring-black/20"
-                  style={{ background: c.hex }}
-                />
-                {c.label}
-              </button>
-            )
-          })}
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">O que você está usando</p>
+        <div className="space-y-3">
+          {GARMENTS.map((garment) => (
+            <GarmentSection
+              key={garment.key}
+              garment={garment}
+              piece={outfit[garment.key]}
+              onChange={(next) => onOutfitChange({ ...outfit, [garment.key]: next })}
+            />
+          ))}
         </div>
       </div>
 
@@ -64,11 +108,11 @@ export default function LookMatcher({ onSelectWatch, selectedColors, onColorsCha
       <div>
         {!hasSelection ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
-            Escolha pelo menos uma cor do seu look pra ver quais relógios combinam.
+            Escolha a cor de pelo menos uma peça pra ver quais relógios combinam.
           </div>
         ) : topResults.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
-            Nenhum match forte com essas cores. Tenta um mostrador neutro (preto, branco ou prata) — combina com qualquer look.
+            Nenhum match forte com esse look. Tenta um mostrador neutro (preto, branco ou prata) — combina com qualquer combinação.
           </div>
         ) : (
           <div className="space-y-3">

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { watches } from './data/watches.js'
 import { getColorFilterGroup, getStyleTags } from './lib/outfitEngine.js'
+import { DEFAULT_OUTFIT } from './lib/matchEngine.js'
 import WatchCard from './components/WatchCard.jsx'
 import FilterBar, { Chip } from './components/FilterBar.jsx'
 import WatchDetail from './components/WatchDetail.jsx'
@@ -12,7 +13,7 @@ function App() {
   const [colorFilter, setColorFilter] = useState('todos')
   const [styleFilter, setStyleFilter] = useState('todos')
   const [selectedId, setSelectedId] = useState(null)
-  const [lookColors, setLookColors] = useState([])
+  const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
 
   const selectedWatch = useMemo(() => watches.find((w) => w.id === selectedId) ?? null, [selectedId])
@@ -76,8 +77,8 @@ function App() {
         {mode === 'look' ? (
           <LookMatcher
             onSelectWatch={setSelectedId}
-            selectedColors={lookColors}
-            onColorsChange={setLookColors}
+            outfit={lookOutfit}
+            onOutfitChange={setLookOutfit}
             context={lookContext}
             onContextChange={setLookContext}
           />
