@@ -3,6 +3,7 @@ import { watches } from './data/watches.js'
 import { getColorFilterGroup, getStyleTags } from './lib/outfitEngine.js'
 import { DEFAULT_OUTFIT } from './lib/matchEngine.js'
 import { getFavorites, toggleFavorite, getHistory, logWornToday, lastWornDate, recentlyWornIds } from './lib/storage.js'
+import { getWeatherForCurrentLocation } from './lib/weather.js'
 import WatchCard from './components/WatchCard.jsx'
 import FilterBar, { Chip } from './components/FilterBar.jsx'
 import WatchDetail from './components/WatchDetail.jsx'
@@ -19,11 +20,22 @@ function App() {
   const [lookContext, setLookContext] = useState('casual')
   const [favorites, setFavorites] = useState(() => getFavorites())
   const [history, setHistory] = useState(() => getHistory())
+  const [weather, setWeather] = useState({ status: 'idle' })
 
   const recentIds = useMemo(() => recentlyWornIds(history), [history])
 
   const handleToggleFavorite = (id) => setFavorites(toggleFavorite(id))
   const handleLogWornToday = (id) => setHistory(logWornToday(id))
+
+  const handleFetchWeather = async () => {
+    setWeather({ status: 'loading' })
+    try {
+      const result = await getWeatherForCurrentLocation()
+      setWeather({ status: 'ready', ...result })
+    } catch (err) {
+      setWeather({ status: 'error', error: err.message })
+    }
+  }
 
   const selectedWatch = useMemo(() => watches.find((w) => w.id === selectedId) ?? null, [selectedId])
 
@@ -103,6 +115,8 @@ function App() {
             recentIds={recentIds}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
+            weather={weather}
+            onFetchWeather={handleFetchWeather}
           />
         ) : (
           <>

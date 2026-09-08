@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { watches } from '../data/watches.js'
 import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
+import { detectDominantColorId } from '../lib/colorDetect.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
 
@@ -39,6 +40,42 @@ function TipoRow({ tipos, tipo, onChange }) {
   )
 }
 
+function PhotoDetectButton({ onDetected }) {
+  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'error'
+  const inputId = useId()
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setStatus('loading')
+    try {
+      const colorId = await detectDominantColorId(file)
+      onDetected(colorId)
+      setStatus('idle')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <label
+        htmlFor={inputId}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-white/10"
+      >
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h1.5l1-1.5h9l1 1.5H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <circle cx="12" cy="13.5" r="3.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {status === 'loading' ? 'Detectando...' : 'Detectar cor por foto'}
+      </label>
+      <input id={inputId} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+      {status === 'error' && <span className="text-xs text-red-400">Não deu pra ler essa foto</span>}
+    </div>
+  )
+}
+
 function GarmentSection({ garment, piece, onChange }) {
   const setColor = (colorId) => onChange({ ...piece, colorId })
   const setTipo = (tipo) => onChange({ ...piece, tipo })
@@ -73,8 +110,37 @@ function GarmentSection({ garment, piece, onChange }) {
           )}
           <ColorRow colorId={piece.colorId} onChange={setColor} />
           <TipoRow tipos={garment.tipos} tipo={piece.tipo} onChange={setTipo} />
+          <PhotoDetectButton onDetected={setColor} />
         </div>
       )}
+    </div>
+  )
+}
+
+function WeatherPanel({ weather, onFetchWeather }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-neutral-100">Clima de hoje</p>
+          {weather.status === 'ready' && (
+            <p className="mt-0.5 text-xs text-neutral-400">
+              {weather.tempC}°C, {weather.description} — {weather.bias === 'ameno' ? 'sem viés no match' : `puxando pra mostradores mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}
+            </p>
+          )}
+          {weather.status === 'error' && <p className="mt-0.5 text-xs text-red-400">{weather.error}</p>}
+          {weather.status === 'idle' && (
+            <p className="mt-0.5 text-xs text-neutral-500">Usa sua localização pra puxar o match pro clima do dia</p>
+          )}
+        </div>
+        <button
+          onClick={onFetchWeather}
+          disabled={weather.status === 'loading'}
+          className="shrink-0 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:opacity-60"
+        >
+          {weather.status === 'loading' ? 'Buscando...' : weather.status === 'ready' ? 'Atualizar' : 'Usar clima de hoje'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -88,8 +154,14 @@ export default function LookMatcher({
   recentIds,
   favorites,
   onToggleFavorite,
+  weather,
+  onFetchWeather,
 }) {
-  const results = useMemo(() => matchWatchesToLook(watches, outfit, context, recentIds), [outfit, context, recentIds])
+  const weatherBias = weather.status === 'ready' ? weather.bias : null
+  const results = useMemo(
+    () => matchWatchesToLook(watches, outfit, context, { recentIds, weatherBias }),
+    [outfit, context, recentIds, weatherBias],
+  )
 
   const hasSelection = GARMENTS.some((g) => {
     const piece = outfit[g.key]
@@ -99,6 +171,8 @@ export default function LookMatcher({
 
   return (
     <div className="space-y-5">
+      <WeatherPanel weather={weather} onFetchWeather={onFetchWeather} />
+
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">O que você está usando</p>
         <div className="space-y-3">

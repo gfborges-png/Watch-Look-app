@@ -96,11 +96,12 @@ function netVibe(garments) {
   return vibe
 }
 
-// Recebe o outfit (peça por peça), o contexto e (opcional) o conjunto de
-// ids usados recentemente; devolve os relógios da coleção ordenados por
+// Recebe o outfit (peça por peça), o contexto e sinais extras opcionais
+// (`recentIds` p/ dar variedade, `weatherBias` 'quente'|'frio'|'ameno'|null
+// vindo do clima do dia); devolve os relógios da coleção ordenados por
 // compatibilidade, cada um com os motivos do match e um `percent` (0-100,
 // relativo ao melhor match do momento) pra mostrar o quanto ele combina.
-export function matchWatchesToLook(watches, outfit, contextId, recentIds = new Set()) {
+export function matchWatchesToLook(watches, outfit, contextId, { recentIds = new Set(), weatherBias = null } = {}) {
   const garments = activeGarments(outfit)
   const coloredGarments = garments.filter((g) => g.colorId).map((g) => ({ ...g, color: LOOK_COLORS.find((c) => c.id === g.colorId) })).filter((g) => g.color)
   const vibe = netVibe(garments)
@@ -150,6 +151,14 @@ export function matchWatchesToLook(watches, outfit, contextId, recentIds = new S
       reasonEntries.push({ rank: 2, text: 'estilo statement, ótimo pra sair do óbvio no fim de semana' })
     } else if (contextId === 'casual' && isBoldStyle(watch.estilo)) {
       score += 1
+    }
+
+    if (weatherBias === 'quente' && (group === 'frio' || group === 'neutro')) {
+      score += 1.5
+      reasonEntries.push({ rank: 1, text: 'dia quente — mostrador claro combina com o clima de hoje' })
+    } else if (weatherBias === 'frio' && (group === 'quente' || group === 'terroso')) {
+      score += 1.5
+      reasonEntries.push({ rank: 1, text: 'dia frio — tom quente do mostrador combina com o clima de hoje' })
     }
 
     if (recentIds.has(watch.id)) {
