@@ -42,6 +42,7 @@ function TipoRow({ tipos, tipo, onChange }) {
 function GarmentSection({ garment, piece, onChange }) {
   const setColor = (colorId) => onChange({ ...piece, colorId })
   const setTipo = (tipo) => onChange({ ...piece, tipo })
+  const setModelo = (modelo) => onChange({ ...piece, modelo })
 
   return (
     <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
@@ -61,6 +62,15 @@ function GarmentSection({ garment, piece, onChange }) {
 
       {(!garment.optional || piece.enabled) && (
         <div className="space-y-2.5">
+          {garment.hasModel && (
+            <input
+              type="text"
+              value={piece.modelo ?? ''}
+              onChange={(e) => setModelo(e.target.value)}
+              placeholder={garment.modelPlaceholder}
+              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none"
+            />
+          )}
           <ColorRow colorId={piece.colorId} onChange={setColor} />
           <TipoRow tipos={garment.tipos} tipo={piece.tipo} onChange={setTipo} />
         </div>

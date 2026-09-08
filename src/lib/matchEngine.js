@@ -33,15 +33,18 @@ export const CONTEXTS = [
 // Uma peça por chave. `weight` pondera o quanto a cor dessa peça pesa no
 // match (a camisa fica perto do pulso e do rosto, pesa mais que o tênis).
 // `tipos` alimenta a leitura de formalidade do look (alfaiataria x jeans).
+// `pronoun` é só pra concordância nominal nos textos de motivo (o tênis
+// -> "seu", a calça/camisa/jaqueta -> "sua"). `hasModel` libera um campo
+// de texto livre pro modelo exato da peça (ex.: "Dunk Low Travis Scott").
 export const GARMENTS = [
-  { key: 'calcado', label: 'Tênis/Calçado', weight: 1, optional: false, tipos: ['Tênis', 'Sapato social', 'Bota', 'Loafer'] },
-  { key: 'calca', label: 'Calça', weight: 1.5, optional: false, tipos: ['Jeans', 'Sarja/Chino', 'Alfaiataria', 'Cargo'] },
-  { key: 'camisa', label: 'Camisa/Camiseta', weight: 2.5, optional: false, tipos: ['Camisa social', 'Camiseta', 'Polo', 'Linho'] },
-  { key: 'jaqueta', label: 'Jaqueta/Overshirt', weight: 2, optional: true, tipos: ['Blazer', 'Jaqueta jeans', 'Bomber', 'Overshirt', 'Suede/couro'] },
+  { key: 'calcado', label: 'Tênis/Calçado', pronoun: 'seu', weight: 1, optional: false, hasModel: true, modelPlaceholder: 'Ex: Dunk Low Travis Scott Golf', tipos: ['Tênis', 'Sapato social', 'Bota', 'Loafer'] },
+  { key: 'calca', label: 'Calça', pronoun: 'sua', weight: 1.5, optional: false, tipos: ['Jeans', 'Sarja/Chino', 'Alfaiataria', 'Cargo'] },
+  { key: 'camisa', label: 'Camisa/Camiseta', pronoun: 'sua', weight: 2.5, optional: false, tipos: ['Camisa social', 'Camiseta', 'Polo', 'Linho'] },
+  { key: 'jaqueta', label: 'Jaqueta/Overshirt', pronoun: 'sua', weight: 2, optional: true, tipos: ['Blazer', 'Jaqueta jeans', 'Bomber', 'Overshirt', 'Suede/couro'] },
 ]
 
 export const DEFAULT_OUTFIT = {
-  calcado: { colorId: null, tipo: null },
+  calcado: { colorId: null, tipo: null, modelo: '' },
   calca: { colorId: null, tipo: null },
   camisa: { colorId: null, tipo: null },
   jaqueta: { enabled: false, colorId: null, tipo: null },
@@ -79,7 +82,7 @@ function activeGarments(outfit) {
     const piece = outfit[g.key]
     if (!piece) return null
     if (g.optional && !piece.enabled) return null
-    return { ...g, colorId: piece.colorId, tipo: piece.tipo }
+    return { ...g, colorId: piece.colorId, tipo: piece.tipo, modelo: piece.modelo?.trim() || null }
   }).filter(Boolean)
 }
 
@@ -107,14 +110,15 @@ export function matchWatchesToLook(watches, outfit, contextId) {
 
     for (const g of coloredGarments) {
       const w = g.weight / 2
+      const nome = g.modelo || g.label.toLowerCase()
       if (g.color.groups.includes(group)) {
         score += 2 * w
-        reasonEntries.push({ rank: 1, text: `sua ${g.label.toLowerCase()} combina com a paleta ${GROUP_LABEL[group]} do mostrador` })
+        reasonEntries.push({ rank: 1, text: `${g.pronoun} ${nome} combina com a paleta ${GROUP_LABEL[group]} do mostrador` })
       }
       const closest = Math.min(...watch.hexes.map((h) => colorDistance(h, g.color.hex)))
       if (closest < 70) {
         score += 4 * w
-        reasonEntries.push({ rank: 3, text: `sua ${g.label.toLowerCase()} cria eco cromático com o mostrador` })
+        reasonEntries.push({ rank: 3, text: `${g.pronoun} ${nome} cria eco cromático com o mostrador` })
       } else if (closest < 130) {
         score += 1.5 * w
       }
