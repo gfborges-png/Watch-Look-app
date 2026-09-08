@@ -15,7 +15,16 @@ export function Chip({ active, onClick, children }) {
   )
 }
 
-export default function FilterBar({ query, onQueryChange, colorFilter, onColorChange, styleFilter, onStyleChange }) {
+export default function FilterBar({
+  query,
+  onQueryChange,
+  colorFilter,
+  onColorChange,
+  styleFilter,
+  onStyleChange,
+  favoritesOnly,
+  onFavoritesOnlyChange,
+}) {
   return (
     <div className="space-y-3">
       <div className="relative">
@@ -57,6 +66,9 @@ export default function FilterBar({ query, onQueryChange, colorFilter, onColorCh
             {STYLE_LABELS[s]}
           </Chip>
         ))}
+        <Chip active={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>
+          ♥ Favoritos
+        </Chip>
       </div>
     </div>
   )

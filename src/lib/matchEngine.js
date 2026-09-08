@@ -96,9 +96,11 @@ function netVibe(garments) {
   return vibe
 }
 
-// Recebe o outfit (peça por peça) e o contexto; devolve os relógios da
-// coleção ordenados por compatibilidade, cada um com os motivos do match.
-export function matchWatchesToLook(watches, outfit, contextId) {
+// Recebe o outfit (peça por peça), o contexto e (opcional) o conjunto de
+// ids usados recentemente; devolve os relógios da coleção ordenados por
+// compatibilidade, cada um com os motivos do match e um `percent` (0-100,
+// relativo ao melhor match do momento) pra mostrar o quanto ele combina.
+export function matchWatchesToLook(watches, outfit, contextId, recentIds = new Set()) {
   const garments = activeGarments(outfit)
   const coloredGarments = garments.filter((g) => g.colorId).map((g) => ({ ...g, color: LOOK_COLORS.find((c) => c.id === g.colorId) })).filter((g) => g.color)
   const vibe = netVibe(garments)
@@ -150,6 +152,11 @@ export function matchWatchesToLook(watches, outfit, contextId) {
       score += 1
     }
 
+    if (recentIds.has(watch.id)) {
+      score -= 1.5
+      reasonEntries.push({ rank: -1, text: 'você já usou esse nos últimos dias — que tal variar?' })
+    }
+
     if (reasonEntries.length === 0 && group === 'neutro') {
       reasonEntries.push({ rank: 0, text: 'mostrador neutro combina com qualquer look' })
     }
@@ -161,5 +168,7 @@ export function matchWatchesToLook(watches, outfit, contextId) {
   })
 
   scored.sort((a, b) => b.score - a.score)
-  return scored
+
+  const topScore = scored[0]?.score > 0 ? scored[0].score : 0
+  return scored.map((s) => ({ ...s, percent: topScore > 0 ? Math.max(0, Math.round((s.score / topScore) * 100)) : 0 }))
 }

@@ -16,9 +16,12 @@ Abre em `http://localhost:5173`.
 
 - React 19 + Vite
 - Tailwind CSS v4 (dark mode, mobile-first)
+- PWA (instalável no celular): `npm run build` gera manifest + service worker
 
 ## Estrutura
 
 - `src/data/watches.js` — os 23 relógios da coleção.
-- `src/lib/outfitEngine.js` — as regras de combinação de cores (relógio → look).
-- `src/components/` — cards, filtros, tela de detalhe.
+- `src/lib/outfitEngine.js` — regras de combinação de cores (relógio → look).
+- `src/lib/matchEngine.js` — regras inversas (look → relógio), com score de compatibilidade.
+- `src/lib/storage.js` — favoritos e histórico de uso (localStorage).
+- `src/components/` — cards, filtros, tela de detalhe, matcher de look.

@@ -79,8 +79,17 @@ function GarmentSection({ garment, piece, onChange }) {
   )
 }
 
-export default function LookMatcher({ onSelectWatch, outfit, onOutfitChange, context, onContextChange }) {
-  const results = useMemo(() => matchWatchesToLook(watches, outfit, context), [outfit, context])
+export default function LookMatcher({
+  onSelectWatch,
+  outfit,
+  onOutfitChange,
+  context,
+  onContextChange,
+  recentIds,
+  favorites,
+  onToggleFavorite,
+}) {
+  const results = useMemo(() => matchWatchesToLook(watches, outfit, context, recentIds), [outfit, context, recentIds])
 
   const hasSelection = GARMENTS.some((g) => {
     const piece = outfit[g.key]
@@ -129,12 +138,15 @@ export default function LookMatcher({ onSelectWatch, outfit, onOutfitChange, con
             <p className="text-xs text-neutral-500">
               {topResults.length} {topResults.length === 1 ? 'relógio combina' : 'relógios combinam'} com esse look
             </p>
-            {topResults.map(({ watch, reasons }) => (
+            {topResults.map(({ watch, reasons, percent }) => (
               <WatchCard
                 key={watch.id}
                 watch={watch}
                 onClick={() => onSelectWatch(watch.id)}
                 reason={reasons[0] ? reasons[0][0].toUpperCase() + reasons[0].slice(1) : undefined}
+                percent={percent}
+                isFavorite={favorites.includes(watch.id)}
+                onToggleFavorite={() => onToggleFavorite(watch.id)}
               />
             ))}
           </div>
