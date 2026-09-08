@@ -50,14 +50,14 @@ export function getColorFilterGroup(cor) {
 // Grupo de paleta usado pelo motor de looks (quente/frio/terroso/neutro).
 // Combinações mistas ou "neutro-x" partem de uma base neutra versátil,
 // com um "pop" de cor extraído do campo accent do próprio relógio.
-function paletteGroup(cor) {
+export function paletteGroup(cor) {
   if (cor === 'quente' || cor === 'frio' || cor === 'terroso') return cor
   return 'neutro'
 }
 
 const SAFE_SHOE = 'Tênis branco'
 
-const PALETTES = {
+export const PALETTES = {
   quente: {
     nome: 'Paleta quente',
     cores: ['bege', 'cream', 'marrom', 'terracota', 'oliva'],

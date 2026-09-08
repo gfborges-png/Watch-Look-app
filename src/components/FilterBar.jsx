@@ -1,6 +1,6 @@
 import { COLOR_FILTERS, COLOR_LABELS, STYLE_FILTERS, STYLE_LABELS } from '../lib/outfitEngine.js'
 
-function Chip({ active, onClick, children }) {
+export function Chip({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
