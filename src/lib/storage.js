@@ -1,6 +1,10 @@
-// Persistência local (favoritos + histórico de uso). Tudo fica só no
-// navegador do usuário — não tem backend, então cada leitura/escrita é
-// protegida contra localStorage indisponível (modo privado, etc).
+// Persistência local (coleção editável + favoritos + histórico de uso).
+// Tudo fica só no navegador do usuário — não tem backend, então cada
+// leitura/escrita é protegida contra localStorage indisponível (modo
+// privado, etc).
+import { watches as defaultWatches } from '../data/watches.js'
+
+const COLLECTION_KEY = 'watchlook:collection'
 const FAVORITES_KEY = 'watchlook:favorites'
 const HISTORY_KEY = 'watchlook:history'
 const HISTORY_LIMIT = 200
@@ -21,6 +25,85 @@ function safeSet(key, value) {
   } catch {
     // localStorage indisponível (modo privado, storage cheio) — segue sem persistir
   }
+}
+
+// Coleção: começa como os 23 relógios padrão, mas qualquer edição
+// (adicionar/editar/remover) passa a persistir a lista inteira do usuário.
+export function getCollection() {
+  return safeGet(COLLECTION_KEY, null) ?? defaultWatches
+}
+
+function saveCollection(collection) {
+  safeSet(COLLECTION_KEY, collection)
+  return collection
+}
+
+export function resetCollection() {
+  try {
+    localStorage.removeItem(COLLECTION_KEY)
+  } catch {
+    // localStorage indisponível — nada pra limpar
+  }
+  return defaultWatches
+}
+
+function slugify(text) {
+  const slug = text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+  return slug || 'relogio'
+}
+
+function makeWatchId(nome, existingIds) {
+  const base = slugify(nome)
+  let id = base
+  let n = 2
+  while (existingIds.includes(id)) {
+    id = `${base}-${n}`
+    n++
+  }
+  return id
+}
+
+export function addWatch(watchData) {
+  const collection = getCollection()
+  const id = makeWatchId(watchData.nome, collection.map((w) => w.id))
+  return saveCollection([...collection, { ...watchData, id }])
+}
+
+export function updateWatch(id, watchData) {
+  const collection = getCollection()
+  return saveCollection(collection.map((w) => (w.id === id ? { ...watchData, id } : w)))
+}
+
+export function deleteWatch(id) {
+  const collection = getCollection()
+  return saveCollection(collection.filter((w) => w.id !== id))
+}
+
+// Backup: um único JSON com coleção + favoritos + histórico, pra não
+// perder tudo se limpar os dados do navegador ou trocar de aparelho.
+export function exportData() {
+  return {
+    app: 'watch-look',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    collection: getCollection(),
+    favorites: getFavorites(),
+    history: getHistory(),
+  }
+}
+
+export function importData(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.collection)) {
+    throw new Error('Arquivo inválido: não parece um backup do Watch & Look.')
+  }
+  saveCollection(data.collection)
+  if (Array.isArray(data.favorites)) safeSet(FAVORITES_KEY, data.favorites)
+  if (Array.isArray(data.history)) safeSet(HISTORY_KEY, data.history)
 }
 
 export function getFavorites() {

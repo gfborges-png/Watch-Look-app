@@ -20,7 +20,7 @@ function lastWornLabel(dateStr) {
   return `Você usou esse há ${days} dias`
 }
 
-export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorite, lastWorn, onLogWornToday }) {
+export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorite, lastWorn, onLogWornToday, onEdit, onDelete }) {
   const looks = generateLooks(watch)
   const wornLabel = lastWornLabel(lastWorn)
 
@@ -71,6 +71,21 @@ export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorit
           className="shrink-0 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
         >
           Usei hoje
+        </button>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={onEdit}
+          className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-neutral-300 transition hover:bg-white/10"
+        >
+          Editar relógio
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex-1 rounded-full border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+        >
+          Remover da coleção
         </button>
       </div>
 

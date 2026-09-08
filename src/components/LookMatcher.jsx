@@ -1,5 +1,4 @@
 import { useId, useMemo, useState } from 'react'
-import { watches } from '../data/watches.js'
 import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
 import { detectDominantColorId } from '../lib/colorDetect.js'
 import { Chip } from './FilterBar.jsx'
@@ -146,6 +145,7 @@ function WeatherPanel({ weather, onFetchWeather }) {
 }
 
 export default function LookMatcher({
+  watches,
   onSelectWatch,
   outfit,
   onOutfitChange,
@@ -160,7 +160,7 @@ export default function LookMatcher({
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
     () => matchWatchesToLook(watches, outfit, context, { recentIds, weatherBias }),
-    [outfit, context, recentIds, weatherBias],
+    [watches, outfit, context, recentIds, weatherBias],
   )
 
   const hasSelection = GARMENTS.some((g) => {
