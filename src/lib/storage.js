@@ -7,8 +7,11 @@ import { watches as defaultWatches } from '../data/watches.js'
 const COLLECTION_KEY = 'watchlook:collection'
 const FAVORITES_KEY = 'watchlook:favorites'
 const HISTORY_KEY = 'watchlook:history'
+const CHOICES_KEY = 'watchlook:choices'
 const HISTORY_LIMIT = 200
+const CHOICES_LIMIT = 150
 const RECENT_DAYS = 2
+const BASE_GROUPS = ['quente', 'frio', 'terroso', 'neutro']
 
 function safeGet(key, fallback) {
   try {
@@ -94,6 +97,7 @@ export function exportData() {
     collection: getCollection(),
     favorites: getFavorites(),
     history: getHistory(),
+    choices: getChoices(),
   }
 }
 
@@ -104,6 +108,7 @@ export function importData(data) {
   saveCollection(data.collection)
   if (Array.isArray(data.favorites)) safeSet(FAVORITES_KEY, data.favorites)
   if (Array.isArray(data.history)) safeSet(HISTORY_KEY, data.history)
+  if (Array.isArray(data.choices)) safeSet(CHOICES_KEY, data.choices)
 }
 
 export function getFavorites() {
@@ -156,4 +161,37 @@ export function daysSince(dateStr) {
 // em vez de sugerir sempre o mesmo relógio.
 export function recentlyWornIds(history) {
   return new Set(history.filter((h) => daysSince(h.date) <= RECENT_DAYS).map((h) => h.watchId))
+}
+
+// Escolhas: toda vez que a pessoa diz "foi esse relógio que eu escolhi"
+// (sugerido ou não), guardamos o grupo de paleta escolhido. É o que
+// alimenta o `personalBias` — a "inteligência" aprendendo com o uso real,
+// não só com a regra de cor.
+export function getChoices() {
+  return safeGet(CHOICES_KEY, [])
+}
+
+export function logChoice(entry) {
+  const choices = getChoices()
+  const next = [{ ...entry, date: new Date().toISOString() }, ...choices].slice(0, CHOICES_LIMIT)
+  safeSet(CHOICES_KEY, next)
+  return next
+}
+
+// Compara, nas últimas `sampleSize` escolhas, com que frequência cada
+// grupo de paleta foi escolhido contra uma base uniforme (25% cada) —
+// vira um pequeno bônus/penalidade de pontuação por grupo. Só age depois
+// de um mínimo de dados, senão qualquer escolha isolada vira ruído.
+export function personalBias(choices, sampleSize = 20) {
+  const recent = choices.slice(0, sampleSize)
+  if (recent.length < 4) return {}
+  const counts = Object.fromEntries(BASE_GROUPS.map((g) => [g, 0]))
+  for (const c of recent) {
+    if (c.group in counts) counts[c.group] += 1
+  }
+  const bias = {}
+  for (const g of BASE_GROUPS) {
+    bias[g] = (counts[g] / recent.length - 1 / BASE_GROUPS.length) * 4
+  }
+  return bias
 }

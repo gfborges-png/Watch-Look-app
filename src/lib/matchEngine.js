@@ -98,10 +98,16 @@ function netVibe(garments) {
 
 // Recebe o outfit (peça por peça), o contexto e sinais extras opcionais
 // (`recentIds` p/ dar variedade, `weatherBias` 'quente'|'frio'|'ameno'|null
-// vindo do clima do dia); devolve os relógios da coleção ordenados por
-// compatibilidade, cada um com os motivos do match e um `percent` (0-100,
-// relativo ao melhor match do momento) pra mostrar o quanto ele combina.
-export function matchWatchesToLook(watches, outfit, contextId, { recentIds = new Set(), weatherBias = null } = {}) {
+// vindo do clima do dia, `personalBias` por grupo de paleta aprendido das
+// suas escolhas passadas — ver storage.js); devolve os relógios da coleção
+// ordenados por compatibilidade, cada um com os motivos do match e um
+// `percent` (0-100, relativo ao melhor match do momento).
+export function matchWatchesToLook(
+  watches,
+  outfit,
+  contextId,
+  { recentIds = new Set(), weatherBias = null, personalBias = {} } = {},
+) {
   const garments = activeGarments(outfit)
   const coloredGarments = garments.filter((g) => g.colorId).map((g) => ({ ...g, color: LOOK_COLORS.find((c) => c.id === g.colorId) })).filter((g) => g.color)
   const vibe = netVibe(garments)
@@ -164,6 +170,14 @@ export function matchWatchesToLook(watches, outfit, contextId, { recentIds = new
     if (recentIds.has(watch.id)) {
       score -= 1.5
       reasonEntries.push({ rank: -1, text: 'você já usou esse nos últimos dias — que tal variar?' })
+    }
+
+    const bias = personalBias[group] ?? 0
+    if (bias) {
+      score += bias
+      if (bias > 0.4) {
+        reasonEntries.push({ rank: 1, text: 'combina com o seu padrão de escolhas anteriores' })
+      }
     }
 
     if (reasonEntries.length === 0 && group === 'neutro') {

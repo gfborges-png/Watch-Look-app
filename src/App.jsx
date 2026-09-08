@@ -15,6 +15,9 @@ import {
   logWornToday,
   lastWornDate,
   recentlyWornIds,
+  getChoices,
+  logChoice,
+  personalBias,
 } from './lib/storage.js'
 import { getWeatherForCurrentLocation } from './lib/weather.js'
 import WatchCard from './components/WatchCard.jsx'
@@ -38,12 +41,15 @@ function App() {
   const [collection, setCollection] = useState(() => getCollection())
   const [favorites, setFavorites] = useState(() => getFavorites())
   const [history, setHistory] = useState(() => getHistory())
+  const [choices, setChoices] = useState(() => getChoices())
   const [weather, setWeather] = useState({ status: 'idle' })
 
   const recentIds = useMemo(() => recentlyWornIds(history), [history])
+  const bias = useMemo(() => personalBias(choices), [choices])
 
   const handleToggleFavorite = (id) => setFavorites(toggleFavorite(id))
   const handleLogWornToday = (id) => setHistory(logWornToday(id))
+  const handleLogChoice = (entry) => setChoices(logChoice(entry))
 
   const handleFetchWeather = async () => {
     setWeather({ status: 'loading' })
@@ -77,6 +83,7 @@ function App() {
     setCollection(getCollection())
     setFavorites(getFavorites())
     setHistory(getHistory())
+    setChoices(getChoices())
   }
 
   const selectedWatch = useMemo(() => collection.find((w) => w.id === selectedId) ?? null, [collection, selectedId])
@@ -208,6 +215,8 @@ function App() {
             onToggleFavorite={handleToggleFavorite}
             weather={weather}
             onFetchWeather={handleFetchWeather}
+            bias={bias}
+            onLogChoice={handleLogChoice}
           />
         ) : (
           <>

@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
+import { paletteGroup } from '../lib/outfitEngine.js'
 import { detectDominantColorId } from '../lib/colorDetect.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
@@ -144,6 +145,77 @@ function WeatherPanel({ weather, onFetchWeather }) {
   )
 }
 
+function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
+  const [selectedId, setSelectedId] = useState('')
+  const [logged, setLogged] = useState(false)
+  const selectId = useId()
+
+  const sorted = useMemo(() => [...watches].sort((a, b) => a.nome.localeCompare(b.nome)), [watches])
+  const entry = selectedId ? results.find((r) => r.watch.id === selectedId) : null
+  const wasSuggested = selectedId ? topResults.some((r) => r.watch.id === selectedId) : false
+
+  const handleChange = (e) => {
+    setSelectedId(e.target.value)
+    setLogged(false)
+  }
+
+  const handleLog = () => {
+    if (!entry) return
+    onLogChoice({
+      watchId: entry.watch.id,
+      group: paletteGroup(entry.watch.cor),
+      score: entry.score,
+      percent: entry.percent,
+      context,
+      wasSuggested,
+    })
+    setLogged(true)
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
+      <p className="text-sm font-semibold text-neutral-100">Qual você escolheu de verdade?</p>
+      <p className="mt-1 text-xs text-neutral-500">
+        Mesmo que não tenha sido sugerido — conta pra mim, e eu uso isso pra calibrar as próximas sugestões.
+      </p>
+      <select
+        id={selectId}
+        value={selectedId}
+        onChange={handleChange}
+        className="mt-3 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 focus:border-amber-400/60 focus:outline-none"
+      >
+        <option value="">Selecione um relógio da coleção...</option>
+        {sorted.map((w) => (
+          <option key={w.id} value={w.id}>
+            {w.nome}
+          </option>
+        ))}
+      </select>
+
+      {entry && (
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-amber-400" style={{ width: `${entry.percent}%` }} />
+            </div>
+            <span className="text-xs font-semibold tabular-nums text-neutral-400">{entry.percent}% de match</span>
+          </div>
+          <p className="text-xs text-neutral-500">
+            {wasSuggested ? 'Estava entre os sugeridos.' : 'Fora do top sugerido — anotado, isso pesa mais no aprendizado.'}
+            {entry.reasons[0] && ` ${entry.reasons[0][0].toUpperCase()}${entry.reasons[0].slice(1)}.`}
+          </p>
+          <button
+            onClick={handleLog}
+            className="w-full rounded-full bg-amber-400 px-3 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+          >
+            {logged ? '✓ Registrado' : 'Registrar essa escolha'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function LookMatcher({
   watches,
   onSelectWatch,
@@ -156,11 +228,13 @@ export default function LookMatcher({
   onToggleFavorite,
   weather,
   onFetchWeather,
+  bias,
+  onLogChoice,
 }) {
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
-    () => matchWatchesToLook(watches, outfit, context, { recentIds, weatherBias }),
-    [watches, outfit, context, recentIds, weatherBias],
+    () => matchWatchesToLook(watches, outfit, context, { recentIds, weatherBias, personalBias: bias }),
+    [watches, outfit, context, recentIds, weatherBias, bias],
   )
 
   const hasSelection = GARMENTS.some((g) => {
@@ -226,6 +300,8 @@ export default function LookMatcher({
           </div>
         )}
       </div>
+
+      <ChoiceLogger watches={watches} results={results} topResults={topResults} context={context} onLogChoice={onLogChoice} />
     </div>
   )
 }
