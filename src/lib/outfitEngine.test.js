@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateLooks, lookForOccasion, paletteGroup } from './outfitEngine.js'
+import { generateLooks, lookForOccasion, paletteGroup, SNEAKER_REFERENCES } from './outfitEngine.js'
 import { CONTEXTS } from './matchEngine.js'
 
 const relogioQuente = { nome: 'Teste', cor: 'quente', estilo: 'Dress clássico elegante', hexes: ['#c9a227'] }
@@ -47,5 +47,13 @@ describe('lookForOccasion', () => {
     expect(grupo).toBe('quente')
     const look = lookForOccasion(relogioQuente, 'reuniaoImportante')
     expect(look.porque.toLowerCase()).toContain('quente')
+  })
+})
+
+describe('SNEAKER_REFERENCES — "outras opções" que a pessoa não tem, sempre ao lado do que ela já possui', () => {
+  it('toda paleta (quente/frio/terroso/neutro) tem pelo menos uma referência', () => {
+    for (const grupo of ['quente', 'frio', 'terroso', 'neutro']) {
+      expect(SNEAKER_REFERENCES[grupo]?.length, `paleta "${grupo}" sem referências`).toBeGreaterThan(0)
+    }
   })
 })

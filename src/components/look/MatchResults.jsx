@@ -3,6 +3,7 @@ import { CONTEXTS, GROUP_LABEL } from '../../lib/matchEngine.js'
 import { paletteGroup } from '../../lib/outfitEngine.js'
 import { pickOwnedSneakerForGroup } from '../../lib/dailyRecommendation.js'
 import { suggestPerfume } from '../../lib/perfumeEngine.js'
+import { SNEAKER_REFERENCES } from '../../lib/outfitEngine.js'
 import WatchCard from '../WatchCard.jsx'
 
 const SUBSCORE_LABELS = { cor: 'Cor', ocasiao: 'Ocasião', estilo: 'Estilo', clima: 'Clima', rotacao: 'Rotação', preferencia: 'Preferência' }
@@ -120,12 +121,17 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
     weatherBias && weatherBias !== 'ameno' ? ` e o clima ${weatherBias === 'quente' ? 'quente' : 'frio'} de hoje` : ''
   }, e o perfume funciona bem${contextLabel ? ` pra ocasião de ${contextLabel.toLowerCase()}` : ''}.`
 
+  const sneakerReferences = SNEAKER_REFERENCES[group] ?? []
+
   return (
     <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs">
       <div className="flex items-center justify-between gap-2">
         <span className="text-text-muted">Tênis</span>
         <span className="text-text">{sneaker ? sneaker.nome : 'Tênis branco'}</span>
       </div>
+      {sneakerReferences.length > 0 && (
+        <p className="mt-0.5 truncate text-right text-[10px] text-text-muted/70">Outras opções: {sneakerReferences.slice(0, 2).join(' · ')}</p>
+      )}
       <div className="mt-1 flex items-center justify-between gap-2">
         <span className="text-text-muted">Perfume</span>
         <div className="flex items-center gap-1.5">
@@ -137,6 +143,9 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
           )}
         </div>
       </div>
+      {suggestion.referencias.length > 0 && (
+        <p className="mt-0.5 truncate text-right text-[10px] text-text-muted/70">Outras opções: {suggestion.referencias.slice(0, 2).join(' · ')}</p>
+      )}
       {pickerOpen && (
         <select
           value={overrideId ?? ''}

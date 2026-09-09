@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CONTEXTS } from '../lib/matchEngine.js'
 import { buildTodayCandidates, defaultOccasionForToday, greetingForNow, pickAdjustedIndex } from '../lib/dailyRecommendation.js'
 import { matchColorNameToHexes } from '../lib/colorNameMatch.js'
+import { SNEAKER_REFERENCES } from '../lib/outfitEngine.js'
 import { weatherSummaryParts } from '../lib/weather.js'
 import { Chip } from './FilterBar.jsx'
 import BottomSheet from './ds/BottomSheet.jsx'
@@ -38,7 +39,7 @@ function NeutralGlyph({ className = 'h-5 w-5' }) {
 // há cor conhecida) + rótulo curto. Quando `onSwap` vem, a peça pode
 // ser travada num item específico da coleção — o mesmo "lock item" em
 // qualquer categoria, não só o relógio que guia a recomendação do dia.
-function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, onReset }) {
+function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, onReset, references }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   if (!value) return null
 
@@ -63,6 +64,9 @@ function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, on
           </p>
         </div>
       </div>
+      {references && references.length > 0 && (
+        <p className="truncate text-[10px] text-text-muted/70">Outras opções: {references.slice(0, 2).join(' · ')}</p>
+      )}
       {onSwap && (
         <button onClick={() => setPickerOpen((v) => !v)} className="self-start text-[10px] font-medium text-accent hover:underline">
           trocar
@@ -209,6 +213,7 @@ export default function TodayScreen({
           swapOptions={sneakers}
           onSwap={setLockedSneakerId}
           onReset={() => setLockedSneakerId(null)}
+          references={SNEAKER_REFERENCES[candidate.group]}
         />
         <MoodeTile label="Relógio" value={candidate.watch.nome} hexes={candidate.watch.hexes} />
         <MoodeTile
@@ -219,6 +224,7 @@ export default function TodayScreen({
           swapOptions={perfumes}
           onSwap={setLockedPerfumeId}
           onReset={() => setLockedPerfumeId(null)}
+          references={candidate.perfume.referencias}
         />
       </div>
 

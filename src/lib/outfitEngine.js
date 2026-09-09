@@ -57,6 +57,17 @@ export function paletteGroup(cor) {
 
 const SAFE_SHOE = 'Tênis branco'
 
+// Referências reais de tênis por paleta — mesmo papel que `referencias`
+// tem em perfumeEngine.js (OCCASION_PROFILES): inspiração de modelos que
+// a pessoa não tem cadastrado, pra sempre aparecer ao lado do que ela já
+// possui, não só quando falta um tênis próprio que combine.
+export const SNEAKER_REFERENCES = {
+  quente: ['New Balance 990 (marrom/bege)', 'Clarks Desert Boot (terracota)'],
+  frio: ['Adidas Samba OG (branco/marinho)', 'New Balance 550 (branco/cinza)'],
+  terroso: ['New Balance 574 (oliva)', 'Nike Cortez (bege/marrom)'],
+  neutro: ['Common Projects Achilles (branco)', 'Adidas Stan Smith (branco)'],
+}
+
 export const PALETTES = {
   quente: {
     nome: 'Paleta quente',
