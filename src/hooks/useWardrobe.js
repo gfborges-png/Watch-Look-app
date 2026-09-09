@@ -7,6 +7,7 @@ import {
   deleteSneaker,
   getPerfumes,
   addPerfume,
+  addPerfumes,
   updatePerfume,
   deletePerfume,
 } from '../lib/storage.js'
@@ -29,6 +30,7 @@ export function useWardrobe() {
     updateSneaker: (id, data) => setSneakers(updateSneaker(id, data)),
     deleteSneaker: (id) => setSneakers(deleteSneaker(id)),
     addPerfume: (data) => setPerfumes(addPerfume(data)),
+    addPerfumes: (dataList) => setPerfumes(addPerfumes(dataList)),
     updatePerfume: (id, data) => setPerfumes(updatePerfume(id, data)),
     deletePerfume: (id) => setPerfumes(deletePerfume(id)),
     refresh,

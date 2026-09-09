@@ -67,7 +67,9 @@ ou "IA".
 - Catálogo de tênis e perfumes, favoritos por item e por MOODE do dia,
   histórico de uso, backup/restauração (JSON versionado).
 - PWA instalável (iOS/Android/desktop), funciona offline depois do
-  primeiro carregamento; claro e escuro via `prefers-color-scheme`.
+  primeiro carregamento; tema claro/escuro selecionável no app (botão no
+  header, ciclo Sistema → Claro → Escuro), com o sistema operacional como
+  padrão até a pessoa escolher outra coisa.
 
 ## Arquitetura
 
@@ -93,11 +95,12 @@ src/
     colorNameMatch.js        texto livre de cor → paleta do app (import de tênis, flat-lay da Home)
     colorDetect.js           detecção de cor por foto (canvas, cliente)
     weather.js                clima do dia (Open-Meteo)
+    theme.js                  preferência de tema (claro/escuro/sistema), persistida e aplicada pré-render
     storage.js                toda a persistência (ver "Armazenamento")
     storageAdapter.js         interface get/set/remove escopada por perfil, sobre db.js
     db.js                     camada fina sobre localStorage
   hooks/                      useWatchCollection, useWardrobe, useRecommendationHistory,
-                               useWeather, usePreferences, useLocalProfile, useUserStyleProfile
+                               useWeather, usePreferences, useLocalProfile, useUserStyleProfile, useTheme
   components/
     brand/                    MoodeSymbol, MoodeLogo
     ds/                       BottomSheet, SwitchMoode — componentes de design system reutilizáveis
@@ -106,7 +109,9 @@ src/
     TodayScreen.jsx            "Seu MOODE de hoje"
     MeusMoodesScreen.jsx       histórico ("Meus Moodes") + Moodes favoritos
     BottomNav.jsx               navegação por abas (mobile + desktop)
-    WardrobePanel.jsx           Relógios/Tênis/Perfumes/Seu estilo
+    WardrobePanel.jsx           Relógios/Tênis/Perfumes/Seu estilo (com importação em lote pra tênis e perfumes)
+    ThemeToggle.jsx              botão de tema claro/escuro/sistema no header
+    ErrorBoundary.jsx            rede de segurança pra erro de render não virar tela branca
     WatchCard, WatchDetail, WatchForm, FilterBar, BackupPanel, ForgottenWatches, ColorSwatch
   App.jsx                      roteamento entre abas + telas modais (form, detalhe, backup)
 ```
@@ -163,10 +168,11 @@ Tudo em `localStorage`, sempre escopado por perfil (`storageAdapter.js`
 mesma interface já suporta uma futura troca por um `userId` autenticado
 sem reescrever nada do resto do app.
 
-**Backup** (Dados e backup → Exportar/Importar) gera um JSON versionado,
-com validação antes de tocar em qualquer dado (rejeita JSON inválido ou
-sem coleção reconhecível, sem corromper o estado atual) e aceita tanto o
-formato atual quanto backups mais antigos.
+**Backup** (Dados e backup → Exportar/Importar) gera um JSON versionado
+(v3), com validação item a item antes de tocar em qualquer dado —
+rejeita JSON inválido, sem coleção reconhecível, ou com um relógio/tênis/
+perfume sem id/nome, sem corromper o estado atual — e aceita tanto o
+formato atual quanto os dois formatos mais antigos já emitidos (v1/v2).
 
 ## Como rodar
 
@@ -183,13 +189,15 @@ npm run lint      # oxlint
 npm test          # Vitest
 ```
 
-94 testes cobrindo os três motores de score (relógio/tênis/perfume),
-rotação, storage/migração de dados, preferência aprendida (`UserStyleProfile`),
-ações de ajuste da Home, histórico/Moodes favoritos e reconhecimento de
-cor em texto livre — com cenários usando dados realistas (ex: camisa
-branca + calça bege + trabalho + relógio dress deve pontuar alto; o
-mesmo look com um relógio esportivo statement deve ser penalizado).
-Os testes verificam comportamento esperado, não números mágicos exatos.
+113 testes cobrindo os três motores de score (relógio/tênis/perfume),
+rotação, storage/migração de dados e backup versionado (v1→v3, inclusive
+rejeição de item malformado em qualquer categoria), preferência aprendida
+(`UserStyleProfile`), ações de ajuste da Home, histórico/Moodes favoritos,
+clima enriquecido, preferência de tema e reconhecimento de cor/família em
+texto livre — com cenários usando dados realistas (ex: camisa branca +
+calça bege + trabalho + relógio dress deve pontuar alto; o mesmo look com
+um relógio esportivo statement deve ser penalizado). Os testes verificam
+comportamento esperado, não números mágicos exatos.
 
 Ambiente Node puro (sem jsdom): `src/test-setup.js` instala um polyfill
 de `localStorage` em memória.
@@ -199,18 +207,47 @@ de `localStorage` em memória.
 GitHub Pages, via `.github/workflows/deploy.yml` — dispara em push pra
 `main` ou manualmente (aba Actions → Run workflow, escolhendo a branch).
 
-## Roadmap (deixado deliberadamente fora desta versão)
+## Roadmap público
 
-- Migrar o catálogo de tênis/perfumes pro modelo genérico de item de
-  guarda-roupa (a arquitetura já suporta; a migração de dado real do
-  usuário foi adiada por risco/benefício).
-- Reconhecimento de peça de roupa por visão computacional real (hoje é
-  uma estimativa por zonas da foto, deixado assim de propósito — ver
-  `colorDetect.js` — em vez de fingir precisão que não existe).
-- Cadastro de mais categorias de guarda-roupa (camisa, calça, jaqueta,
-  óculos) com formulário dedicado.
-- Onboarding (estilo, cores favoritas, cidade, rotina) — arquitetura
-  preparada, sem UI ainda.
-- Conta/autenticação, sincronização entre aparelhos, IA aplicada de
-  verdade — nada disso implementado nesta etapa; o produto é
-  local-first e fashion-first de propósito.
+Histórico de até onde o produto chegou e candidatos a próximas etapas —
+não um compromisso de prazo, só a mesma transparência que o produto
+pede pro usuário sobre como cada sugestão é calculada.
+
+### Entregue
+
+- **Fundação** — modelo de dados versionado, motor de recomendação do
+  relógio (StylingScore explicável), coleção com filtros/ordenação.
+- **Personal stylist** — preferência de estilo aprendida
+  (`UserStyleProfile`, nunca hardcoded), SneakerScore/FragranceScore
+  explicáveis, "Hoje" redesenhada com lock item e troca parcial.
+- **Marca MOODE** — identidade completa (símbolo, paleta, tipografia),
+  navegação repensada (Hoje/Guarda-roupa/Montar/Histórico), "Meus
+  Moodes" com favoritos por conjunto do dia.
+- **Robustez** — clima enriquecido (sensação térmica, umidade, chuva),
+  error boundary global, auditoria de estados vazios, acessibilidade
+  (foco visível e preso em diálogos, `aria-pressed`, tamanho mínimo de
+  toque, contraste AA), tema claro/escuro selecionável no app, backup
+  v3 com validação item a item, importação em lote para tênis e
+  perfumes.
+
+### Próximos passos (candidatos, não compromissos)
+
+1. **Guarda-roupa completo** — migrar tênis/perfumes pro modelo
+   genérico de item (`wardrobeItems`, arquitetura já pronta) e abrir
+   cadastro pra mais categorias (camisa, calça, jaqueta, óculos,
+   acessórios).
+2. **Reconhecimento de imagem de verdade** — hoje `colorDetect.js` é
+   uma estimativa por zonas da foto, deixada assim de propósito; um
+   modelo real de visão computacional entraria aqui sem mudar o resto
+   do motor de recomendação.
+3. **Onboarding** — estilo, cores favoritas, cidade, rotina; a
+   arquitetura de perfil (`localProfile.js`) já suporta, falta a UI.
+4. **Conta e sincronização** — trocar `local-default` por um `userId`
+   autenticado e uma `RemoteStorageAdapter` que implemente a mesma
+   interface do `storageAdapter.js` atual, sem reescrever regra de
+   negócio nenhuma.
+5. **IA aplicada de verdade** — hoje toda "inteligência" é regra
+   determinística/heurística local, de propósito (ver princípio
+   "tecnologia nos bastidores"); um assistente conversacional real
+   entraria como camada opcional sobre o motor de scores existente,
+   não como substituto dele.

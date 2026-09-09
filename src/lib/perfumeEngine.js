@@ -86,6 +86,22 @@ const DEFAULT_OCCASION = 'casual'
 // geram (senão "da sua coleção" nunca acha nada pra combinar).
 export const KNOWN_FAMILIES = [...new Set(Object.values(OCCASION_PROFILES).map((c) => c.familia))]
 
+function normalizeFamilyText(text) {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+}
+
+// Texto livre de família olfativa (ex: importação em lote de perfumes)
+// -> uma das KNOWN_FAMILIES exatas, ignorando acento/maiúscula. Sem
+// aproximação por palavra-chave (ao contrário de matchColorNameToHexes):
+// família errada muda a ocasião inteira que o perfume é sugerido pra,
+// então é melhor não achar nada (null, o chamador decide o padrão) do
+// que "chutar" uma família parecida.
+export function matchFamilyName(text) {
+  if (!text) return null
+  const target = normalizeFamilyText(String(text))
+  return KNOWN_FAMILIES.find((f) => normalizeFamilyText(f) === target) ?? null
+}
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null — só vira uma nota de
 // ajuste na concentração, não muda a família. context: um dos ids de
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário

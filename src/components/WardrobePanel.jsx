@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
-import { KNOWN_FAMILIES } from '../lib/perfumeEngine.js'
+import { KNOWN_FAMILIES, matchFamilyName } from '../lib/perfumeEngine.js'
 import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
 import FilterBar, { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
@@ -318,6 +318,113 @@ function SneakerImportPanel({ onImport, onCancel }) {
   )
 }
 
+// Mesmo padrão de SneakerImportPanel, mas pra perfumes: cola um array
+// [{nome, marca, familia, notas}] e cada item vira um perfume cadastrado.
+// Família em texto livre é resolvida via matchFamilyName (correspondência
+// exata, sem aproximação por palavra-chave — errar a família muda a
+// ocasião inteira que o perfume é sugerido pra, então sem match cai na
+// primeira família conhecida, sempre revisável depois no formulário).
+function PerfumeImportPanel({ onImport, onCancel }) {
+  const [raw, setRaw] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [error, setError] = useState(null)
+
+  const handleParse = () => {
+    setError(null)
+    let data
+    try {
+      data = JSON.parse(raw)
+    } catch {
+      setError('JSON inválido — confere se colou a lista certinha.')
+      return
+    }
+    if (!Array.isArray(data) || data.length === 0) {
+      setError('Esperado um array de itens, ex: [{"nome": "...", "familia": "..."}].')
+      return
+    }
+    const items = data
+      .map((item) => {
+        const nome = String(item?.nome ?? '').trim()
+        const marca = String(item?.marca ?? '').trim()
+        const familia = matchFamilyName(item?.familia) ?? KNOWN_FAMILIES[0]
+        const notas = String(item?.notas ?? '').trim()
+        return { nome, marca, familia, notas }
+      })
+      .filter((i) => i.nome)
+    if (items.length === 0) {
+      setError('Nenhum item com "nome" válido encontrado.')
+      return
+    }
+    setParsed(items)
+  }
+
+  if (parsed) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-accent/25 bg-surface-2/60 p-5">
+        <p className="text-sm font-semibold text-text">{parsed.length} perfumes encontrados</p>
+        <p className="text-xs text-text-muted">Confere a família olfativa antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
+        <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+          {parsed.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10">
+                <svg className="h-3.5 w-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 2h6M10 2v3.3c0 .5-.2 1-.55 1.37L7.1 9.2A3 3 0 006 11.4V20a2 2 0 002 2h8a2 2 0 002-2v-8.6a3 3 0 00-1.1-2.2L14.55 6.7A2 2 0 0114 5.3V2" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-text">{item.nome}</p>
+                <p className="truncate text-[11px] text-text-muted">
+                  {item.marca ? `${item.marca} · ` : ''}
+                  {item.familia}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => onImport(parsed)}
+            className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
+          >
+            Importar {parsed.length} perfumes
+          </button>
+          <button onClick={() => setParsed(null)} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
+            Voltar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-accent/25 bg-surface-2/60 p-5">
+      <div>
+        <p className="text-sm font-semibold text-text">Importar lista de perfumes</p>
+        <p className="mt-1 text-xs text-text-muted">
+          Cola um array JSON com nome (e opcionalmente marca/família/notas) de cada perfume — a família em texto
+          é reconhecida quando bate com uma das famílias que o app já usa.
+        </p>
+      </div>
+      <textarea
+        value={raw}
+        onChange={(e) => setRaw(e.target.value)}
+        rows={8}
+        placeholder='[{"nome": "Bleu de Chanel EDP", "marca": "Chanel", "familia": "Amadeirado executivo"}, ...]'
+        className={`${inputClass} font-mono text-xs`}
+      />
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <div className="flex gap-2">
+        <button onClick={handleParse} className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90">
+          Ler lista
+        </button>
+        <button onClick={onCancel} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SneakerRow({ sneaker, onEdit }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-2/60 p-3">
@@ -384,6 +491,7 @@ export default function WardrobePanel({
   onUpdateSneaker,
   onDeleteSneaker,
   onAddPerfume,
+  onImportPerfumes,
   onUpdatePerfume,
   onDeletePerfume,
   watches,
@@ -392,11 +500,13 @@ export default function WardrobePanel({
   const [editingSneaker, setEditingSneaker] = useState(null) // null | 'new' | id
   const [editingPerfume, setEditingPerfume] = useState(null)
   const [importingSneakers, setImportingSneakers] = useState(false)
+  const [importingPerfumes, setImportingPerfumes] = useState(false)
 
   const closeForms = () => {
     setEditingSneaker(null)
     setEditingPerfume(null)
     setImportingSneakers(false)
+    setImportingPerfumes(false)
   }
 
   return (
@@ -565,6 +675,14 @@ export default function WardrobePanel({
           )
         ) : tab === 'estilo' ? (
           <StyleInsightsPanel insights={styleInsights} />
+        ) : importingPerfumes ? (
+          <PerfumeImportPanel
+            onImport={(items) => {
+              onImportPerfumes(items)
+              setImportingPerfumes(false)
+            }}
+            onCancel={() => setImportingPerfumes(false)}
+          />
         ) : editingPerfume !== null ? (
           <PerfumeForm
             initial={editingPerfume === 'new' ? null : perfumes.find((p) => p.id === editingPerfume)}
@@ -585,12 +703,20 @@ export default function WardrobePanel({
           />
         ) : (
           <div className="space-y-3">
-            <button
-              onClick={() => setEditingPerfume('new')}
-              className="w-full rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
-            >
-              + Adicionar perfume
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingPerfume('new')}
+                className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
+              >
+                + Adicionar perfume
+              </button>
+              <button
+                onClick={() => setImportingPerfumes(true)}
+                className="rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3"
+              >
+                Importar lista
+              </button>
+            </div>
             {perfumes.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-8 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wide text-text">Ainda sem perfumes</p>

@@ -226,6 +226,7 @@ function App() {
             onUpdateSneaker={wardrobe.updateSneaker}
             onDeleteSneaker={wardrobe.deleteSneaker}
             onAddPerfume={wardrobe.addPerfume}
+            onImportPerfumes={wardrobe.addPerfumes}
             onUpdatePerfume={wardrobe.updatePerfume}
             onDeletePerfume={wardrobe.deletePerfume}
             watches={{

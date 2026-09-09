@@ -128,6 +128,18 @@ export function deletePerfume(id) {
   return savePerfumes(list.filter((p) => p.id !== id))
 }
 
+// Adiciona vários perfumes de uma vez (importação em lote) — mesmo
+// padrão de addSneakers: só acrescenta à lista existente.
+export function addPerfumes(dataList) {
+  const list = getPerfumes()
+  const added = []
+  for (const data of dataList) {
+    const id = makeItemId(data.nome, [...list, ...added].map((p) => p.id))
+    added.push({ ...data, id })
+  }
+  return savePerfumes([...list, ...added])
+}
+
 // Item genérico de guarda-roupa — categorias além de relógio/tênis/
 // perfume (camisa, calça, jaqueta, óculos, acessório...). Relógio/tênis/
 // perfume continuam em suas próprias coleções dedicadas (não vale a
@@ -198,9 +210,12 @@ export function logFeedback(entry) {
 //
 // v2 agrupa tênis/perfumes/itens genéricos sob `wardrobe` e adiciona
 // `feedback`; v1 (formato antigo, ainda pode estar em backups já
-// baixados) tinha `sneakers`/`perfumes` soltos no nível raiz. A leitura
-// aceita os dois formatos — ver normalizeBackup.
-const BACKUP_VERSION = 2
+// baixados) tinha `sneakers`/`perfumes` soltos no nível raiz. v3 não
+// muda o formato — só estende a validação (ver validateBackup) pra
+// checar id/nome em tênis e perfumes também, não só na coleção de
+// relógios. A leitura aceita as três versões já emitidas — ver
+// normalizeBackup.
+const BACKUP_VERSION = 3
 
 export function exportData() {
   return {
@@ -239,8 +254,19 @@ function normalizeBackup(data) {
   }
 }
 
+function validateItemsHaveIdAndNome(items, label) {
+  for (const item of items) {
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || typeof item.nome !== 'string') {
+      throw new Error(`Arquivo inválido: um item de ${label} está sem id/nome.`)
+    }
+  }
+}
+
 // Validação mínima antes de tocar em qualquer storage — um JSON qualquer
-// (ou um backup de outro app) não pode corromper o estado atual.
+// (ou um backup de outro app) não pode corromper o estado atual. Checa
+// id/nome não só na coleção de relógios como também em tênis e perfumes
+// (v3) — um item malformado em qualquer categoria rejeita o backup
+// inteiro, em vez de deixar passar um card quebrado silenciosamente.
 function validateBackup(data) {
   if (!data || typeof data !== 'object') {
     throw new Error('Arquivo inválido: não é um JSON de backup.')
@@ -248,11 +274,13 @@ function validateBackup(data) {
   if (!Array.isArray(data.collection)) {
     throw new Error('Arquivo inválido: não parece um backup do MOODE (sem coleção de relógios).')
   }
-  for (const w of data.collection) {
-    if (!w || typeof w !== 'object' || typeof w.id !== 'string' || typeof w.nome !== 'string') {
-      throw new Error('Arquivo inválido: um item da coleção está sem id/nome.')
-    }
-  }
+  validateItemsHaveIdAndNome(data.collection, 'coleção de relógios')
+
+  const wardrobe = data.wardrobe && typeof data.wardrobe === 'object' ? data.wardrobe : null
+  const sneakers = Array.isArray(wardrobe?.sneakers) ? wardrobe.sneakers : Array.isArray(data.sneakers) ? data.sneakers : []
+  const perfumes = Array.isArray(wardrobe?.perfumes) ? wardrobe.perfumes : Array.isArray(data.perfumes) ? data.perfumes : []
+  validateItemsHaveIdAndNome(sneakers, 'tênis')
+  validateItemsHaveIdAndNome(perfumes, 'perfumes')
 }
 
 export function importData(data) {

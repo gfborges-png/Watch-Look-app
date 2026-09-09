@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES } from './perfumeEngine.js'
+import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName } from './perfumeEngine.js'
 import { CONTEXTS } from './matchEngine.js'
 
 describe('suggestPerfume', () => {
@@ -82,5 +82,18 @@ describe('rankOwnedPerfumes — FragranceScore explicável', () => {
     for (let i = 1; i < results.length; i++) {
       expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
     }
+  })
+})
+
+describe('matchFamilyName — importação em lote de perfumes', () => {
+  it('bate uma família conhecida ignorando maiúscula/acento', () => {
+    expect(matchFamilyName(KNOWN_FAMILIES[0].toUpperCase())).toBe(KNOWN_FAMILIES[0])
+  })
+
+  it('sem texto ou sem família reconhecida, devolve null (não chuta uma família parecida)', () => {
+    expect(matchFamilyName(null)).toBeNull()
+    expect(matchFamilyName(undefined)).toBeNull()
+    expect(matchFamilyName('')).toBeNull()
+    expect(matchFamilyName('Família que não existe')).toBeNull()
   })
 })

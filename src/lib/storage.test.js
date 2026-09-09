@@ -1,5 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { personalBias, daysSince, lastWornDate, exportData, importData, getCollection, getFavoriteLooks, isFavoriteLook, toggleFavoriteLook } from './storage.js'
+import {
+  personalBias,
+  daysSince,
+  lastWornDate,
+  exportData,
+  importData,
+  getCollection,
+  getFavoriteLooks,
+  isFavoriteLook,
+  toggleFavoriteLook,
+  addPerfumes,
+  getPerfumes,
+} from './storage.js'
 
 describe('personalBias', () => {
   it('sem dado suficiente (menos de 4 sinais) não aplica viés', () => {
@@ -87,18 +99,42 @@ describe('Moodes Favoritos (favoriteLooks)', () => {
   })
 })
 
+describe('addPerfumes — importação em lote', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('acrescenta vários perfumes de uma vez, sem apagar os que já existiam', () => {
+    addPerfumes([{ nome: 'Já tinha', marca: '', familia: 'Aromático limpo', notas: '' }])
+    expect(getPerfumes()).toHaveLength(1)
+
+    addPerfumes([
+      { nome: 'Bleu de Chanel', marca: 'Chanel', familia: 'Aromático limpo', notas: '' },
+      { nome: 'Sauvage', marca: 'Dior', familia: 'Aromático limpo', notas: '' },
+    ])
+    expect(getPerfumes()).toHaveLength(3)
+  })
+
+  it('gera ids únicos mesmo quando dois nomes do lote colidem (slug igual)', () => {
+    addPerfumes([
+      { nome: 'Bleu de Chanel', marca: 'Chanel EDT', familia: 'Aromático limpo', notas: '' },
+      { nome: 'Bleu de Chanel', marca: 'Chanel EDP', familia: 'Aromático limpo', notas: '' },
+    ])
+    const ids = getPerfumes().map((p) => p.id)
+    expect(new Set(ids).size).toBe(2)
+  })
+})
+
 describe('backup versionado (export/import)', () => {
   beforeEach(() => localStorage.clear())
 
-  it('exporta no formato v2, com tênis/perfumes agrupados sob wardrobe', () => {
+  it('exporta no formato v3, com tênis/perfumes agrupados sob wardrobe', () => {
     const data = exportData()
-    expect(data.version).toBe(2)
+    expect(data.version).toBe(3)
     expect(data.wardrobe).toHaveProperty('sneakers')
     expect(data.wardrobe).toHaveProperty('perfumes')
     expect(data.wardrobe).toHaveProperty('items')
   })
 
-  it('importa um backup v2 válido sem lançar erro', () => {
+  it('importa um backup v2/v3 válido sem lançar erro', () => {
     const before = getCollection()
     expect(() =>
       importData({ collection: before, wardrobe: { sneakers: [{ id: 's1', nome: 'Teste', hexes: ['#fff'] }], perfumes: [] } }),
@@ -109,6 +145,23 @@ describe('backup versionado (export/import)', () => {
   it('importa um backup v1 antigo (sneakers/perfumes soltos na raiz)', () => {
     const before = getCollection()
     expect(() => importData({ collection: before, sneakers: [{ id: 's1', nome: 'Legado', hexes: ['#000'] }], perfumes: [] })).not.toThrow()
+    expect(getCollection()).toEqual(before)
+  })
+
+  it('rejeita tênis sem id/nome em qualquer formato (wardrobe.sneakers ou raiz), sem alterar o estado atual (v3)', () => {
+    const before = getCollection()
+    expect(() =>
+      importData({ collection: before, wardrobe: { sneakers: [{ nome: 'Sem id' }], perfumes: [] } }),
+    ).toThrow(/tênis/)
+    expect(() => importData({ collection: before, sneakers: [{ id: 's1' }], perfumes: [] })).toThrow(/tênis/)
+    expect(getCollection()).toEqual(before)
+  })
+
+  it('rejeita perfume sem id/nome, sem alterar o estado atual (v3)', () => {
+    const before = getCollection()
+    expect(() =>
+      importData({ collection: before, wardrobe: { sneakers: [], perfumes: [{ id: 'p1' }] } }),
+    ).toThrow(/perfumes/)
     expect(getCollection()).toEqual(before)
   })
 
