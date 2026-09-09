@@ -27,7 +27,9 @@ export function greetingForNow(date = new Date()) {
   return 'Boa noite'
 }
 
-function findOwnedSneakerForGroup(sneakers, group) {
+// Primeiro tênis cadastrado cuja cor pertence à mesma paleta do relógio —
+// reaproveitado também no bundle de resultado do Look → Relógio.
+export function pickOwnedSneakerForGroup(sneakers, group) {
   if (!sneakers || sneakers.length === 0) return null
   return (
     sneakers.find((s) => {
@@ -57,7 +59,7 @@ export function buildTodayCandidates(watches, opts = {}) {
     const { watch } = result
     const group = paletteGroup(watch.cor)
     const look = lookForContext(watch, contextId)
-    const sneaker = findOwnedSneakerForGroup(sneakers, group)
+    const sneaker = pickOwnedSneakerForGroup(sneakers, group)
     const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes })
 
     const reasons = [...new Set(['cores harmonizam com o mostrador', ...result.reasons])]
