@@ -89,7 +89,15 @@ function MeusTenisRow({ sneakers, onPick }) {
             onClick={() => onPick(s)}
             className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 transition hover:bg-white/10"
           >
-            <span className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20" style={{ background: s.hexes[0] }} />
+            <span
+              className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20"
+              style={{
+                background:
+                  s.hexes.length > 1
+                    ? `conic-gradient(${s.hexes[0]} 0% 50%, ${s.hexes[1]} 50% 100%)`
+                    : s.hexes[0],
+              }}
+            />
             {s.nome}
           </button>
         ))}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GARMENTS } from '../lib/matchEngine.js'
+import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
 import { KNOWN_FAMILIES } from '../lib/perfumeEngine.js'
 import { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
@@ -10,6 +10,65 @@ const inputClass =
 const SNEAKER_TIPOS = GARMENTS.find((g) => g.key === 'calcado').tipos
 const BLANK_SNEAKER = { nome: '', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] }
 const BLANK_PERFUME = { nome: '', marca: '', familia: KNOWN_FAMILIES[0], notas: '' }
+
+// Rótulo de uma cor cadastrada, buscando o hex exato na paleta do app
+// (o seletor de cor do tênis só oferece esses hexes, então sempre bate).
+function colorLabel(hex) {
+  return LOOK_COLORS.find((c) => c.hex === hex)?.label ?? hex
+}
+
+// "Branco com Azul" vs "Azul com Branco" — a ordem em que as cores foram
+// escolhidas decide qual é a dominante, então vira a primeira do rótulo.
+function colorComboLabel(hexes) {
+  return hexes.map(colorLabel).join(' com ')
+}
+
+// Mesmo mostruário de cores nomeadas usado no look (LookMatcher/ColorRow),
+// mas com seleção múltipla (até 2, em ordem) em vez de uma roda de cor
+// livre — assim o tênis cadastrado já nasce com uma cor exata da paleta
+// que o motor de match usa, sem precisar aproximar depois.
+function SneakerColorPicker({ hexes, onChange }) {
+  const toggle = (hex) => {
+    const idx = hexes.indexOf(hex)
+    if (idx !== -1) {
+      if (hexes.length === 1) return
+      onChange(hexes.filter((h) => h !== hex))
+    } else if (hexes.length < 2) {
+      onChange([...hexes, hex])
+    } else {
+      onChange([hexes[1], hex])
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {LOOK_COLORS.map((c) => {
+        const order = hexes.indexOf(c.hex)
+        const active = order !== -1
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => toggle(c.hex)}
+            title={c.label}
+            aria-label={c.label}
+            aria-pressed={active}
+            className={`relative h-7 w-7 shrink-0 rounded-full ring-2 transition ${
+              active ? 'ring-amber-400 scale-110' : 'ring-transparent hover:ring-white/30'
+            }`}
+            style={{ background: c.hex }}
+          >
+            {active && hexes.length === 2 && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold leading-none text-neutral-950">
+                {order + 1}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 function Field({ label, required, children }) {
   return (
@@ -36,9 +95,6 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(initial ? { ...BLANK_SNEAKER, ...initial } : BLANK_SNEAKER)
   const [error, setError] = useState(null)
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
-  const setHex = (i, value) => setForm((f) => ({ ...f, hexes: f.hexes.map((h, idx) => (idx === i ? value : h)) }))
-  const addHex = () => setForm((f) => (f.hexes.length >= 2 ? f : { ...f, hexes: [...f.hexes, '#8C8C8C'] }))
-  const removeHex = (i) => setForm((f) => (f.hexes.length <= 1 ? f : { ...f, hexes: f.hexes.filter((_, idx) => idx !== i) }))
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -70,28 +126,11 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
         <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
           Cor (até 2) <span className="text-amber-400">*</span>
         </span>
-        <div className="flex flex-wrap items-center gap-2">
-          {form.hexes.map((hex, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <input
-                type="color"
-                value={hex}
-                onChange={(e) => setHex(i, e.target.value)}
-                className="h-9 w-9 cursor-pointer rounded-lg border border-white/10 bg-transparent p-0.5"
-              />
-              {form.hexes.length > 1 && (
-                <button type="button" onClick={() => removeHex(i)} className="text-xs text-neutral-500 hover:text-red-400" aria-label="Remover cor">
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          {form.hexes.length < 2 && (
-            <button type="button" onClick={addHex} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 hover:bg-white/10">
-              + cor
-            </button>
-          )}
-        </div>
+        <SneakerColorPicker hexes={form.hexes} onChange={(hexes) => setForm((f) => ({ ...f, hexes }))} />
+        <p className="mt-1.5 text-xs text-neutral-500">
+          {colorComboLabel(form.hexes)}
+          {form.hexes.length < 2 && ' — toca em outra cor pra fazer uma combinação (ex: Branco com Azul)'}
+        </p>
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -177,8 +216,8 @@ function SneakerRow({ sneaker, onEdit }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-neutral-100">{sneaker.nome}</p>
         <p className="truncate text-xs text-neutral-500">
-          {sneaker.marca ? `${sneaker.marca} · ` : ''}
-          {sneaker.tipo}
+          {colorComboLabel(sneaker.hexes)}
+          {sneaker.marca ? ` · ${sneaker.marca}` : ''} · {sneaker.tipo}
         </p>
       </div>
       <EditIconButton onClick={onEdit} label={`Editar ${sneaker.nome}`} />
