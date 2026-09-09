@@ -41,7 +41,7 @@ export default defineConfig({
       manifest: {
         name: 'MOODE',
         short_name: 'MOODE',
-        description: 'MOODE é seu personal stylist diário. Descubra o que vestir e usar com base no seu guarda-roupa, clima, ocasião e estilo.',
+        description: 'MOODE é seu personal stylist diário. Descubra o que vestir e usar com base no seu acervo, clima, ocasião e estilo.',
         theme_color: '#f8f6f2',
         background_color: '#f8f6f2',
         display: 'standalone',

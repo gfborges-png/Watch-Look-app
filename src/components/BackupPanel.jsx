@@ -19,7 +19,7 @@ export default function BackupPanel({ onBack, onExport, onImportFile, onResetCol
   const handleExport = () => {
     const data = onExport()
     const date = new Date().toISOString().slice(0, 10)
-    downloadJSON(data, `watch-and-look-backup-${date}.json`)
+    downloadJSON(data, `moode-backup-${date}.json`)
     setStatus({ type: 'success', text: 'Backup baixado.' })
   }
 

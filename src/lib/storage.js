@@ -256,7 +256,7 @@ const BACKUP_VERSION = 4
 
 export function exportData() {
   return {
-    app: 'watch-look',
+    app: 'moode',
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     collection: getCollection(),
