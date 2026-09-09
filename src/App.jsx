@@ -18,6 +18,14 @@ import {
   getChoices,
   logChoice,
   personalBias,
+  getSneakers,
+  addSneaker,
+  updateSneaker,
+  deleteSneaker,
+  getPerfumes,
+  addPerfume,
+  updatePerfume,
+  deletePerfume,
 } from './lib/storage.js'
 import { getWeatherForCurrentLocation } from './lib/weather.js'
 import WatchCard from './components/WatchCard.jsx'
@@ -26,6 +34,7 @@ import WatchDetail from './components/WatchDetail.jsx'
 import LookMatcher from './components/LookMatcher.jsx'
 import WatchForm from './components/WatchForm.jsx'
 import BackupPanel from './components/BackupPanel.jsx'
+import WardrobePanel from './components/WardrobePanel.jsx'
 
 function App() {
   const [mode, setMode] = useState('colecao') // 'colecao' | 'look'
@@ -36,12 +45,15 @@ function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [formTarget, setFormTarget] = useState(null) // null | 'new' | watchId
   const [showBackup, setShowBackup] = useState(false)
+  const [showWardrobe, setShowWardrobe] = useState(false)
   const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
   const [collection, setCollection] = useState(() => getCollection())
   const [favorites, setFavorites] = useState(() => getFavorites())
   const [history, setHistory] = useState(() => getHistory())
   const [choices, setChoices] = useState(() => getChoices())
+  const [sneakers, setSneakers] = useState(() => getSneakers())
+  const [perfumes, setPerfumes] = useState(() => getPerfumes())
   const [weather, setWeather] = useState({ status: 'idle' })
 
   const recentIds = useMemo(() => recentlyWornIds(history), [history])
@@ -50,6 +62,12 @@ function App() {
   const handleToggleFavorite = (id) => setFavorites(toggleFavorite(id))
   const handleLogWornToday = (id) => setHistory(logWornToday(id))
   const handleLogChoice = (entry) => setChoices(logChoice(entry))
+  const handleAddSneaker = (data) => setSneakers(addSneaker(data))
+  const handleUpdateSneaker = (id, data) => setSneakers(updateSneaker(id, data))
+  const handleDeleteSneaker = (id) => setSneakers(deleteSneaker(id))
+  const handleAddPerfume = (data) => setPerfumes(addPerfume(data))
+  const handleUpdatePerfume = (id, data) => setPerfumes(updatePerfume(id, data))
+  const handleDeletePerfume = (id) => setPerfumes(deletePerfume(id))
 
   const handleFetchWeather = async () => {
     setWeather({ status: 'loading' })
@@ -84,6 +102,8 @@ function App() {
     setFavorites(getFavorites())
     setHistory(getHistory())
     setChoices(getChoices())
+    setSneakers(getSneakers())
+    setPerfumes(getPerfumes())
   }
 
   const selectedWatch = useMemo(() => collection.find((w) => w.id === selectedId) ?? null, [collection, selectedId])
@@ -112,6 +132,24 @@ function App() {
           onSave={handleSaveWatch}
           onCancel={() => setFormTarget(null)}
           onDelete={() => handleDeleteWatch(formTarget)}
+        />
+      </div>
+    )
+  }
+
+  if (showWardrobe) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+        <WardrobePanel
+          onBack={() => setShowWardrobe(false)}
+          sneakers={sneakers}
+          perfumes={perfumes}
+          onAddSneaker={handleAddSneaker}
+          onUpdateSneaker={handleUpdateSneaker}
+          onDeleteSneaker={handleDeleteSneaker}
+          onAddPerfume={handleAddPerfume}
+          onUpdatePerfume={handleUpdatePerfume}
+          onDeletePerfume={handleDeletePerfume}
         />
       </div>
     )
@@ -163,16 +201,28 @@ function App() {
                   : 'Diga as cores do seu look e veja qual relógio da coleção combina.'}
               </p>
             </div>
-            <button
-              onClick={() => setShowBackup(true)}
-              aria-label="Dados e backup"
-              className="shrink-0 rounded-full border border-white/10 bg-white/5 p-2 text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </button>
+            <div className="flex shrink-0 gap-2">
+              <button
+                onClick={() => setShowWardrobe(true)}
+                aria-label="Guarda-roupa"
+                className="rounded-full border border-white/10 bg-white/5 p-2 text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="12" cy="4.5" r="1.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v2.5M3.5 20.5L12 8.5l8.5 12M7 15.5h10" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowBackup(true)}
+                aria-label="Dados e backup"
+                className="rounded-full border border-white/10 bg-white/5 p-2 text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 flex gap-2">
@@ -229,6 +279,8 @@ function App() {
             onFetchWeather={handleFetchWeather}
             bias={bias}
             onLogChoice={handleLogChoice}
+            sneakers={sneakers}
+            perfumes={perfumes}
           />
         ) : (
           <>

@@ -8,6 +8,8 @@ const COLLECTION_KEY = 'watchlook:collection'
 const FAVORITES_KEY = 'watchlook:favorites'
 const HISTORY_KEY = 'watchlook:history'
 const CHOICES_KEY = 'watchlook:choices'
+const SNEAKERS_KEY = 'watchlook:sneakers'
+const PERFUMES_KEY = 'watchlook:perfumes'
 const HISTORY_LIMIT = 200
 const CHOICES_LIMIT = 150
 const RECENT_DAYS = 2
@@ -60,7 +62,7 @@ function slugify(text) {
   return slug || 'relogio'
 }
 
-function makeWatchId(nome, existingIds) {
+function makeItemId(nome, existingIds) {
   const base = slugify(nome)
   let id = base
   let n = 2
@@ -73,7 +75,7 @@ function makeWatchId(nome, existingIds) {
 
 export function addWatch(watchData) {
   const collection = getCollection()
-  const id = makeWatchId(watchData.nome, collection.map((w) => w.id))
+  const id = makeItemId(watchData.nome, collection.map((w) => w.id))
   return saveCollection([...collection, { ...watchData, id }])
 }
 
@@ -87,8 +89,61 @@ export function deleteWatch(id) {
   return saveCollection(collection.filter((w) => w.id !== id))
 }
 
-// Backup: um único JSON com coleção + favoritos + histórico, pra não
-// perder tudo se limpar os dados do navegador ou trocar de aparelho.
+// Tênis e perfumes cadastrados — catálogos simples do que você já tem,
+// pra sugestão poder apontar pras suas próprias coisas em vez de só um
+// tipo genérico ("tênis branco") ou uma referência de mercado.
+export function getSneakers() {
+  return safeGet(SNEAKERS_KEY, [])
+}
+
+function saveSneakers(list) {
+  safeSet(SNEAKERS_KEY, list)
+  return list
+}
+
+export function addSneaker(data) {
+  const list = getSneakers()
+  const id = makeItemId(data.nome, list.map((s) => s.id))
+  return saveSneakers([...list, { ...data, id }])
+}
+
+export function updateSneaker(id, data) {
+  const list = getSneakers()
+  return saveSneakers(list.map((s) => (s.id === id ? { ...data, id } : s)))
+}
+
+export function deleteSneaker(id) {
+  const list = getSneakers()
+  return saveSneakers(list.filter((s) => s.id !== id))
+}
+
+export function getPerfumes() {
+  return safeGet(PERFUMES_KEY, [])
+}
+
+function savePerfumes(list) {
+  safeSet(PERFUMES_KEY, list)
+  return list
+}
+
+export function addPerfume(data) {
+  const list = getPerfumes()
+  const id = makeItemId(data.nome, list.map((p) => p.id))
+  return savePerfumes([...list, { ...data, id }])
+}
+
+export function updatePerfume(id, data) {
+  const list = getPerfumes()
+  return savePerfumes(list.map((p) => (p.id === id ? { ...data, id } : p)))
+}
+
+export function deletePerfume(id) {
+  const list = getPerfumes()
+  return savePerfumes(list.filter((p) => p.id !== id))
+}
+
+// Backup: um único JSON com coleção + favoritos + histórico + guarda-roupa,
+// pra não perder tudo se limpar os dados do navegador ou trocar de aparelho.
 export function exportData() {
   return {
     app: 'watch-look',
@@ -98,6 +153,8 @@ export function exportData() {
     favorites: getFavorites(),
     history: getHistory(),
     choices: getChoices(),
+    sneakers: getSneakers(),
+    perfumes: getPerfumes(),
   }
 }
 
@@ -109,6 +166,8 @@ export function importData(data) {
   if (Array.isArray(data.favorites)) safeSet(FAVORITES_KEY, data.favorites)
   if (Array.isArray(data.history)) safeSet(HISTORY_KEY, data.history)
   if (Array.isArray(data.choices)) safeSet(CHOICES_KEY, data.choices)
+  if (Array.isArray(data.sneakers)) safeSet(SNEAKERS_KEY, data.sneakers)
+  if (Array.isArray(data.perfumes)) safeSet(PERFUMES_KEY, data.perfumes)
 }
 
 export function getFavorites() {

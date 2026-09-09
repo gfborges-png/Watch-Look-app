@@ -1,0 +1,340 @@
+import { useState } from 'react'
+import { GARMENTS } from '../lib/matchEngine.js'
+import { KNOWN_FAMILIES } from '../lib/perfumeEngine.js'
+import { Chip } from './FilterBar.jsx'
+import ColorSwatch from './ColorSwatch.jsx'
+
+const inputClass =
+  'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none'
+
+const SNEAKER_TIPOS = GARMENTS.find((g) => g.key === 'calcado').tipos
+const BLANK_SNEAKER = { nome: '', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] }
+const BLANK_PERFUME = { nome: '', marca: '', familia: KNOWN_FAMILIES[0], notas: '' }
+
+function Field({ label, required, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+        {label} {required && <span className="text-amber-400">*</span>}
+      </span>
+      {children}
+    </label>
+  )
+}
+
+function EditIconButton({ onClick, label }) {
+  return (
+    <button onClick={onClick} aria-label={label} className="rounded-full p-1.5 text-neutral-500 transition hover:bg-white/10 hover:text-neutral-200">
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    </button>
+  )
+}
+
+function SneakerForm({ initial, onSave, onCancel, onDelete }) {
+  const [form, setForm] = useState(initial ? { ...BLANK_SNEAKER, ...initial } : BLANK_SNEAKER)
+  const [error, setError] = useState(null)
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const setHex = (i, value) => setForm((f) => ({ ...f, hexes: f.hexes.map((h, idx) => (idx === i ? value : h)) }))
+  const addHex = () => setForm((f) => (f.hexes.length >= 2 ? f : { ...f, hexes: [...f.hexes, '#8C8C8C'] }))
+  const removeHex = (i) => setForm((f) => (f.hexes.length <= 1 ? f : { ...f, hexes: f.hexes.filter((_, idx) => idx !== i) }))
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!form.nome.trim()) {
+      setError('Dá um nome pro tênis (ex: modelo + colorway).')
+      return
+    }
+    onSave({ ...form, nome: form.nome.trim(), marca: form.marca.trim() })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+      <Field label="Nome" required>
+        <input className={inputClass} value={form.nome} onChange={set('nome')} placeholder="Ex: Dunk Low Travis Scott Golf" />
+      </Field>
+      <Field label="Marca">
+        <input className={inputClass} value={form.marca} onChange={set('marca')} placeholder="Ex: Nike" />
+      </Field>
+      <Field label="Tipo">
+        <div className="flex flex-wrap gap-1.5">
+          {SNEAKER_TIPOS.map((t) => (
+            <Chip key={t} active={form.tipo === t} onClick={() => setForm((f) => ({ ...f, tipo: t }))}>
+              {t}
+            </Chip>
+          ))}
+        </div>
+      </Field>
+      <div>
+        <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+          Cor (até 2) <span className="text-amber-400">*</span>
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {form.hexes.map((hex, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <input
+                type="color"
+                value={hex}
+                onChange={(e) => setHex(i, e.target.value)}
+                className="h-9 w-9 cursor-pointer rounded-lg border border-white/10 bg-transparent p-0.5"
+              />
+              {form.hexes.length > 1 && (
+                <button type="button" onClick={() => removeHex(i)} className="text-xs text-neutral-500 hover:text-red-400" aria-label="Remover cor">
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {form.hexes.length < 2 && (
+            <button type="button" onClick={addHex} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 hover:bg-white/10">
+              + cor
+            </button>
+          )}
+        </div>
+      </div>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <button type="submit" className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+          Salvar
+        </button>
+        {onDelete && (
+          <button type="button" onClick={onDelete} className="rounded-full border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10">
+            Remover
+          </button>
+        )}
+        <button type="button" onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
+  const [form, setForm] = useState(initial ? { ...BLANK_PERFUME, ...initial } : BLANK_PERFUME)
+  const [error, setError] = useState(null)
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!form.nome.trim()) {
+      setError('Dá um nome pro perfume.')
+      return
+    }
+    onSave({ ...form, nome: form.nome.trim(), marca: form.marca.trim(), notas: form.notas.trim() })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-amber-400/20 bg-neutral-900/60 p-5">
+      <Field label="Nome" required>
+        <input className={inputClass} value={form.nome} onChange={set('nome')} placeholder="Ex: Bleu de Chanel EDP" />
+      </Field>
+      <Field label="Marca">
+        <input className={inputClass} value={form.marca} onChange={set('marca')} placeholder="Ex: Chanel" />
+      </Field>
+      <Field label="Família olfativa" required>
+        <select className={inputClass} value={form.familia} onChange={set('familia')}>
+          {KNOWN_FAMILIES.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-neutral-600">
+          É essa família que decide quando esse perfume vira sugestão pra um clima/ocasião.
+        </span>
+      </Field>
+      <Field label="Notas">
+        <input className={inputClass} value={form.notas} onChange={set('notas')} placeholder="Ex: bergamota, cedro, almíscar (opcional)" />
+      </Field>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <button type="submit" className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+          Salvar
+        </button>
+        {onDelete && (
+          <button type="button" onClick={onDelete} className="rounded-full border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10">
+            Remover
+          </button>
+        )}
+        <button type="button" onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function SneakerRow({ sneaker, onEdit }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
+      <ColorSwatch hexes={sneaker.hexes} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-neutral-100">{sneaker.nome}</p>
+        <p className="truncate text-xs text-neutral-500">
+          {sneaker.marca ? `${sneaker.marca} · ` : ''}
+          {sneaker.tipo}
+        </p>
+      </div>
+      <EditIconButton onClick={onEdit} label={`Editar ${sneaker.nome}`} />
+    </div>
+  )
+}
+
+function PerfumeRow({ perfume, onEdit }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
+        <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 2h6M10 2v3.3c0 .5-.2 1-.55 1.37L7.1 9.2A3 3 0 006 11.4V20a2 2 0 002 2h8a2 2 0 002-2v-8.6a3 3 0 00-1.1-2.2L14.55 6.7A2 2 0 0114 5.3V2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.2 13.5h9.6" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-neutral-100">{perfume.nome}</p>
+        <p className="truncate text-xs text-neutral-500">
+          {perfume.marca ? `${perfume.marca} · ` : ''}
+          {perfume.familia}
+        </p>
+      </div>
+      <EditIconButton onClick={onEdit} label={`Editar ${perfume.nome}`} />
+    </div>
+  )
+}
+
+export default function WardrobePanel({
+  onBack,
+  sneakers,
+  perfumes,
+  onAddSneaker,
+  onUpdateSneaker,
+  onDeleteSneaker,
+  onAddPerfume,
+  onUpdatePerfume,
+  onDeletePerfume,
+}) {
+  const [tab, setTab] = useState('tenis') // 'tenis' | 'perfumes'
+  const [editingSneaker, setEditingSneaker] = useState(null) // null | 'new' | id
+  const [editingPerfume, setEditingPerfume] = useState(null)
+
+  const closeForms = () => {
+    setEditingSneaker(null)
+    setEditingPerfume(null)
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
+      <button onClick={onBack} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 hover:text-neutral-100">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Voltar
+      </button>
+
+      <h1 className="text-lg font-bold text-neutral-50">Guarda-roupa</h1>
+      <p className="mt-1 text-sm text-neutral-400">
+        Cadastra o que você realmente tem — assim as sugestões de tênis e perfume apontam pras suas próprias coisas.
+      </p>
+
+      <div className="mt-4 flex gap-2">
+        <Chip
+          active={tab === 'tenis'}
+          onClick={() => {
+            setTab('tenis')
+            closeForms()
+          }}
+        >
+          Tênis ({sneakers.length})
+        </Chip>
+        <Chip
+          active={tab === 'perfumes'}
+          onClick={() => {
+            setTab('perfumes')
+            closeForms()
+          }}
+        >
+          Perfumes ({perfumes.length})
+        </Chip>
+      </div>
+
+      <div className="mt-4">
+        {tab === 'tenis' ? (
+          editingSneaker !== null ? (
+            <SneakerForm
+              initial={editingSneaker === 'new' ? null : sneakers.find((s) => s.id === editingSneaker)}
+              onSave={(data) => {
+                if (editingSneaker === 'new') onAddSneaker(data)
+                else onUpdateSneaker(editingSneaker, data)
+                setEditingSneaker(null)
+              }}
+              onCancel={() => setEditingSneaker(null)}
+              onDelete={
+                editingSneaker === 'new'
+                  ? null
+                  : () => {
+                      onDeleteSneaker(editingSneaker)
+                      setEditingSneaker(null)
+                    }
+              }
+            />
+          ) : (
+            <div className="space-y-3">
+              <button
+                onClick={() => setEditingSneaker('new')}
+                className="w-full rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+              >
+                + Adicionar tênis
+              </button>
+              {sneakers.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+                  Nenhum tênis cadastrado ainda.
+                </div>
+              ) : (
+                sneakers.map((s) => <SneakerRow key={s.id} sneaker={s} onEdit={() => setEditingSneaker(s.id)} />)
+              )}
+            </div>
+          )
+        ) : editingPerfume !== null ? (
+          <PerfumeForm
+            initial={editingPerfume === 'new' ? null : perfumes.find((p) => p.id === editingPerfume)}
+            onSave={(data) => {
+              if (editingPerfume === 'new') onAddPerfume(data)
+              else onUpdatePerfume(editingPerfume, data)
+              setEditingPerfume(null)
+            }}
+            onCancel={() => setEditingPerfume(null)}
+            onDelete={
+              editingPerfume === 'new'
+                ? null
+                : () => {
+                    onDeletePerfume(editingPerfume)
+                    setEditingPerfume(null)
+                  }
+            }
+          />
+        ) : (
+          <div className="space-y-3">
+            <button
+              onClick={() => setEditingPerfume('new')}
+              className="w-full rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+            >
+              + Adicionar perfume
+            </button>
+            {perfumes.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+                Nenhum perfume cadastrado ainda.
+              </div>
+            ) : (
+              perfumes.map((p) => <PerfumeRow key={p.id} perfume={p} onEdit={() => setEditingPerfume(p.id)} />)
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

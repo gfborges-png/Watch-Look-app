@@ -72,12 +72,21 @@ const INTENSITY = {
   fimDeSemana: { intensidade: '4-5 borrifadas, EDP — pode projetar mais', evitar: null },
 }
 
+// Famílias conhecidas pelo motor — usado pra popular o seletor no cadastro
+// de perfumes, garantindo que o texto bate exatamente com o que as regras
+// geram (senão "da sua coleção" nunca acha nada pra combinar).
+export const KNOWN_FAMILIES = [...new Set(Object.values(MATRIX).map((c) => c.familia))]
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null (null cai em 'ameno', o
 // perfil mais seguro sem dado de clima). context: 'trabalho' | 'casual' | 'fimDeSemana'.
-export function suggestPerfume({ weatherBias, context }) {
+// ownedPerfumes: catálogo cadastrado pelo usuário (src/lib/storage.js) —
+// quando um deles bate com a família sugerida, entra em `owned` pra
+// aparecer como sugestão primária, na frente das referências genéricas.
+export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
   const w = WEATHER_KEYS.includes(weatherBias) ? weatherBias : 'ameno'
   const c = CONTEXT_KEYS.includes(context) ? context : 'casual'
   const combo = MATRIX[`${w}_${c}`]
   const intensity = INTENSITY[c]
-  return { ...combo, intensidade: intensity.intensidade, evitar: intensity.evitar }
+  const owned = ownedPerfumes.filter((p) => p.familia === combo.familia)
+  return { ...combo, intensidade: intensity.intensidade, evitar: intensity.evitar, owned }
 }

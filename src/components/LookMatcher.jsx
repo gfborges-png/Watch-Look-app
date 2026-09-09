@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from 'react'
 import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
 import { paletteGroup } from '../lib/outfitEngine.js'
-import { detectDominantColorId } from '../lib/colorDetect.js'
+import { detectDominantColorId, detectLookZones, closestLookColorId } from '../lib/colorDetect.js'
 import { suggestPerfume } from '../lib/perfumeEngine.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
@@ -77,10 +77,32 @@ function PhotoDetectButton({ onDetected }) {
   )
 }
 
-function GarmentSection({ garment, piece, onChange }) {
+function MeusTenisRow({ sneakers, onPick }) {
+  if (!sneakers || sneakers.length === 0) return null
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] uppercase tracking-wide text-neutral-500">Meus tênis</p>
+      <div className="flex flex-wrap gap-1.5">
+        {sneakers.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => onPick(s)}
+            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 transition hover:bg-white/10"
+          >
+            <span className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20" style={{ background: s.hexes[0] }} />
+            {s.nome}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function GarmentSection({ garment, piece, onChange, sneakers }) {
   const setColor = (colorId) => onChange({ ...piece, colorId })
   const setTipo = (tipo) => onChange({ ...piece, tipo })
   const setModelo = (modelo) => onChange({ ...piece, modelo })
+  const pickSneaker = (s) => onChange({ ...piece, colorId: closestLookColorId(s.hexes[0]), modelo: s.nome, tipo: s.tipo })
 
   return (
     <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
@@ -100,6 +122,7 @@ function GarmentSection({ garment, piece, onChange }) {
 
       {(!garment.optional || piece.enabled) && (
         <div className="space-y-2.5">
+          {garment.key === 'calcado' && <MeusTenisRow sneakers={sneakers} onPick={pickSneaker} />}
           {garment.hasModel && (
             <input
               type="text"
@@ -114,6 +137,49 @@ function GarmentSection({ garment, piece, onChange }) {
           <PhotoDetectButton onDetected={setColor} />
         </div>
       )}
+    </div>
+  )
+}
+
+function WholeLookPhotoButton({ onDetected }) {
+  const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'error'
+  const inputId = useId()
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setStatus('loading')
+    try {
+      const zones = await detectLookZones(file)
+      onDetected(zones)
+      setStatus('idle')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-dashed border-amber-400/30 bg-amber-400/5 p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
+          <svg className="h-4.5 w-4.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h1.5l1-1.5h9l1 1.5H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <circle cx="12" cy="13.5" r="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <label htmlFor={inputId} className="cursor-pointer text-sm font-semibold text-amber-400">
+            {status === 'loading' ? 'Analisando a foto...' : 'Preencher tudo com uma foto do look'}
+          </label>
+          <p className="mt-0.5 text-[11px] text-neutral-500">
+            Estimativa por zonas da foto (camisa/calça/tênis) — confere e ajusta se precisar. Funciona melhor com foto de
+            corpo inteiro, de frente.
+          </p>
+          {status === 'error' && <p className="mt-1 text-xs text-red-400">Não deu pra ler essa foto</p>}
+        </div>
+      </div>
+      <input id={inputId} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
     </div>
   )
 }
@@ -227,8 +293,8 @@ function ClimaEOcasiaoPanel({ weather, onFetchWeather, context, onContextChange 
   )
 }
 
-function PerfumePanel({ weatherBias, context }) {
-  const p = useMemo(() => suggestPerfume({ weatherBias, context }), [weatherBias, context])
+function PerfumePanel({ weatherBias, context, ownedPerfumes }) {
+  const p = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes }), [weatherBias, context, ownedPerfumes])
   return (
     <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-neutral-900/70 to-neutral-900/30 p-4">
       <div className="flex items-center gap-2.5">
@@ -254,6 +320,19 @@ function PerfumePanel({ weatherBias, context }) {
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-neutral-400">{p.porque}</p>
+
+      {p.owned.length > 0 && (
+        <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">Da sua coleção</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {p.owned.map((o) => (
+              <span key={o.id} className="rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-semibold text-neutral-950">
+                {o.nome}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Referências reais</p>
@@ -291,6 +370,8 @@ export default function LookMatcher({
   onFetchWeather,
   bias,
   onLogChoice,
+  sneakers,
+  perfumes,
 }) {
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
@@ -304,17 +385,28 @@ export default function LookMatcher({
   })
   const topResults = hasSelection ? results.filter((r) => r.score > 0).slice(0, 5) : []
 
+  const handleWholeLookPhoto = (zones) => {
+    onOutfitChange({
+      ...outfit,
+      camisa: zones.camisa ? { ...outfit.camisa, colorId: zones.camisa } : outfit.camisa,
+      calca: zones.calca ? { ...outfit.calca, colorId: zones.calca } : outfit.calca,
+      calcado: zones.calcado ? { ...outfit.calcado, colorId: zones.calcado } : outfit.calcado,
+    })
+  }
+
   return (
     <div className="space-y-5">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">1. O que você está usando</p>
         <div className="space-y-3">
+          <WholeLookPhotoButton onDetected={handleWholeLookPhoto} />
           {GARMENTS.map((garment) => (
             <GarmentSection
               key={garment.key}
               garment={garment}
               piece={outfit[garment.key]}
               onChange={(next) => onOutfitChange({ ...outfit, [garment.key]: next })}
+              sneakers={sneakers}
             />
           ))}
         </div>
@@ -324,7 +416,7 @@ export default function LookMatcher({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">2. Contexto do dia</p>
         <div className="space-y-3">
           <ClimaEOcasiaoPanel weather={weather} onFetchWeather={onFetchWeather} context={context} onContextChange={onContextChange} />
-          <PerfumePanel weatherBias={weatherBias} context={context} />
+          <PerfumePanel weatherBias={weatherBias} context={context} ownedPerfumes={perfumes} />
         </div>
       </div>
 
