@@ -9,6 +9,8 @@ import { useWardrobe } from './hooks/useWardrobe.js'
 import { useRecommendationHistory } from './hooks/useRecommendationHistory.js'
 import { useWeather } from './hooks/useWeather.js'
 import { usePreferences } from './hooks/usePreferences.js'
+import { useLocalProfile } from './hooks/useLocalProfile.js'
+import { useUserStyleProfile } from './hooks/useUserStyleProfile.js'
 import WatchCard from './components/WatchCard.jsx'
 import FilterBar from './components/FilterBar.jsx'
 import ForgottenWatches from './components/ForgottenWatches.jsx'
@@ -47,6 +49,13 @@ function App() {
   const { history, logWornToday, logChoice, logFeedback } = rec
   const { weather, fetchWeather } = useWeather()
   const { bias } = usePreferences(rec.choices, rec.feedback)
+  useLocalProfile()
+  const { insights: styleInsights } = useUserStyleProfile({
+    collection,
+    choices: rec.choices,
+    feedback: rec.feedback,
+    favorites,
+  })
 
   const handleSaveWatch = (data) => {
     if (formTarget === 'new') addWatch(data)
@@ -230,6 +239,7 @@ function App() {
           <WardrobePanel
             sneakers={sneakers}
             perfumes={perfumes}
+            styleInsights={styleInsights}
             onAddSneaker={wardrobe.addSneaker}
             onImportSneakers={wardrobe.addSneakers}
             onUpdateSneaker={wardrobe.updateSneaker}

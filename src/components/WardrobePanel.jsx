@@ -332,6 +332,25 @@ function SneakerRow({ sneaker, onEdit }) {
   )
 }
 
+// "Seu estilo" — sempre recalculado a partir de dados reais (nunca uma
+// preferência escrita à mão no código); ver src/lib/userStyleProfile.js.
+function StyleInsightsPanel({ insights }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+      <p className="text-sm font-semibold text-neutral-100">Seu estilo</p>
+      <p className="mt-1 text-xs text-neutral-500">Calculado a partir das suas escolhas e feedback — não é uma configuração manual.</p>
+      <ul className="mt-4 space-y-2.5">
+        {insights.map((text, i) => (
+          <li key={i} className="flex gap-2.5 text-sm text-neutral-300">
+            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+            {text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function PerfumeRow({ perfume, onEdit }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
@@ -357,6 +376,7 @@ export default function WardrobePanel({
   onBack,
   sneakers,
   perfumes,
+  styleInsights,
   onAddSneaker,
   onImportSneakers,
   onUpdateSneaker,
@@ -410,6 +430,15 @@ export default function WardrobePanel({
           }}
         >
           Perfumes ({perfumes.length})
+        </Chip>
+        <Chip
+          active={tab === 'estilo'}
+          onClick={() => {
+            setTab('estilo')
+            closeForms()
+          }}
+        >
+          Seu estilo
         </Chip>
       </div>
 
@@ -466,6 +495,8 @@ export default function WardrobePanel({
               )}
             </div>
           )
+        ) : tab === 'estilo' ? (
+          <StyleInsightsPanel insights={styleInsights} />
         ) : editingPerfume !== null ? (
           <PerfumeForm
             initial={editingPerfume === 'new' ? null : perfumes.find((p) => p.id === editingPerfume)}
