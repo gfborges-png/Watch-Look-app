@@ -31,7 +31,7 @@ function ColorRow({ colorId, onChange }) {
             title={c.label}
             aria-label={c.label}
             aria-pressed={active}
-            className={`h-7 w-7 shrink-0 rounded-full ring-2 transition ${
+            className={`h-8 w-8 shrink-0 rounded-full ring-2 transition ${
               active ? 'ring-accent scale-110' : 'ring-transparent hover:ring-border'
             }`}
             style={{ background: c.hex }}
@@ -139,7 +139,7 @@ function SneakerSuggestionField({ piece, onChange, sneakers, suggested }) {
             const s = sneakers.find((x) => x.id === e.target.value)
             if (s) applySneaker(s)
           }}
-          className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <option value="">Escolher outro tênis...</option>
           {sneakers.map((s) => (
@@ -187,7 +187,7 @@ function GarmentSection({ garment, piece, onChange, sneakers, suggestedSneaker }
                   value={piece.modelo ?? ''}
                   onChange={(e) => setModelo(e.target.value)}
                   placeholder={garment.modelPlaceholder}
-                  className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 />
               )}
               <ColorRow colorId={piece.colorId} onChange={setColor} />

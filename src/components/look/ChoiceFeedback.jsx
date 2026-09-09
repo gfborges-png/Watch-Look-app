@@ -36,7 +36,7 @@ export default function ChoiceFeedback({ watches, results, topResults, context, 
         id={selectId}
         value={selectedId}
         onChange={handleChange}
-        className="mt-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
+        className="mt-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <option value="">Selecione um relógio da coleção...</option>
         {sorted.map((w) => (

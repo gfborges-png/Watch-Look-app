@@ -14,7 +14,7 @@ function HeartButton({ active, onClick }) {
       onClick={onClick}
       aria-label={active ? 'Remover dos Moodes favoritos' : 'Favoritar esse Moode'}
       aria-pressed={active}
-      className="shrink-0 rounded-full p-1 text-text-muted transition hover:text-accent"
+      className="shrink-0 rounded-full p-2 text-text-muted transition hover:text-accent"
     >
       <svg className={`h-4 w-4 ${active ? 'fill-accent text-accent' : 'fill-none'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path

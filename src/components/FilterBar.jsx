@@ -6,6 +6,7 @@ export function Chip({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
         active
           ? 'bg-accent text-bone'
@@ -18,7 +19,7 @@ export function Chip({ active, onClick, children }) {
 }
 
 const selectClass =
-  'rounded-lg border border-border bg-surface-2/60 px-2.5 py-1.5 text-xs text-text-muted focus:border-accent focus:outline-none'
+  'rounded-lg border border-border bg-surface-2/60 px-2.5 py-1.5 text-xs text-text-muted focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 export default function FilterBar({
   query,
@@ -54,7 +55,7 @@ export default function FilterBar({
           onChange={(e) => onQueryChange(e.target.value)}
           type="text"
           placeholder="Buscar relógio por nome..."
-          className="w-full rounded-xl border border-border bg-surface-2/60 py-2.5 pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
+          className="w-full rounded-xl border border-border bg-surface-2/60 py-2.5 pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         />
       </div>
 

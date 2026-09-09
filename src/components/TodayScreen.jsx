@@ -76,7 +76,7 @@ function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, on
             else onSwap(e.target.value)
             setPickerOpen(false)
           }}
-          className="w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <option value="" disabled>
             Escolher da sua coleção...

@@ -10,7 +10,7 @@ function HeartButton({ active, onToggle }) {
       }}
       aria-label={active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       aria-pressed={active}
-      className="shrink-0 rounded-full p-1 text-text-muted transition hover:text-accent"
+      className="shrink-0 rounded-full p-2 text-text-muted transition hover:text-accent"
     >
       <svg
         className={`h-4 w-4 ${active ? 'fill-accent text-accent' : 'fill-none'}`}

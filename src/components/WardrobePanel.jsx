@@ -8,7 +8,7 @@ import ForgottenWatches from './ForgottenWatches.jsx'
 import WatchCard from './WatchCard.jsx'
 
 const inputClass =
-  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none'
+  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 const SNEAKER_TIPOS = GARMENTS.find((g) => g.key === 'calcado').tipos
 const BLANK_SNEAKER = { nome: '', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] }
@@ -56,7 +56,7 @@ function SneakerColorPicker({ hexes, onChange }) {
             title={c.label}
             aria-label={c.label}
             aria-pressed={active}
-            className={`relative h-7 w-7 shrink-0 rounded-full ring-2 transition ${
+            className={`relative h-8 w-8 shrink-0 rounded-full ring-2 transition ${
               active ? 'ring-accent scale-110' : 'ring-transparent hover:ring-border'
             }`}
             style={{ background: c.hex }}
@@ -86,7 +86,7 @@ function Field({ label, required, children }) {
 
 function EditIconButton({ onClick, label }) {
   return (
-    <button onClick={onClick} aria-label={label} className="rounded-full p-1.5 text-text-muted transition hover:bg-surface-3 hover:text-text">
+    <button onClick={onClick} aria-label={label} className="rounded-full p-2 text-text-muted transition hover:bg-surface-3 hover:text-text">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
       </svg>

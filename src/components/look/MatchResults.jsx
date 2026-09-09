@@ -73,12 +73,12 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
           <button
             key={r.id}
             onClick={() => submit('dislike', r.id)}
-            className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-surface-3"
+            className="rounded-full border border-border px-2 py-1.5 text-[10px] text-text-muted transition hover:bg-surface-3"
           >
             {r.label}
           </button>
         ))}
-        <button onClick={() => submit('dislike', null)} className="text-[10px] text-text-muted hover:text-text">
+        <button onClick={() => submit('dislike', null)} className="px-1.5 py-1.5 text-[10px] text-text-muted hover:text-text">
           pular
         </button>
       </div>
@@ -88,13 +88,13 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">Foi um bom MOODE?</span>
-      <button onClick={() => submit('like')} aria-label="Gostei" title="Gostei" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
+      <button onClick={() => submit('like')} aria-label="Gostei" title="Gostei" className="rounded-full p-2 text-sm transition hover:bg-surface-3">
         👍
       </button>
-      <button onClick={() => submit('love')} aria-label="Adorei" title="Adorei" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
+      <button onClick={() => submit('love')} aria-label="Adorei" title="Adorei" className="rounded-full p-2 text-sm transition hover:bg-surface-3">
         ❤️
       </button>
-      <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
+      <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-2 text-sm transition hover:bg-surface-3">
         👎
       </button>
     </div>
@@ -144,7 +144,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
             setOverrideId(e.target.value || null)
             setPickerOpen(false)
           }}
-          className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <option value="">Sugestão automática ({suggestion.owned[0]?.nome ?? suggestion.familia})</option>
           {perfumes.map((p) => (

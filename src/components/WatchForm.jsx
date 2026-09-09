@@ -34,7 +34,7 @@ function Field({ label, required, children }) {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none'
+  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(() => {
