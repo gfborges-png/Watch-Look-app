@@ -61,7 +61,7 @@ function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, on
         )}
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wide text-text-muted">{label}</p>
-          <p className="truncate text-xs font-medium text-text">
+          <p className="line-clamp-2 text-xs font-medium leading-snug text-text">
             {locked && <span title="Fixado por você">🔒 </span>}
             {value}
           </p>
@@ -71,7 +71,7 @@ function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, on
         <p className="truncate text-[10px] text-text-muted/70">Outras opções: {references.slice(0, 2).join(' · ')}</p>
       )}
       {onSwap && (
-        <button onClick={() => setPickerOpen((v) => !v)} className="self-start text-[10px] font-medium text-accent hover:underline">
+        <button onClick={() => setPickerOpen((v) => !v)} className="-my-1 self-start px-1 py-1.5 text-[10px] font-medium text-accent hover:underline">
           trocar
         </button>
       )}
@@ -121,7 +121,7 @@ function PerfumeTouch({ value, locked, onSwap, swapOptions, onReset, references 
           </p>
         </div>
         {onSwap && (
-          <button onClick={() => setPickerOpen((v) => !v)} className="shrink-0 text-[10px] font-medium text-accent hover:underline">
+          <button onClick={() => setPickerOpen((v) => !v)} className="-my-1 shrink-0 px-1 py-1.5 text-[10px] font-medium text-accent hover:underline">
             trocar
           </button>
         )}
@@ -245,19 +245,19 @@ export default function TodayScreen({
         {weather.status === 'loading' && <span className="text-text-muted">Buscando clima...</span>}
         {weather.status === 'error' && <span className="text-text-muted">Não conseguimos atualizar o clima agora — seu MOODE segue sem ele.</span>}
         {(weather.status === 'idle' || weather.status === 'error') && (
-          <button onClick={onFetchWeather} className="font-medium text-accent hover:underline">
+          <button onClick={onFetchWeather} className="-my-1.5 py-1.5 font-medium text-accent hover:underline">
             Usar clima de hoje
           </button>
         )}
         <span className="text-text-muted">·</span>
-        <button onClick={() => setContextSheetOpen(true)} className="inline-flex items-center gap-1 font-medium text-text hover:text-accent">
+        <button onClick={() => setContextSheetOpen(true)} className="-my-1.5 inline-flex items-center gap-1 py-1.5 font-medium text-text hover:text-accent">
           {contextLabel}
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
           </svg>
         </button>
         <span className="text-text-muted">·</span>
-        <button onClick={() => setVibeSheetOpen(true)} className="inline-flex items-center gap-1 font-medium text-text hover:text-accent">
+        <button onClick={() => setVibeSheetOpen(true)} className="-my-1.5 inline-flex items-center gap-1 py-1.5 font-medium text-text hover:text-accent">
           {vibeLabel ?? 'Qual vibe?'}
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
@@ -327,14 +327,14 @@ export default function TodayScreen({
 
       <SwitchMoode onSelect={handleAdjust} />
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs font-medium text-text-muted">
-        <button onClick={onGoToMontar} className="hover:text-text">
+      <div className="-my-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-4 text-xs font-medium text-text-muted">
+        <button onClick={onGoToMontar} className="py-1.5 hover:text-text">
           Já escolhi uma peça
         </button>
-        <button onClick={() => handleAdjust('outra')} className="hover:text-text">
+        <button onClick={() => handleAdjust('outra')} className="py-1.5 hover:text-text">
           Surpreenda-me
         </button>
-        <button onClick={onGoToGuardaroupa} className="hover:text-text">
+        <button onClick={onGoToGuardaroupa} className="py-1.5 hover:text-text">
           Meu Acervo
         </button>
       </div>

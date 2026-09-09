@@ -24,7 +24,7 @@ export default function WeatherOccasionPanel({ weather, onFetchWeather, context,
         <button
           onClick={onFetchWeather}
           disabled={weather.status === 'loading'}
-          className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90 disabled:opacity-60"
+          className="shrink-0 rounded-full bg-accent px-3 py-2 text-xs font-semibold text-bone transition hover:opacity-90 disabled:opacity-60"
         >
           {weather.status === 'loading' ? 'Buscando...' : weather.status === 'ready' ? 'Atualizar' : 'Usar clima de hoje'}
         </button>

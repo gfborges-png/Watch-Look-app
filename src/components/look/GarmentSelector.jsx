@@ -142,7 +142,7 @@ function SneakerSuggestionField({ piece, onChange, sneakers, suggested }) {
         <p className="mt-1 text-sm text-text-muted">Nenhum dos seus tênis cadastrados combina ainda.</p>
       )}
 
-      <button onClick={() => setPickerOpen((v) => !v)} className="mt-1.5 text-[11px] font-medium text-accent hover:underline">
+      <button onClick={() => setPickerOpen((v) => !v)} className="-mb-1 mt-1.5 px-1 py-1.5 text-[11px] font-medium text-accent hover:underline">
         {pickerOpen ? 'fechar' : 'trocar'}
       </button>
 

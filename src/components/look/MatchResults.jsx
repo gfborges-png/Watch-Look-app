@@ -169,7 +169,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] text-text-muted">{perfumeLabel}</span>
           {perfumes.length > 0 && (
-            <button onClick={() => setPickerOpen((v) => !v)} className="text-[10px] font-medium text-accent hover:underline">
+            <button onClick={() => setPickerOpen((v) => !v)} className="-my-1 px-1 py-1.5 text-[10px] font-medium text-accent hover:underline">
               trocar
             </button>
           )}

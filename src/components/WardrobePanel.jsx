@@ -799,7 +799,7 @@ export default function WardrobePanel({
               </p>
               <button
                 onClick={watches.onAddWatch}
-                className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90"
+                className="shrink-0 rounded-full bg-accent px-3 py-2 text-xs font-semibold text-bone transition hover:opacity-90"
               >
                 + Adicionar relógio
               </button>

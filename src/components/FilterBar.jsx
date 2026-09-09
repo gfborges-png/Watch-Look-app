@@ -13,7 +13,7 @@ export function Chip({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+      className={`shrink-0 rounded-full px-3 py-2 text-xs font-medium transition ${
         active
           ? 'bg-accent text-bone'
           : 'border border-border bg-surface-2 text-text-muted hover:bg-surface-3'
