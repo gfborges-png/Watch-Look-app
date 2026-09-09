@@ -1,4 +1,6 @@
-import { COLOR_FILTERS, COLOR_LABELS, STYLE_FILTERS, STYLE_LABELS } from '../lib/outfitEngine.js'
+import { COLOR_FILTERS, COLOR_LABELS } from '../lib/outfitEngine.js'
+import { WATCH_TYPES, BRACELET_MATERIALS } from '../lib/watchModel.js'
+import { SORT_OPTIONS } from '../lib/collectionSort.js'
 
 export function Chip({ active, onClick, children }) {
   return (
@@ -15,15 +17,25 @@ export function Chip({ active, onClick, children }) {
   )
 }
 
+const selectClass =
+  'rounded-lg border border-white/10 bg-neutral-900/60 px-2.5 py-1.5 text-xs text-neutral-300 focus:border-amber-400/60 focus:outline-none'
+
 export default function FilterBar({
   query,
   onQueryChange,
   colorFilter,
   onColorChange,
-  styleFilter,
-  onStyleChange,
+  typeFilter,
+  onTypeChange,
+  brandFilter,
+  onBrandChange,
+  brands,
+  materialFilter,
+  onMaterialChange,
   favoritesOnly,
   onFavoritesOnlyChange,
+  sortBy,
+  onSortChange,
 }) {
   return (
     <div className="space-y-3">
@@ -58,17 +70,43 @@ export default function FilterBar({
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
-        <Chip active={styleFilter === 'todos'} onClick={() => onStyleChange('todos')}>
-          Todos os estilos
+        <Chip active={typeFilter === 'todos'} onClick={() => onTypeChange('todos')}>
+          Todos os tipos
         </Chip>
-        {STYLE_FILTERS.map((s) => (
-          <Chip key={s} active={styleFilter === s} onClick={() => onStyleChange(s)}>
-            {STYLE_LABELS[s]}
+        {WATCH_TYPES.map((t) => (
+          <Chip key={t.id} active={typeFilter === t.id} onClick={() => onTypeChange(t.id)}>
+            {t.label}
           </Chip>
         ))}
         <Chip active={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>
           ♥ Favoritos
         </Chip>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={brandFilter} onChange={(e) => onBrandChange(e.target.value)} className={selectClass} aria-label="Filtrar por marca">
+          <option value="todos">Todas as marcas</option>
+          {brands.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+        <select value={materialFilter} onChange={(e) => onMaterialChange(e.target.value)} className={selectClass} aria-label="Filtrar por material da pulseira">
+          <option value="todos">Toda pulseira</option>
+          {BRACELET_MATERIALS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <select value={sortBy} onChange={(e) => onSortChange(e.target.value)} className={`${selectClass} ml-auto`} aria-label="Ordenar coleção">
+          {SORT_OPTIONS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   )

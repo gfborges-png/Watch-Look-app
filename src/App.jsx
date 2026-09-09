@@ -1,36 +1,17 @@
 import { useMemo, useState } from 'react'
-import { getColorFilterGroup, getStyleTags } from './lib/outfitEngine.js'
+import { getColorFilterGroup } from './lib/outfitEngine.js'
+import { inferWatchTypes, inferBraceletMaterial } from './lib/watchModel.js'
+import { sortCollection } from './lib/collectionSort.js'
+import { exportData, importData, lastWornDate } from './lib/storage.js'
 import { DEFAULT_OUTFIT } from './lib/matchEngine.js'
-import {
-  getCollection,
-  addWatch,
-  updateWatch,
-  deleteWatch,
-  resetCollection,
-  exportData,
-  importData,
-  getFavorites,
-  toggleFavorite,
-  getHistory,
-  logWornToday,
-  lastWornDate,
-  getChoices,
-  logChoice,
-  getFeedback,
-  logFeedback,
-  personalBias,
-  getSneakers,
-  addSneaker,
-  updateSneaker,
-  deleteSneaker,
-  getPerfumes,
-  addPerfume,
-  updatePerfume,
-  deletePerfume,
-} from './lib/storage.js'
-import { getWeatherForCurrentLocation } from './lib/weather.js'
+import { useWatchCollection } from './hooks/useWatchCollection.js'
+import { useWardrobe } from './hooks/useWardrobe.js'
+import { useRecommendationHistory } from './hooks/useRecommendationHistory.js'
+import { useWeather } from './hooks/useWeather.js'
+import { usePreferences } from './hooks/usePreferences.js'
 import WatchCard from './components/WatchCard.jsx'
 import FilterBar from './components/FilterBar.jsx'
+import ForgottenWatches from './components/ForgottenWatches.jsx'
 import WatchDetail from './components/WatchDetail.jsx'
 import LookMatcher from './components/LookMatcher.jsx'
 import WatchForm from './components/WatchForm.jsx'
@@ -48,71 +29,45 @@ function App() {
   const [tab, setTab] = useState('hoje') // 'hoje' | 'colecao' | 'montar' | 'guardaroupa'
   const [query, setQuery] = useState('')
   const [colorFilter, setColorFilter] = useState('todos')
-  const [styleFilter, setStyleFilter] = useState('todos')
+  const [typeFilter, setTypeFilter] = useState('todos')
+  const [brandFilter, setBrandFilter] = useState('todos')
+  const [materialFilter, setMaterialFilter] = useState('todos')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [sortBy, setSortBy] = useState('nome')
   const [selectedId, setSelectedId] = useState(null)
   const [formTarget, setFormTarget] = useState(null) // null | 'new' | watchId
   const [showBackup, setShowBackup] = useState(false)
   const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
-  const [collection, setCollection] = useState(() => getCollection())
-  const [favorites, setFavorites] = useState(() => getFavorites())
-  const [history, setHistory] = useState(() => getHistory())
-  const [choices, setChoices] = useState(() => getChoices())
-  const [feedback, setFeedback] = useState(() => getFeedback())
-  const [sneakers, setSneakers] = useState(() => getSneakers())
-  const [perfumes, setPerfumes] = useState(() => getPerfumes())
-  const [weather, setWeather] = useState({ status: 'idle' })
 
-  const bias = useMemo(() => personalBias(choices, feedback), [choices, feedback])
-
-  const handleToggleFavorite = (id) => setFavorites(toggleFavorite(id))
-  const handleLogWornToday = (id) => setHistory(logWornToday(id))
-  const handleLogChoice = (entry) => setChoices(logChoice(entry))
-  const handleLogFeedback = (entry) => setFeedback(logFeedback(entry))
-  const handleAddSneaker = (data) => setSneakers(addSneaker(data))
-  const handleUpdateSneaker = (id, data) => setSneakers(updateSneaker(id, data))
-  const handleDeleteSneaker = (id) => setSneakers(deleteSneaker(id))
-  const handleAddPerfume = (data) => setPerfumes(addPerfume(data))
-  const handleUpdatePerfume = (id, data) => setPerfumes(updatePerfume(id, data))
-  const handleDeletePerfume = (id) => setPerfumes(deletePerfume(id))
-
-  const handleFetchWeather = async () => {
-    setWeather({ status: 'loading' })
-    try {
-      const result = await getWeatherForCurrentLocation()
-      setWeather({ status: 'ready', ...result })
-    } catch (err) {
-      setWeather({ status: 'error', error: err.message })
-    }
-  }
+  const { collection, favorites, addWatch, updateWatch, deleteWatch, resetCollection, toggleFavorite, refresh: refreshCollection } = useWatchCollection()
+  const wardrobe = useWardrobe()
+  const { sneakers, perfumes } = wardrobe
+  const rec = useRecommendationHistory()
+  const { history, logWornToday, logChoice, logFeedback } = rec
+  const { weather, fetchWeather } = useWeather()
+  const { bias } = usePreferences(rec.choices, rec.feedback)
 
   const handleSaveWatch = (data) => {
-    const next = formTarget === 'new' ? addWatch(data) : updateWatch(formTarget, data)
-    setCollection(next)
+    if (formTarget === 'new') addWatch(data)
+    else updateWatch(formTarget, data)
     setFormTarget(null)
   }
 
   const handleDeleteWatch = (id) => {
     if (!window.confirm('Remover esse relógio da coleção?')) return
-    setCollection(deleteWatch(id))
+    deleteWatch(id)
     setSelectedId(null)
     setFormTarget(null)
   }
-
-  const handleResetCollection = () => setCollection(resetCollection())
 
   const handleImportFile = async (file) => {
     const text = await file.text()
     const data = JSON.parse(text)
     importData(data)
-    setCollection(getCollection())
-    setFavorites(getFavorites())
-    setHistory(getHistory())
-    setChoices(getChoices())
-    setFeedback(getFeedback())
-    setSneakers(getSneakers())
-    setPerfumes(getPerfumes())
+    refreshCollection()
+    rec.refresh()
+    wardrobe.refresh()
   }
 
   const selectedWatch = useMemo(() => collection.find((w) => w.id === selectedId) ?? null, [collection, selectedId])
@@ -121,16 +76,21 @@ function App() {
     [collection, formTarget],
   )
 
+  const brands = useMemo(() => [...new Set(collection.map((w) => w.marca).filter(Boolean))].sort(), [collection])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return collection.filter((w) => {
+    const matches = collection.filter((w) => {
       if (q && !w.nome.toLowerCase().includes(q)) return false
       if (colorFilter !== 'todos' && getColorFilterGroup(w.cor) !== colorFilter) return false
-      if (styleFilter !== 'todos' && !getStyleTags(w.estilo).includes(styleFilter)) return false
+      if (typeFilter !== 'todos' && !inferWatchTypes(w).includes(typeFilter)) return false
+      if (brandFilter !== 'todos' && w.marca !== brandFilter) return false
+      if (materialFilter !== 'todos' && inferBraceletMaterial(w) !== materialFilter) return false
       if (favoritesOnly && !favorites.includes(w.id)) return false
       return true
     })
-  }, [collection, query, colorFilter, styleFilter, favoritesOnly, favorites])
+    return sortCollection(matches, sortBy, { history, weatherBias: weather.status === 'ready' ? weather.bias : null, personalBias: bias })
+  }, [collection, query, colorFilter, typeFilter, brandFilter, materialFilter, favoritesOnly, favorites, sortBy, history, weather, bias])
 
   if (formTarget !== null) {
     return (
@@ -153,7 +113,7 @@ function App() {
           onBack={() => setShowBackup(false)}
           onExport={exportData}
           onImportFile={handleImportFile}
-          onResetCollection={handleResetCollection}
+          onResetCollection={resetCollection}
           watchCount={collection.length}
         />
       </div>
@@ -167,9 +127,9 @@ function App() {
           watch={selectedWatch}
           onBack={() => setSelectedId(null)}
           isFavorite={favorites.includes(selectedWatch.id)}
-          onToggleFavorite={() => handleToggleFavorite(selectedWatch.id)}
+          onToggleFavorite={() => toggleFavorite(selectedWatch.id)}
           lastWorn={lastWornDate(selectedWatch.id, history)}
-          onLogWornToday={() => handleLogWornToday(selectedWatch.id)}
+          onLogWornToday={() => logWornToday(selectedWatch.id)}
           onEdit={() => setFormTarget(selectedWatch.id)}
           onDelete={() => handleDeleteWatch(selectedWatch.id)}
         />
@@ -209,10 +169,17 @@ function App() {
                 onQueryChange={setQuery}
                 colorFilter={colorFilter}
                 onColorChange={setColorFilter}
-                styleFilter={styleFilter}
-                onStyleChange={setStyleFilter}
+                typeFilter={typeFilter}
+                onTypeChange={setTypeFilter}
+                brandFilter={brandFilter}
+                onBrandChange={setBrandFilter}
+                brands={brands}
+                materialFilter={materialFilter}
+                onMaterialChange={setMaterialFilter}
                 favoritesOnly={favoritesOnly}
                 onFavoritesOnlyChange={setFavoritesOnly}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
               />
             </div>
           )}
@@ -226,13 +193,13 @@ function App() {
           <TodayScreen
             watches={collection}
             weather={weather}
-            onFetchWeather={handleFetchWeather}
+            onFetchWeather={fetchWeather}
             history={history}
             bias={bias}
             sneakers={sneakers}
             perfumes={perfumes}
-            onLogWornToday={handleLogWornToday}
-            onLogFeedback={handleLogFeedback}
+            onLogWornToday={logWornToday}
+            onLogFeedback={logFeedback}
             onGoToMontar={() => setTab('montar')}
             onGoToColecao={() => setTab('colecao')}
           />
@@ -248,12 +215,12 @@ function App() {
             onContextChange={setLookContext}
             history={history}
             favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
+            onToggleFavorite={toggleFavorite}
             weather={weather}
-            onFetchWeather={handleFetchWeather}
+            onFetchWeather={fetchWeather}
             bias={bias}
-            onLogChoice={handleLogChoice}
-            onLogFeedback={handleLogFeedback}
+            onLogChoice={logChoice}
+            onLogFeedback={logFeedback}
             sneakers={sneakers}
             perfumes={perfumes}
           />
@@ -263,17 +230,18 @@ function App() {
           <WardrobePanel
             sneakers={sneakers}
             perfumes={perfumes}
-            onAddSneaker={handleAddSneaker}
-            onUpdateSneaker={handleUpdateSneaker}
-            onDeleteSneaker={handleDeleteSneaker}
-            onAddPerfume={handleAddPerfume}
-            onUpdatePerfume={handleUpdatePerfume}
-            onDeletePerfume={handleDeletePerfume}
+            onAddSneaker={wardrobe.addSneaker}
+            onUpdateSneaker={wardrobe.updateSneaker}
+            onDeleteSneaker={wardrobe.deleteSneaker}
+            onAddPerfume={wardrobe.addPerfume}
+            onUpdatePerfume={wardrobe.updatePerfume}
+            onDeletePerfume={wardrobe.deletePerfume}
           />
         )}
 
         {tab === 'colecao' && (
           <>
+            <ForgottenWatches watches={collection} history={history} onSelectWatch={setSelectedId} />
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs text-neutral-500">
                 {filtered.length} {filtered.length === 1 ? 'relógio' : 'relógios'}
@@ -297,7 +265,7 @@ function App() {
                     watch={w}
                     onClick={() => setSelectedId(w.id)}
                     isFavorite={favorites.includes(w.id)}
-                    onToggleFavorite={() => handleToggleFavorite(w.id)}
+                    onToggleFavorite={() => toggleFavorite(w.id)}
                   />
                 ))}
               </div>

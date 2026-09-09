@@ -16,7 +16,6 @@ const FEEDBACK_KEY = 'watchlook:feedback'
 const HISTORY_LIMIT = 200
 const CHOICES_LIMIT = 150
 const FEEDBACK_LIMIT = 300
-const RECENT_DAYS = 2
 const BASE_GROUPS = ['quente', 'frio', 'terroso', 'neutro']
 
 const safeGet = db.get
@@ -303,12 +302,6 @@ export function daysSince(dateStr) {
   if (!dateStr) return Infinity
   const diff = toUTCDateOnly(todayStr()) - toUTCDateOnly(dateStr)
   return Math.max(0, Math.round(diff / 86400000))
-}
-
-// Ids usados nos últimos RECENT_DAYS dias — usado pro match dar variedade
-// em vez de sugerir sempre o mesmo relógio.
-export function recentlyWornIds(history) {
-  return new Set(history.filter((h) => daysSince(h.date) <= RECENT_DAYS).map((h) => h.watchId))
 }
 
 // Escolhas: toda vez que a pessoa diz "foi esse relógio que eu escolhi"

@@ -21,6 +21,15 @@ export const WATCH_TYPES = [
   { id: 'casual', label: 'Casual' },
 ]
 
+export const BRACELET_MATERIALS = [
+  { id: 'couro', label: 'Couro' },
+  { id: 'borracha', label: 'Borracha' },
+  { id: 'têxtil', label: 'Têxtil/NATO' },
+  { id: 'aço', label: 'Aço' },
+  { id: 'titânio', label: 'Titânio' },
+  { id: 'outro', label: 'Outro' },
+]
+
 const BRACELET_MATERIAL_RULES = [
   { id: 'couro', test: (s) => s.includes('couro') || s.includes('leather') || s.includes('alligator') || s.includes('jacaré') },
   { id: 'borracha', test: (s) => s.includes('borracha') || s.includes('rubber') || s.includes('fkm') },
