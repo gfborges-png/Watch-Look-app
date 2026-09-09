@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
-import { KNOWN_FAMILIES, matchFamilyName, notasFromImportItem } from '../lib/perfumeEngine.js'
+import { KNOWN_FAMILIES, guessFamilyFromText, notasFromImportItem } from '../lib/perfumeEngine.js'
 import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
 import {
   ACCESSORY_TYPES,
@@ -504,10 +504,10 @@ function SneakerImportPanel({ onImport, onCancel }) {
 
 // Mesmo padrão de SneakerImportPanel, mas pra perfumes: cola um array
 // [{nome, marca, familia, notas}] e cada item vira um perfume cadastrado.
-// Família em texto livre é resolvida via matchFamilyName (correspondência
-// exata, sem aproximação por palavra-chave — errar a família muda a
-// ocasião inteira que o perfume é sugerido pra, então sem match cai na
-// primeira família conhecida, sempre revisável depois no formulário).
+// Família em texto livre é resolvida via guessFamilyFromText — match
+// exato quando bate na risca, aproximação por palavra-chave quando não
+// bate (a maioria dos bancos de perfume reais usa nomes de família bem
+// diferentes dos 8 internos do app), sempre revisável depois no formulário.
 function PerfumeImportPanel({ onImport, onCancel }) {
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState(null)
@@ -530,7 +530,7 @@ function PerfumeImportPanel({ onImport, onCancel }) {
       .map((item) => {
         const nome = String(item?.nome ?? '').trim()
         const marca = String(item?.marca ?? '').trim()
-        const familia = matchFamilyName(item?.familia) ?? KNOWN_FAMILIES[0]
+        const familia = guessFamilyFromText(item?.familia)
         const notas = notasFromImportItem(item)
         return { nome, marca, familia, notas }
       })

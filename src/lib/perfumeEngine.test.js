@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName, notasFromImportItem } from './perfumeEngine.js'
+import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName, guessFamilyFromText, notasFromImportItem } from './perfumeEngine.js'
 import { CONTEXTS } from './matchEngine.js'
 
 describe('suggestPerfume', () => {
@@ -182,5 +182,51 @@ describe('matchFamilyName — importação em lote de perfumes', () => {
     expect(matchFamilyName(undefined)).toBeNull()
     expect(matchFamilyName('')).toBeNull()
     expect(matchFamilyName('Família que não existe')).toBeNull()
+  })
+})
+
+describe('guessFamilyFromText — aproximação por palavra-chave (fallback de importação)', () => {
+  it('bate exato quando a família já é uma das KNOWN_FAMILIES (mesmo comportamento de matchFamilyName)', () => {
+    expect(guessFamilyFromText(KNOWN_FAMILIES[3])).toBe(KNOWN_FAMILIES[3])
+  })
+
+  it('nunca devolve null — sem texto ou sem nenhum sinal reconhecível, cai na primeira família conhecida', () => {
+    expect(guessFamilyFromText(null)).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText(undefined)).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText('')).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText('xyz123')).toBe(KNOWN_FAMILIES[0])
+  })
+
+  it('bug real reportado: perfumes importados com família de banco de dados real (ex: "Amadeirado Aquático", "Fresco Aromático (fougère)") não caem todos na mesma família por padrão', () => {
+    const familias = [
+      'Amadeirado Aromático',
+      'Âmbar Couro Amadeirado',
+      'Amadeirado Floral',
+      'Cítrico Amadeirado',
+      'Fresco Aromático (fougère)',
+      'Aquático Amadeirado',
+      'Aquático Aromático',
+      'Amadeirado Aquático',
+      'Fougère Aromático',
+    ].map(guessFamilyFromText)
+    // Nem tudo cai na mesma família — o texto real de cada uma influencia o resultado.
+    expect(new Set(familias).size).toBeGreaterThan(1)
+    for (const f of familias) expect(KNOWN_FAMILIES).toContain(f)
+  })
+
+  it('"couro"/"oud" aproxima pra Amadeirado sensual', () => {
+    expect(guessFamilyFromText('Âmbar Couro Amadeirado')).toBe('Amadeirado sensual')
+  })
+
+  it('"cítrico"/"aquático" aproxima pra Cítrico esportivo', () => {
+    expect(guessFamilyFromText('Aquático Aromático')).toBe('Cítrico esportivo')
+  })
+
+  it('"fougère"/"fresco" aproxima pra Aromático limpo', () => {
+    expect(guessFamilyFromText('Fresco Aromático (fougère)')).toBe('Aromático limpo')
+  })
+
+  it('"doce"/"baunilha"/"tabaco" aproxima pra Amadeirado-doce statement', () => {
+    expect(guessFamilyFromText('Oriental Doce Baunilhado')).toBe('Amadeirado-doce statement')
   })
 })

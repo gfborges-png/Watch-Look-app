@@ -107,6 +107,40 @@ export function matchFamilyName(text) {
   return KNOWN_FAMILIES.find((f) => normalizeFamilyText(f) === target) ?? null
 }
 
+// Sinais de vocabulário de perfumaria (em texto livre, sem acento) que
+// aproximam uma família real pra uma das KNOWN_FAMILIES — usado só como
+// fallback de importação em lote, quando matchFamilyName não bate exato.
+// Bancos de dados reais raramente usam os nomes de família compostos
+// exatos deste app ("Amadeirado-especiado leve" etc.); a alternativa a
+// isso não é "nunca errar", é cair sempre na mesma família fixa
+// (KNOWN_FAMILIES[0]) pra QUALQUER perfume não reconhecido — o que já é
+// um chute, só que sempre o mesmo chute, ignorando por completo o texto
+// real da família. Isso aqui lê o texto de verdade; ordem importa (o
+// primeiro padrão que bater vence), do sinal mais específico pro mais
+// genérico.
+const FAMILY_GUESS_PATTERNS = [
+  { family: 'Amadeirado sensual', test: /couro|leather|oud|sensual/ },
+  { family: 'Amadeirado-doce statement', test: /doce|gourmand|baunilha|vanilla|tabaco|tobacco/ },
+  { family: 'Cítrico esportivo', test: /citrico|citrus|aquatico|aquatic|esportivo|marinho/ },
+  { family: 'Amadeirado executivo', test: /executivo/ },
+  { family: 'Amadeirado-especiado elegante', test: /especiado.*elegante|elegante.*especiado/ },
+  { family: 'Amadeirado-especiado leve', test: /especiado|spic/ },
+  { family: 'Aromático limpo', test: /fougere|limpo|clean|fresc/ },
+  { family: 'Aromático-amadeirado', test: /amadeirado|aromatic|floral/ },
+]
+
+// Como matchFamilyName, mas nunca devolve null — tenta o match exato
+// primeiro e só depois aproxima por palavra-chave; sem nenhum sinal
+// reconhecível, cai em KNOWN_FAMILIES[0] (mesmo comportamento de antes).
+export function guessFamilyFromText(text) {
+  const exact = matchFamilyName(text)
+  if (exact) return exact
+  if (!text) return KNOWN_FAMILIES[0]
+  const normalized = normalizeFamilyText(String(text))
+  const guess = FAMILY_GUESS_PATTERNS.find((p) => p.test.test(normalized))
+  return guess?.family ?? KNOWN_FAMILIES[0]
+}
+
 // Nomes de campo alternativos que descrições de perfume por pirâmide
 // olfativa costumam usar (saída/coração/fundo, ou top/heart/base em
 // inglês) — bases de dados reais de fragrância normalmente vêm nesse
