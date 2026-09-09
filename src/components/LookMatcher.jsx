@@ -262,7 +262,7 @@ function ClimaEOcasiaoPanel({ weather, onFetchWeather, context, onContextChange 
           <p className="text-sm font-semibold text-neutral-100">Clima de hoje</p>
           {weather.status === 'ready' && (
             <p className="mt-0.5 text-xs text-neutral-400">
-              {weather.tempC}°C, {weather.description} — {weather.bias === 'ameno' ? 'sem viés no match' : `puxando pra mostradores e perfume mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}
+              {weather.tempC}°C, {weather.description} — {weather.bias === 'ameno' ? 'temperatura amena, então relógio e perfume seguem só pelo look e ocasião' : `puxando a sugestão pra mostradores e perfume mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}
             </p>
           )}
           {weather.status === 'error' && <p className="mt-0.5 text-xs text-red-400">{weather.error}</p>}
