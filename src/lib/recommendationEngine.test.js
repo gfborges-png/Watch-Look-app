@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { recommendWatchesForLook, scoreBand } from './recommendationEngine.js'
-import { DEFAULT_OUTFIT } from './matchEngine.js'
+import { DEFAULT_OUTFIT, CONTEXTS } from './matchEngine.js'
 import { watches } from '../data/watches.js'
 import { daysAgoStr } from './test-helpers.js'
 
@@ -80,6 +80,31 @@ describe('rotação influencia o match final', () => {
     })[0]
     expect(paradoHa30.subScores.rotacao).toBeGreaterThan(usadoOntem.subScores.rotacao)
     expect(paradoHa30.match).toBeGreaterThan(usadoOntem.match)
+  })
+})
+
+describe('ocasiões expandidas (treino, casamento, reunião importante, jantar romântico, festa)', () => {
+  it('treino favorece o relógio esportivo sobre o dress, invertendo o resultado do trabalho', () => {
+    const [formal] = recommendWatchesForLook([relogioFormal], lookTrabalho, 'treino', {})
+    const [esportivo] = recommendWatchesForLook([relogioEsportivoBold], lookTrabalho, 'treino', {})
+    expect(esportivo.subScores.ocasiao).toBeGreaterThan(formal.subScores.ocasiao)
+  })
+
+  it('casamento e reunião importante favorecem o relógio formal, como o trabalho', () => {
+    for (const ocasiao of ['casamento', 'reuniaoImportante']) {
+      const [formal] = recommendWatchesForLook([relogioFormal], lookTrabalho, ocasiao, {})
+      const [esportivo] = recommendWatchesForLook([relogioEsportivoBold], lookTrabalho, ocasiao, {})
+      expect(formal.subScores.ocasiao).toBeGreaterThan(esportivo.subScores.ocasiao)
+    }
+  })
+
+  it('toda ocasião de matchEngine.CONTEXTS produz um sub-score de ocasião válido (nenhuma fica sem perfil)', () => {
+    for (const ctx of CONTEXTS) {
+      const [result] = recommendWatchesForLook([relogioFormal], lookTrabalho, ctx.id, {})
+      expect(result.subScores.ocasiao, `contexto "${ctx.id}" sem sub-score`).not.toBeNull()
+      expect(result.subScores.ocasiao).toBeGreaterThanOrEqual(0)
+      expect(result.subScores.ocasiao).toBeLessThanOrEqual(100)
+    }
   })
 })
 

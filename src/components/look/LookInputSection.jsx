@@ -11,7 +11,7 @@ function hasAnyColor(outfit) {
 // Dono do "como" (foto vs. manual) — se o outfit já tem alguma cor
 // (voltando de outra aba, por exemplo), pula direto pro editor manual já
 // preenchido em vez de perguntar de novo.
-export default function LookInputSection({ outfit, onOutfitChange, sneakers }) {
+export default function LookInputSection({ outfit, onOutfitChange, sneakers, context }) {
   const [method, setMethod] = useState(() => (hasAnyColor(outfit) ? 'manual' : null))
 
   if (method === null) {
@@ -24,7 +24,7 @@ export default function LookInputSection({ outfit, onOutfitChange, sneakers }) {
         ← Mudar forma de entrada
       </button>
       {method === 'foto' && <PhotoLookDetector outfit={outfit} onOutfitChange={onOutfitChange} onDone={() => setMethod('manual')} />}
-      {method === 'manual' && <GarmentSelector outfit={outfit} onOutfitChange={onOutfitChange} sneakers={sneakers} />}
+      {method === 'manual' && <GarmentSelector outfit={outfit} onOutfitChange={onOutfitChange} sneakers={sneakers} context={context} />}
     </div>
   )
 }

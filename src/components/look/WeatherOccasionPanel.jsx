@@ -31,7 +31,7 @@ export default function WeatherOccasionPanel({ weather, onFetchWeather, context,
 
       <div className="mt-3 border-t border-white/5 pt-3">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">Ocasião</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {CONTEXTS.map((ctx) => (
             <Chip key={ctx.id} active={context === ctx.id} onClick={() => onContextChange(ctx.id)}>
               {ctx.label}

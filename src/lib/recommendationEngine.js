@@ -13,7 +13,7 @@
 // bloqueia por falta de dado, só fica com uma base menor (e isso aparece
 // nos motivos: "com mais dados eu explico melhor").
 import { paletteGroup } from './outfitEngine.js'
-import { GROUP_LABEL, colorDistance, isWorkStyle, isBoldStyle, netVibe, coloredActiveGarments, activeGarments } from './matchEngine.js'
+import { GROUP_LABEL, colorDistance, netVibe, coloredActiveGarments, activeGarments } from './matchEngine.js'
 import { getWatchDimensions } from './watchModel.js'
 import { rotationScore, usageStats } from './rotationEngine.js'
 
@@ -59,22 +59,45 @@ function colorSubScore(watch, coloredGarments) {
   return { value: Math.round(weightedSum / weightTotal), reasons }
 }
 
-function occasionSubScore(watch, contextId) {
-  if (!contextId) return { value: null, reasons: [] }
-  const work = isWorkStyle(watch.estilo)
-  const bold = isBoldStyle(watch.estilo)
-  const reasons = []
-  let value
+// Perfil-alvo de cada ocasião nas 3 dimensões que o watchModel já deriva
+// pra cada relógio (formalidade, esportividade, "statement level") — o
+// score é o quão perto o relógio chega desse alvo, não uma lista de
+// if/else por ocasião. Adicionar uma ocasião nova é só adicionar uma
+// linha aqui.
+const OCCASION_PROFILES = {
+  trabalho: { formality: 80, sportiness: 20, statement: 25 },
+  reuniaoImportante: { formality: 95, sportiness: 5, statement: 15 },
+  casual: { formality: 45, sportiness: 45, statement: 40 },
+  treino: { formality: 5, sportiness: 95, statement: 30 },
+  fimDeSemana: { formality: 35, sportiness: 50, statement: 65 },
+  jantarRomantico: { formality: 75, sportiness: 15, statement: 45 },
+  festa: { formality: 35, sportiness: 30, statement: 80 },
+  casamento: { formality: 90, sportiness: 10, statement: 35 },
+}
 
-  if (contextId === 'trabalho') {
-    value = work ? 92 : bold ? 35 : 65
-    if (work) reasons.push('adequado para o trabalho — discreto o bastante pro escritório')
-  } else if (contextId === 'fimDeSemana') {
-    value = bold ? 92 : work ? 55 : 72
-    if (bold) reasons.push('estilo statement, ótimo pra sair do óbvio no fim de semana')
-  } else {
-    value = bold ? 85 : work ? 62 : 75
-  }
+const OCCASION_LABELS = Object.fromEntries([
+  ['trabalho', 'o trabalho'],
+  ['reuniaoImportante', 'uma reunião importante'],
+  ['casual', 'o dia a dia casual'],
+  ['treino', 'o treino'],
+  ['fimDeSemana', 'o fim de semana'],
+  ['jantarRomantico', 'um jantar romântico'],
+  ['festa', 'uma festa'],
+  ['casamento', 'um casamento'],
+])
+
+function occasionSubScore(watchDims, contextId) {
+  const profile = OCCASION_PROFILES[contextId]
+  if (!profile) return { value: null, reasons: [] }
+
+  const diff =
+    Math.abs(watchDims.formality - profile.formality) * 0.5 +
+    Math.abs(watchDims.statementLevel - profile.statement) * 0.3 +
+    Math.abs(watchDims.sportiness - profile.sportiness) * 0.2
+  const value = Math.round(Math.max(0, 100 - diff * 0.9))
+
+  const reasons = []
+  if (value >= 82) reasons.push(`adequado para ${OCCASION_LABELS[contextId] ?? contextId}`)
   return { value, reasons }
 }
 
@@ -156,7 +179,7 @@ export function recommendWatchesForLook(watches, outfit, contextId, opts = {}) {
     const dims = getWatchDimensions(watch)
 
     const cor = colorSubScore(watch, coloredGarments)
-    const ocasiao = occasionSubScore(watch, contextId)
+    const ocasiao = occasionSubScore(dims, contextId)
     const estilo = formalitySubScore(dims, garments)
     const clima = weatherSubScore(watch, weatherBias)
     const rotacao = rotationSubScore(watch.id, history)

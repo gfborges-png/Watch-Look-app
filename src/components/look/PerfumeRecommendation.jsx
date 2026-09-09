@@ -59,6 +59,7 @@ export default function PerfumeRecommendation({ weatherBias, context, ownedPerfu
       <div className="mt-3 rounded-xl bg-black/30 p-3 text-xs text-neutral-400">
         <p>{p.intensidade}</p>
         {p.evitar && <p className="mt-1 text-neutral-500">{p.evitar}</p>}
+        {p.climaNota && <p className="mt-1 text-amber-400/80">{p.climaNota}</p>}
       </div>
     </div>
   )

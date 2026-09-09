@@ -1,6 +1,7 @@
-import { useId, useState } from 'react'
-import { LOOK_COLORS, GARMENTS } from '../../lib/matchEngine.js'
+import { useId, useMemo, useState } from 'react'
+import { LOOK_COLORS, GARMENTS, coloredActiveGarments } from '../../lib/matchEngine.js'
 import { detectDominantColorId, closestLookColorId } from '../../lib/colorDetect.js'
+import { pickBestSneakerForGarments } from '../../lib/sneakerMatch.js'
 import { Chip } from '../FilterBar.jsx'
 
 const MANDATORY_ORDER = ['camisa', 'calca', 'calcado']
@@ -89,37 +90,74 @@ function PhotoDetectButton({ onDetected }) {
   )
 }
 
-function MeusTenisRow({ sneakers, onPick }) {
-  if (!sneakers || sneakers.length === 0) return null
+function sneakerSwatchStyle(hexes) {
+  return { background: hexes.length > 1 ? `conic-gradient(${hexes[0]} 0% 50%, ${hexes[1]} 50% 100%)` : hexes[0] }
+}
+
+// Em vez de escolher cor/tipo manualmente, sugere o tênis da coleção que
+// melhor combina com o resto do look (e, quando a ocasião é conhecida,
+// com o tipo apropriado) — igual ao relógio, que também é sugerido, não
+// escolhido peça por peça. "Trocar" abre o catálogo inteiro pra escolher
+// outro, se a sugestão não for a que a pessoa quer usar hoje.
+function SneakerSuggestionField({ piece, onChange, sneakers, suggested }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const applySneaker = (s) => {
+    onChange({ ...piece, colorId: closestLookColorId(s.hexes[0]), modelo: s.nome, tipo: s.tipo })
+    setPickerOpen(false)
+  }
+
+  const currentHex = piece.colorId ? LOOK_COLORS.find((c) => c.id === piece.colorId)?.hex : null
+
   return (
-    <div>
-      <p className="mb-1.5 text-[11px] uppercase tracking-wide text-neutral-500">Meus tênis</p>
-      <div className="flex flex-wrap gap-1.5">
-        {sneakers.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => onPick(s)}
-            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 transition hover:bg-white/10"
-          >
-            <span
-              className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20"
-              style={{
-                background: s.hexes.length > 1 ? `conic-gradient(${s.hexes[0]} 0% 50%, ${s.hexes[1]} 50% 100%)` : s.hexes[0],
-              }}
-            />
-            {s.nome}
-          </button>
-        ))}
-      </div>
+    <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+      <p className="text-[11px] uppercase tracking-wide text-neutral-500">{piece.modelo ? 'Tênis escolhido' : 'Tênis sugerido'}</p>
+
+      {piece.modelo ? (
+        <div className="mt-1 flex items-center gap-2 text-sm font-medium text-neutral-100">
+          {currentHex && <span className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20" style={{ background: currentHex }} />}
+          <span className="truncate">{piece.modelo}</span>
+        </div>
+      ) : suggested ? (
+        <button onClick={() => applySneaker(suggested)} className="mt-1 flex w-full items-center gap-2 text-left text-sm font-medium text-amber-300 transition hover:text-amber-200">
+          <span className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20" style={sneakerSwatchStyle(suggested.hexes)} />
+          <span className="truncate">{suggested.nome}</span>
+          <span className="ml-auto shrink-0 text-[11px] font-normal text-neutral-500">usar esse</span>
+        </button>
+      ) : (
+        <p className="mt-1 text-sm text-neutral-500">Nenhum dos seus tênis cadastrados combina ainda.</p>
+      )}
+
+      <button onClick={() => setPickerOpen((v) => !v)} className="mt-1.5 text-[11px] font-medium text-amber-400 hover:underline">
+        {pickerOpen ? 'fechar' : 'trocar'}
+      </button>
+
+      {pickerOpen && (
+        <select
+          value=""
+          onChange={(e) => {
+            const s = sneakers.find((x) => x.id === e.target.value)
+            if (s) applySneaker(s)
+          }}
+          className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-neutral-100 focus:border-amber-400/60 focus:outline-none"
+        >
+          <option value="">Escolher outro tênis...</option>
+          {sneakers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nome}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   )
 }
 
-function GarmentSection({ garment, piece, onChange, sneakers }) {
+function GarmentSection({ garment, piece, onChange, sneakers, suggestedSneaker }) {
   const setColor = (colorId) => onChange({ ...piece, colorId })
   const setTipo = (tipo) => onChange({ ...piece, tipo })
   const setModelo = (modelo) => onChange({ ...piece, modelo })
-  const pickSneaker = (s) => onChange({ ...piece, colorId: closestLookColorId(s.hexes[0]), modelo: s.nome, tipo: s.tipo })
+  const isSneakerSlot = garment.key === 'calcado' && sneakers && sneakers.length > 0
 
   return (
     <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
@@ -139,19 +177,24 @@ function GarmentSection({ garment, piece, onChange, sneakers }) {
 
       {(!garment.optional || piece.enabled) && (
         <div className="space-y-2.5">
-          {garment.key === 'calcado' && <MeusTenisRow sneakers={sneakers} onPick={pickSneaker} />}
-          {garment.hasModel && (
-            <input
-              type="text"
-              value={piece.modelo ?? ''}
-              onChange={(e) => setModelo(e.target.value)}
-              placeholder={garment.modelPlaceholder}
-              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none"
-            />
+          {isSneakerSlot ? (
+            <SneakerSuggestionField piece={piece} onChange={onChange} sneakers={sneakers} suggested={suggestedSneaker} />
+          ) : (
+            <>
+              {garment.hasModel && (
+                <input
+                  type="text"
+                  value={piece.modelo ?? ''}
+                  onChange={(e) => setModelo(e.target.value)}
+                  placeholder={garment.modelPlaceholder}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none"
+                />
+              )}
+              <ColorRow colorId={piece.colorId} onChange={setColor} />
+              <TipoRow tipos={garment.tipos} tipo={piece.tipo} onChange={setTipo} />
+              <PhotoDetectButton onDetected={setColor} />
+            </>
           )}
-          <ColorRow colorId={piece.colorId} onChange={setColor} />
-          <TipoRow tipos={garment.tipos} tipo={piece.tipo} onChange={setTipo} />
-          <PhotoDetectButton onDetected={setColor} />
         </div>
       )}
     </div>
@@ -162,9 +205,33 @@ function GarmentSection({ garment, piece, onChange, sneakers }) {
 // depois que a anterior estiver preenchida (progressive disclosure),
 // pra não jogar 4 cards cheios de controles na tela de uma vez. Derivado
 // direto do outfit a cada render — sem estado próprio, sem efeito.
-export default function GarmentSelector({ outfit, onOutfitChange, sneakers }) {
+export default function GarmentSelector({ outfit, onOutfitChange, sneakers, context }) {
   const revealed = visibleGarmentKeys(outfit)
   const visibleGarments = GARMENTS.filter((g) => revealed.includes(g.key))
+
+  const suggestedSneaker = useMemo(() => {
+    if (!sneakers || sneakers.length === 0) return null
+    const others = coloredActiveGarments(outfit).filter((g) => g.key !== 'calcado')
+    return pickBestSneakerForGarments(sneakers, others, context)
+  }, [sneakers, outfit, context])
+
+  const handleGarmentChange = (key, next) => {
+    let nextOutfit = { ...outfit, [key]: next }
+    // Ao terminar a calça (última peça obrigatória antes do tênis), já
+    // aplica o tênis sugerido de cara — não faz sentido pedir mais um
+    // clique pra algo que já dá pra inferir da própria coleção.
+    if (key === 'calca' && next.colorId && !outfit.calcado?.modelo && sneakers && sneakers.length > 0) {
+      const others = coloredActiveGarments(nextOutfit).filter((g) => g.key !== 'calcado')
+      const best = pickBestSneakerForGarments(sneakers, others, context)
+      if (best) {
+        nextOutfit = {
+          ...nextOutfit,
+          calcado: { ...nextOutfit.calcado, colorId: closestLookColorId(best.hexes[0]), modelo: best.nome, tipo: best.tipo },
+        }
+      }
+    }
+    onOutfitChange(nextOutfit)
+  }
 
   return (
     <div className="space-y-3">
@@ -173,8 +240,9 @@ export default function GarmentSelector({ outfit, onOutfitChange, sneakers }) {
           key={garment.key}
           garment={garment}
           piece={outfit[garment.key]}
-          onChange={(next) => onOutfitChange({ ...outfit, [garment.key]: next })}
+          onChange={(next) => handleGarmentChange(garment.key, next)}
           sneakers={sneakers}
+          suggestedSneaker={garment.key === 'calcado' ? suggestedSneaker : undefined}
         />
       ))}
     </div>

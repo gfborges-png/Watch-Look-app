@@ -24,8 +24,13 @@ export const LOOK_COLORS = [
 
 export const CONTEXTS = [
   { id: 'trabalho', label: 'Trabalho' },
+  { id: 'reuniaoImportante', label: 'Reunião importante' },
   { id: 'casual', label: 'Casual' },
+  { id: 'treino', label: 'Treino' },
   { id: 'fimDeSemana', label: 'Fim de semana' },
+  { id: 'jantarRomantico', label: 'Jantar romântico' },
+  { id: 'festa', label: 'Festa' },
+  { id: 'casamento', label: 'Casamento' },
 ]
 
 // Uma peça por chave. `weight` pondera o quanto a cor dessa peça pesa no
