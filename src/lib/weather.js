@@ -26,6 +26,15 @@ const WEATHER_DESCRIPTIONS = {
   99: 'tempestade forte',
 }
 
+// Mensagens específicas por código de erro do Geolocation API — "não
+// funciona" sem mais detalhe não dá pra debugar; permissão negada, sem
+// sinal de GPS e timeout são causas bem diferentes.
+const GEO_ERROR_MESSAGES = {
+  1: 'Você negou o acesso à localização. No iPhone: Ajustes > Privacidade e Segurança > Serviços de Localização > Safari (ou o app instalado) > Ao Usar o App.',
+  2: 'Não consegui obter sua localização agora (sem sinal de GPS/rede). Tenta de novo em instantes.',
+  3: 'Deu timeout tentando pegar sua localização. Tenta de novo.',
+}
+
 export function getLocation() {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
@@ -34,16 +43,21 @@ export function getLocation() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      () => reject(new Error('Não foi possível acessar sua localização')),
-      { timeout: 8000 },
+      (err) => reject(new Error(GEO_ERROR_MESSAGES[err.code] ?? 'Não foi possível acessar sua localização')),
+      { timeout: 15000, maximumAge: 0 },
     )
   })
 }
 
 export async function fetchWeather({ lat, lon }) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Falha ao buscar o clima')
+  let res
+  try {
+    res = await fetch(url)
+  } catch {
+    throw new Error('Não deu pra conectar no serviço de clima — checa sua internet.')
+  }
+  if (!res.ok) throw new Error(`Falha ao buscar o clima (servidor respondeu ${res.status}).`)
   const data = await res.json()
   const tempC = Math.round(data.current.temperature_2m)
   const description = WEATHER_DESCRIPTIONS[data.current.weather_code] ?? 'tempo variável'

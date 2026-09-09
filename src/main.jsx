@@ -5,6 +5,17 @@ import './index.css'
 import App from './App.jsx'
 
 if ('serviceWorker' in navigator) {
+  // Quando o novo service worker assume o controle, a aba/app continua
+  // rodando o JS antigo já carregado na memória — sem isso, "atualizar em
+  // segundo plano" só troca o SW por baixo do tapete e a tela visível
+  // nunca pega a versão nova até o usuário fechar e reabrir de verdade.
+  let refreshing = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return
+    refreshing = true
+    window.location.reload()
+  })
+
   registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
