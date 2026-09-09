@@ -2,7 +2,12 @@
 // família olfativa e intensidade de aplicação, com referências reais
 // conhecidas de cada família como ponto de partida — não é "o perfume
 // certo pra você", é "aqui está o tipo de coisa que combina, e alguns
-// exemplos famosos pra você ter uma régua".
+// exemplos famosos pra você ter uma régua". `referencias` são sempre
+// perfumaria de nicho, árabe ou tradicional/de herança — nunca o
+// designer mainstream óbvio (Chanel/Dior/Versace...) — o "da sua
+// coleção" (campo `owned`, ver suggestPerfume) já cobre o que a pessoa
+// realmente tem; a referência genérica é pensada como descoberta, não
+// como redundância do óbvio.
 //
 // Ocasião é o eixo principal (muda a família inteira — um jantar
 // romântico e uma reunião de trabalho pedem coisas fundamentalmente
@@ -17,7 +22,7 @@ const OCCASION_PROFILES = {
     familia: 'Aromático limpo',
     descritores: ['lavanda', 'vetiver', 'almíscar limpo'],
     porque: 'escritório pede o mais seguro e versátil — limpo, sem doçura que pese ao longo do dia',
-    referencias: ['Chanel Bleu de Chanel EDT', 'Prada L’Homme'],
+    referencias: ['Guerlain Vétiver', 'Ormonde Jayne Zizan'],
     intensidade: '2-3 borrifadas, EDT — discreto a 1 metro de distância',
     evitar: 'evita gourmand muito doce ou oud pesado no escritório',
   },
@@ -25,7 +30,7 @@ const OCCASION_PROFILES = {
     familia: 'Amadeirado executivo',
     descritores: ['vetiver', 'cedro', 'âmbar seco'],
     porque: 'reunião de peso pede presença sem ostentação — amadeirado seco projeta confiança de perto, sem tomar a sala',
-    referencias: ['Hermès Terre d’Hermès Parfum', 'Chanel Bleu de Chanel Parfum'],
+    referencias: ['Amouage Reflection Man', 'Ajmal Amber Wood'],
     intensidade: '2-3 borrifadas, EDP — notável a 1 metro, não além',
     evitar: 'evita notas muito doces ou adocicadas — o objetivo é sobriedade',
   },
@@ -33,7 +38,7 @@ const OCCASION_PROFILES = {
     familia: 'Aromático-amadeirado',
     descritores: ['lavanda', 'cedro', 'toque cítrico'],
     porque: 'dia a dia pede o mais versátil — vai bem em quase qualquer situação sem chamar atenção demais',
-    referencias: ['Dior Homme', 'Chanel Bleu de Chanel EDP'],
+    referencias: ['Creed Green Irish Tweed', 'Nishane Ani'],
     intensidade: '3-4 borrifadas, EDT ou EDP leve',
     evitar: null,
   },
@@ -41,7 +46,7 @@ const OCCASION_PROFILES = {
     familia: 'Cítrico esportivo',
     descritores: ['bergamota', 'notas aquáticas', 'almíscar limpo'],
     porque: 'treino pede o mínimo possível — o objetivo é só ficar limpo, não competir com o esforço físico',
-    referencias: ['Davidoff Cool Water', 'Issey Miyake L’Eau d’Issey pour Homme'],
+    referencias: ['4711 Original Eau de Cologne', 'Escentric Molecules Escentric 01'],
     intensidade: '1-2 borrifadas, ou nenhuma — o banho pós-treino já resolve',
     evitar: 'evita qualquer coisa doce, amadeirada pesada ou muito concentrada',
   },
@@ -49,7 +54,7 @@ const OCCASION_PROFILES = {
     familia: 'Amadeirado-especiado leve',
     descritores: ['cardamomo', 'cedro', 'âmbar claro'],
     porque: 'fora do expediente dá pra ousar um degrau — mais corpo que o dia a dia, sem exagerar',
-    referencias: ['Yves Saint Laurent Y EDP', 'Versace Eros'],
+    referencias: ['Nishane Hacivat', 'Rasasi Hawas'],
     intensidade: '4-5 borrifadas, EDP — pode projetar mais',
     evitar: null,
   },
@@ -57,7 +62,7 @@ const OCCASION_PROFILES = {
     familia: 'Amadeirado sensual',
     descritores: ['âmbar', 'especiarias doces', 'toque de oud'],
     porque: 'clima íntimo pede algo mais quente e sedutor, mas projetado pra quem está perto — não pro salão inteiro',
-    referencias: ['Yves Saint Laurent La Nuit de L’Homme', 'Giorgio Armani Acqua di Giò Absolu'],
+    referencias: ['Amouage Interlude Man', 'Ajmal Mukhallat Malaki'],
     intensidade: '3 borrifadas, EDP — presença a curta distância',
     evitar: 'evita fragrâncias muito frescas/aquáticas — o clima pede mais corpo',
   },
@@ -65,7 +70,7 @@ const OCCASION_PROFILES = {
     familia: 'Amadeirado-doce statement',
     descritores: ['baunilha', 'tabaco', 'especiarias'],
     porque: 'fim de noite é a hora de sair do seguro do dia a dia — algo com mais personalidade e projeção',
-    referencias: ['Tom Ford Tobacco Vanille', 'Versace Eros Parfum'],
+    referencias: ['Kilian Angels’ Share', 'Initio Side Effect'],
     intensidade: '4-5 borrifadas, EDP ou Parfum — pode e deve projetar',
     evitar: null,
   },
@@ -73,7 +78,7 @@ const OCCASION_PROFILES = {
     familia: 'Amadeirado-especiado elegante',
     descritores: ['âmbar', 'baunilha seca', 'cedro', 'cardamomo'],
     porque: 'ocasião de peso e o dia inteiro de duração — pede algo com corpo que aguente sem precisar retocar',
-    referencias: ['Tom Ford Tobacco Vanille', 'Yves Saint Laurent Y Parfum'],
+    referencias: ['Amouage Jubilation XXV Man', 'Al Haramain Amber Oud'],
     intensidade: '3-4 borrifadas, EDP — precisa aguentar o dia inteiro',
     evitar: null,
   },

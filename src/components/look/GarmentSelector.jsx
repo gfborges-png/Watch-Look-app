@@ -6,14 +6,28 @@ import { Chip } from '../FilterBar.jsx'
 
 const MANDATORY_ORDER = ['camisa', 'calca', 'calcado']
 
+// Peça "pronta" pra revelar a próxima: cor E tipo escolhidos (e, pra
+// calçado, também o modelo — livre ou vindo de um tênis cadastrado
+// aplicado via SneakerSuggestionField, que seta os três juntos numa
+// tacada só). Antes só olhava a cor, então escolher só a cor já
+// revelava a peça seguinte com tipo ainda em branco — trocado pra
+// esperar a escolha inteira (item/tipo + cor + modelo) ficar completa.
+function isGarmentReady(key, outfit) {
+  const piece = outfit[key]
+  if (!piece?.colorId || !piece?.tipo) return false
+  const garment = GARMENTS.find((g) => g.key === key)
+  if (garment?.hasModel && !piece.modelo?.trim()) return false
+  return true
+}
+
 // Quais peças já podem aparecer: revela a próxima peça obrigatória só
-// depois que a anterior tiver cor — a jaqueta (opcional) aparece por
-// último, depois que as três obrigatórias já estiverem visíveis.
+// depois que a anterior estiver pronta — a jaqueta (opcional) aparece
+// por último, depois que as três obrigatórias já estiverem visíveis.
 function visibleGarmentKeys(outfit) {
   const keys = []
   for (const key of MANDATORY_ORDER) {
     keys.push(key)
-    if (!outfit[key]?.colorId) break
+    if (!isGarmentReady(key, outfit)) break
   }
   if (keys.length === MANDATORY_ORDER.length) keys.push('jaqueta')
   return keys
