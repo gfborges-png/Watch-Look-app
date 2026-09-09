@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName } from './perfumeEngine.js'
+import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName, notasFromImportItem } from './perfumeEngine.js'
 import { CONTEXTS } from './matchEngine.js'
 
 describe('suggestPerfume', () => {
@@ -127,6 +127,30 @@ describe('notas refinando o sub-score de clima (rankOwnedPerfumes)', () => {
       { weatherBias: 'quente' },
     )[0]
     expect(notaIrreconhecivel.match).toBe(semNotas.match)
+  })
+})
+
+describe('notasFromImportItem — importação em lote de perfumes', () => {
+  it('usa o campo `notas` direto quando existe', () => {
+    expect(notasFromImportItem({ notas: 'bergamota, cedro' })).toBe('bergamota, cedro')
+  })
+
+  it('sem `notas`, junta a pirâmide olfativa (saída/coração/fundo) — bug real: bancos de perfume exportam assim, não como um campo "notas" único', () => {
+    const item = { saida: 'Toranja, cânhamo', coracao: 'Absinto, cravo, sálvia', fundo: 'Fava tonka, cedro, couro' }
+    expect(notasFromImportItem(item)).toBe('Toranja, cânhamo, Absinto, cravo, sálvia, Fava tonka, cedro, couro')
+  })
+
+  it('aceita as variantes em inglês (top/heart/base) e sem acento (saida/coracao)', () => {
+    expect(notasFromImportItem({ top: 'citrus', heart: 'jasmine', base: 'musk' })).toBe('citrus, jasmine, musk')
+  })
+
+  it('ignora camada marcada como "—" ou "-" (sem essa nota) em vez de incluir o traço literal', () => {
+    expect(notasFromImportItem({ saida: '—', coracao: 'Íris', fundo: 'Sândalo, almíscar' })).toBe('Íris, Sândalo, almíscar')
+  })
+
+  it('sem nenhum campo de nota, devolve string vazia (nunca undefined/null)', () => {
+    expect(notasFromImportItem({})).toBe('')
+    expect(notasFromImportItem(undefined)).toBe('')
   })
 })
 

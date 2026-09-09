@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
-import { KNOWN_FAMILIES, matchFamilyName } from '../lib/perfumeEngine.js'
+import { KNOWN_FAMILIES, matchFamilyName, notasFromImportItem } from '../lib/perfumeEngine.js'
 import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
 import FilterBar, { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
@@ -352,7 +352,7 @@ function PerfumeImportPanel({ onImport, onCancel }) {
         const nome = String(item?.nome ?? '').trim()
         const marca = String(item?.marca ?? '').trim()
         const familia = matchFamilyName(item?.familia) ?? KNOWN_FAMILIES[0]
-        const notas = String(item?.notas ?? '').trim()
+        const notas = notasFromImportItem(item)
         return { nome, marca, familia, notas }
       })
       .filter((i) => i.nome)
@@ -409,7 +409,9 @@ function PerfumeImportPanel({ onImport, onCancel }) {
         <p className="mt-1 text-xs text-text-muted">
           Cola um array JSON com nome (e opcionalmente marca/família/notas) de cada perfume — a família em texto é
           reconhecida quando bate com uma das famílias que o app já usa, e as notas ajudam a escolher qual perfume
-          combina mais com o clima do dia, quando você tiver mais de um da mesma família.
+          combina mais com o clima do dia, quando você tiver mais de um da mesma família. Notas em pirâmide olfativa
+          (campos "saida"/"coracao"/"fundo", como a maioria dos bancos de dados de perfume exporta) também funcionam
+          — não precisa ser um campo "notas" único.
         </p>
       </div>
       <textarea

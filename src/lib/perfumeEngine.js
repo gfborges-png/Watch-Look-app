@@ -102,6 +102,32 @@ export function matchFamilyName(text) {
   return KNOWN_FAMILIES.find((f) => normalizeFamilyText(f) === target) ?? null
 }
 
+// Nomes de campo alternativos que descrições de perfume por pirâmide
+// olfativa costumam usar (saída/coração/fundo, ou top/heart/base em
+// inglês) — bases de dados reais de fragrância normalmente vêm nesse
+// formato, não numa única string "notas". Aceita os dois: se o item já
+// tem `notas`, usa direto; senão junta as camadas que existirem.
+const TOP_NOTE_KEYS = ['saida', 'saída', 'topo', 'top']
+const HEART_NOTE_KEYS = ['coracao', 'coração', 'meio', 'heart']
+const BASE_NOTE_KEYS = ['fundo', 'base']
+
+function firstNonEmpty(item, keys) {
+  for (const key of keys) {
+    const value = item?.[key]
+    if (value == null) continue
+    const text = String(value).trim()
+    if (text && text !== '—' && text !== '-') return text
+  }
+  return null
+}
+
+export function notasFromImportItem(item) {
+  const direct = firstNonEmpty(item, ['notas'])
+  if (direct) return direct
+  const layers = [firstNonEmpty(item, TOP_NOTE_KEYS), firstNonEmpty(item, HEART_NOTE_KEYS), firstNonEmpty(item, BASE_NOTE_KEYS)].filter(Boolean)
+  return layers.join(', ')
+}
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null — só vira uma nota de
 // ajuste na concentração, não muda a família. context: um dos ids de
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário
