@@ -46,7 +46,7 @@ export default function FilterBar({
         />
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
         <Chip active={colorFilter === 'todos'} onClick={() => onColorChange('todos')}>
           Todas as cores
         </Chip>
@@ -57,7 +57,7 @@ export default function FilterBar({
         ))}
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
         <Chip active={styleFilter === 'todos'} onClick={() => onStyleChange('todos')}>
           Todos os estilos
         </Chip>

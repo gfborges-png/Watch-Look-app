@@ -177,10 +177,22 @@ function App() {
 
           <div className="mt-4 flex gap-2">
             <Chip active={mode === 'colecao'} onClick={() => setMode('colecao')}>
-              Relógio → Look
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="12" cy="12" r="7.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.3l2.2 1.5" />
+                  <path strokeLinecap="round" d="M10 2h4M10 22h4" />
+                </svg>
+                Relógio → Look
+              </span>
             </Chip>
             <Chip active={mode === 'look'} onClick={() => setMode('look')}>
-              Look → Relógio
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 4L4 7l2.5 2.5L8 8v12h8V8l1.5 1.5L20 7l-4-3-2 2h-4l-2-2z" />
+                </svg>
+                Look → Relógio
+              </span>
             </Chip>
           </div>
 

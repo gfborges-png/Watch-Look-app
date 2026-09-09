@@ -118,34 +118,6 @@ function GarmentSection({ garment, piece, onChange }) {
   )
 }
 
-function WeatherPanel({ weather, onFetchWeather }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-neutral-100">Clima de hoje</p>
-          {weather.status === 'ready' && (
-            <p className="mt-0.5 text-xs text-neutral-400">
-              {weather.tempC}°C, {weather.description} — {weather.bias === 'ameno' ? 'sem viés no match' : `puxando pra mostradores mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}
-            </p>
-          )}
-          {weather.status === 'error' && <p className="mt-0.5 text-xs text-red-400">{weather.error}</p>}
-          {weather.status === 'idle' && (
-            <p className="mt-0.5 text-xs text-neutral-500">Usa sua localização pra puxar o match pro clima do dia</p>
-          )}
-        </div>
-        <button
-          onClick={onFetchWeather}
-          disabled={weather.status === 'loading'}
-          className="shrink-0 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:opacity-60"
-        >
-          {weather.status === 'loading' ? 'Buscando...' : weather.status === 'ready' ? 'Atualizar' : 'Usar clima de hoje'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
   const [selectedId, setSelectedId] = useState('')
   const [logged, setLogged] = useState(false)
@@ -175,9 +147,8 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
-      <p className="text-sm font-semibold text-neutral-100">Qual você escolheu de verdade?</p>
-      <p className="mt-1 text-xs text-neutral-500">
-        Mesmo que não tenha sido sugerido — conta pra mim, e eu uso isso pra calibrar as próximas sugestões.
+      <p className="text-xs text-neutral-500">
+        Escolheu outro relógio, mesmo sem eu ter sugerido? Conta pra mim — uso isso pra calibrar as próximas sugestões.
       </p>
       <select
         id={selectId}
@@ -217,7 +188,46 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
   )
 }
 
-function PerfumePanel({ weatherBias, context, onContextChange }) {
+function ClimaEOcasiaoPanel({ weather, onFetchWeather, context, onContextChange }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-neutral-100">Clima de hoje</p>
+          {weather.status === 'ready' && (
+            <p className="mt-0.5 text-xs text-neutral-400">
+              {weather.tempC}°C, {weather.description} — {weather.bias === 'ameno' ? 'sem viés no match' : `puxando pra mostradores e perfume mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}
+            </p>
+          )}
+          {weather.status === 'error' && <p className="mt-0.5 text-xs text-red-400">{weather.error}</p>}
+          {weather.status === 'idle' && (
+            <p className="mt-0.5 text-xs text-neutral-500">Ajusta o relógio e o perfume sugeridos pro clima real de hoje</p>
+          )}
+        </div>
+        <button
+          onClick={onFetchWeather}
+          disabled={weather.status === 'loading'}
+          className="shrink-0 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:opacity-60"
+        >
+          {weather.status === 'loading' ? 'Buscando...' : weather.status === 'ready' ? 'Atualizar' : 'Usar clima de hoje'}
+        </button>
+      </div>
+
+      <div className="mt-3 border-t border-white/5 pt-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">Ocasião</p>
+        <div className="flex gap-2">
+          {CONTEXTS.map((ctx) => (
+            <Chip key={ctx.id} active={context === ctx.id} onClick={() => onContextChange(ctx.id)}>
+              {ctx.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PerfumePanel({ weatherBias, context }) {
   const p = useMemo(() => suggestPerfume({ weatherBias, context }), [weatherBias, context])
   return (
     <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-neutral-900/70 to-neutral-900/30 p-4">
@@ -230,16 +240,8 @@ function PerfumePanel({ weatherBias, context, onContextChange }) {
         </div>
         <div>
           <p className="text-sm font-semibold text-neutral-100">Perfume sugerido</p>
-          <p className="text-[11px] text-neutral-500">por clima e ocasião</p>
+          <p className="text-[11px] text-neutral-500">pro clima e ocasião de cima</p>
         </div>
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        {CONTEXTS.map((ctx) => (
-          <Chip key={ctx.id} active={context === ctx.id} onClick={() => onContextChange(ctx.id)}>
-            {ctx.label}
-          </Chip>
-        ))}
       </div>
 
       <p className="mt-4 text-lg font-bold leading-tight text-amber-400">{p.familia}</p>
@@ -304,10 +306,8 @@ export default function LookMatcher({
 
   return (
     <div className="space-y-5">
-      <WeatherPanel weather={weather} onFetchWeather={onFetchWeather} />
-
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">O que você está usando</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">1. O que você está usando</p>
         <div className="space-y-3">
           {GARMENTS.map((garment) => (
             <GarmentSection
@@ -320,9 +320,16 @@ export default function LookMatcher({
         </div>
       </div>
 
-      <PerfumePanel weatherBias={weatherBias} context={context} onContextChange={onContextChange} />
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">2. Contexto do dia</p>
+        <div className="space-y-3">
+          <ClimaEOcasiaoPanel weather={weather} onFetchWeather={onFetchWeather} context={context} onContextChange={onContextChange} />
+          <PerfumePanel weatherBias={weatherBias} context={context} />
+        </div>
+      </div>
 
       <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">3. Relógios que combinam</p>
         {!hasSelection ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
             Escolha a cor de pelo menos uma peça pra ver quais relógios combinam.
@@ -334,7 +341,7 @@ export default function LookMatcher({
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-neutral-500">
-              {topResults.length} {topResults.length === 1 ? 'relógio combina' : 'relógios combinam'} com esse look
+              {topResults.length} {topResults.length === 1 ? 'resultado' : 'resultados'}, do que mais pro que menos combina
             </p>
             {topResults.map(({ watch, reasons, percent }) => (
               <WatchCard
@@ -351,7 +358,10 @@ export default function LookMatcher({
         )}
       </div>
 
-      <ChoiceLogger watches={watches} results={results} topResults={topResults} context={context} onLogChoice={onLogChoice} />
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">4. Sua escolha real</p>
+        <ChoiceLogger watches={watches} results={results} topResults={topResults} context={context} onLogChoice={onLogChoice} />
+      </div>
     </div>
   )
 }
