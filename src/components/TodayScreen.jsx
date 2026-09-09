@@ -100,6 +100,60 @@ function MoodeTile({ label, value, hexes, glyph, locked, onSwap, swapOptions, on
   )
 }
 
+// O perfume fecha a composição, mas não deveria competir visualmente com
+// roupa/calçado/relógio — por isso vira uma linha discreta ("toque
+// final"), não mais um card do mesmo peso dos outros na grade.
+function PerfumeTouch({ value, locked, onSwap, swapOptions, onReset, references }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  if (!value) return null
+
+  return (
+    <div className="rounded-lg bg-surface-2/50 px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <PerfumeGlyph className="h-4 w-4 shrink-0 text-text-muted" />
+          <p className="min-w-0 truncate text-xs text-text-muted">
+            Toque final ·{' '}
+            <span className="font-medium text-text">
+              {locked && <span title="Fixado por você">🔒 </span>}
+              {value}
+            </span>
+          </p>
+        </div>
+        {onSwap && (
+          <button onClick={() => setPickerOpen((v) => !v)} className="shrink-0 text-[10px] font-medium text-accent hover:underline">
+            trocar
+          </button>
+        )}
+      </div>
+      {references && references.length > 0 && (
+        <p className="mt-0.5 truncate pl-6 text-[10px] text-text-muted/70">Outras opções: {references.slice(0, 2).join(' · ')}</p>
+      )}
+      {pickerOpen && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value === '__auto__') onReset()
+            else onSwap(e.target.value)
+            setPickerOpen(false)
+          }}
+          className="mt-2 w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <option value="" disabled>
+            Escolher da sua coleção...
+          </option>
+          {locked && <option value="__auto__">← Voltar pra sugestão automática</option>}
+          {swapOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.nome}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  )
+}
+
 export default function TodayScreen({
   watches,
   weather,
@@ -229,16 +283,6 @@ export default function TodayScreen({
           references={SNEAKER_REFERENCES[candidate.group]}
         />
         <MoodeTile label="Relógio" value={candidate.watch.nome} hexes={candidate.watch.hexes} />
-        <MoodeTile
-          label="Perfume"
-          value={effectivePerfumeName}
-          glyph={<PerfumeGlyph />}
-          locked={!!lockedPerfume}
-          swapOptions={perfumes}
-          onSwap={setLockedPerfumeId}
-          onReset={() => setLockedPerfumeId(null)}
-          references={candidate.perfume.referencias}
-        />
         {candidate.accessoryPicks.map((pick, i) => (
           <MoodeTile
             key={pick.accessory.id}
@@ -248,6 +292,15 @@ export default function TodayScreen({
           />
         ))}
       </div>
+
+      <PerfumeTouch
+        value={effectivePerfumeName}
+        locked={!!lockedPerfume}
+        swapOptions={perfumes}
+        onSwap={setLockedPerfumeId}
+        onReset={() => setLockedPerfumeId(null)}
+        references={candidate.perfume.referencias}
+      />
 
       <div className="border-t border-border pt-4">
         <div className="flex items-baseline gap-2">

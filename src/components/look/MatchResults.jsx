@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CONTEXTS, GROUP_LABEL, coloredActiveGarments } from '../../lib/matchEngine.js'
+import { GROUP_LABEL, coloredActiveGarments } from '../../lib/matchEngine.js'
 import { paletteGroup } from '../../lib/outfitEngine.js'
 import { pickBestSneakerForGarments } from '../../lib/sneakerMatch.js'
 import { suggestPerfume } from '../../lib/perfumeEngine.js'
@@ -127,7 +127,6 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
   const suggestion = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes: perfumes }), [weatherBias, context, perfumes])
   const overridden = overrideId ? perfumes.find((p) => p.id === overrideId) : null
   const perfumeLabel = overridden?.nome ?? suggestion.owned[0]?.nome ?? suggestion.familia
-  const contextLabel = CONTEXTS.find((c) => c.id === context)?.label
 
   // Cor de referência pro match de acessório: o relógio + as peças do
   // look que já têm cor resolvida (não só o relógio) — quanto mais
@@ -139,9 +138,13 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
     [accessories, referenceHexes, context, watch, sneaker, vibeId],
   )
 
-  const justification = `O relógio combina com o look ${GROUP_LABEL[group]}${
-    weatherBias && weatherBias !== 'ameno' ? ` e o clima ${weatherBias === 'quente' ? 'quente' : 'frio'} de hoje` : ''
-  }, e o perfume funciona bem${contextLabel ? ` pra ocasião de ${contextLabel.toLowerCase()}` : ''}.`
+  // "Por que funciona" fica curto de propósito — um único ponto, o mais
+  // relevante pro conjunto como um todo (o motivo específico do relógio
+  // já aparece separado, no WatchCard acima).
+  const justification =
+    weatherBias && weatherBias !== 'ameno'
+      ? `Reforça um look ${GROUP_LABEL[group]}, que também combina com o clima ${weatherBias === 'quente' ? 'quente' : 'frio'} de hoje.`
+      : `Reforça um look ${GROUP_LABEL[group]}.`
 
   const sneakerReferences = SNEAKER_REFERENCES[group] ?? []
 
@@ -161,10 +164,10 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
             <span className="text-text">{accessoryDisplayName(pick.accessory)}</span>
           </div>
         ))}
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="text-text-muted">Perfume</span>
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-text-muted">Toque final</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-text">{perfumeLabel}</span>
+          <span className="text-[11px] text-text-muted">{perfumeLabel}</span>
           {perfumes.length > 0 && (
             <button onClick={() => setPickerOpen((v) => !v)} className="text-[10px] font-medium text-accent hover:underline">
               trocar
