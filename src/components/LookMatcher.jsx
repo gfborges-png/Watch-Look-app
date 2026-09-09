@@ -27,6 +27,8 @@ export default function LookMatcher({
   onLogFeedback,
   sneakers,
   perfumes,
+  lockedWatchId,
+  onUnlockWatch,
 }) {
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
@@ -38,10 +40,31 @@ export default function LookMatcher({
     const piece = outfit[g.key]
     return (!g.optional || piece.enabled) && piece.colorId
   })
-  const topResults = hasSelection ? results.slice(0, 5) : []
+  // Um relógio "travado" (via "Montar um MOODE com isso" no detalhe do
+  // item) restringe só o resultado final a ele — o resto do fluxo
+  // (peças, clima, ocasião) continua igual, e ChoiceFeedback ainda lista
+  // a coleção inteira, já que é sobre o que você realmente acabou usando.
+  const lockedResult = lockedWatchId ? results.find((r) => r.watch.id === lockedWatchId) : null
+  const topResults = !hasSelection ? [] : lockedResult ? [lockedResult] : results.slice(0, 5)
 
   return (
     <div className="space-y-5">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">Montar</p>
+        <h1 className="mt-1 font-serif text-2xl text-text">Montar um MOODE</h1>
+      </div>
+
+      {lockedResult && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3">
+          <p className="text-xs text-text">
+            🔒 <span className="font-semibold">{lockedResult.watch.nome}</span> — vamos montar o restante em torno disso.
+          </p>
+          <button onClick={onUnlockWatch} className="shrink-0 text-[11px] font-medium text-accent hover:underline">
+            usar outro
+          </button>
+        </div>
+      )}
+
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">1. O que você está usando</p>
         <LookInputSection
@@ -63,7 +86,7 @@ export default function LookMatcher({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">3. Relógios que combinam</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">{lockedResult ? '3. Seu MOODE' : '3. Relógios que combinam'}</p>
         {!hasSelection ? (
           <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
             Escolha a cor de pelo menos uma peça pra ver quais relógios combinam.

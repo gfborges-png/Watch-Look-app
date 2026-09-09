@@ -17,7 +17,7 @@ function MethodCard({ icon, title, subtitle, onClick }) {
 export default function LookInputMethodPicker({ onPickPhoto, onPickManual }) {
   return (
     <div>
-      <p className="mb-3 text-sm font-semibold text-text">Como você quer informar seu look?</p>
+      <p className="mb-3 text-sm font-semibold text-text">Como você quer começar?</p>
       <div className="flex gap-3">
         <MethodCard
           onClick={onPickPhoto}
@@ -32,7 +32,7 @@ export default function LookInputMethodPicker({ onPickPhoto, onPickManual }) {
         />
         <MethodCard
           onClick={onPickManual}
-          title="Informar manualmente"
+          title="Montar manualmente"
           subtitle="Escolhe cor e tipo de cada peça"
           icon={
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>

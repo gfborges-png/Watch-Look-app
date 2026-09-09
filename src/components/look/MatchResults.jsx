@@ -86,11 +86,12 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
   }
 
   return (
-    <div className="flex items-center gap-0.5">
-      <button onClick={() => submit('like')} aria-label="Boa sugestão" title="Boa sugestão" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">Foi um bom MOODE?</span>
+      <button onClick={() => submit('like')} aria-label="Gostei" title="Gostei" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
         👍
       </button>
-      <button onClick={() => submit('love')} aria-label="Ficou perfeito" title="Ficou perfeito" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
+      <button onClick={() => submit('love')} aria-label="Adorei" title="Adorei" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
         ❤️
       </button>
       <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-1 text-sm transition hover:bg-surface-3">

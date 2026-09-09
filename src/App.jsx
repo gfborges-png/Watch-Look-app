@@ -21,10 +21,6 @@ import MeusMoodesScreen from './components/MeusMoodesScreen.jsx'
 import BottomNav from './components/BottomNav.jsx'
 import MoodeLogo from './components/brand/MoodeLogo.jsx'
 
-const TAB_SUBTITLE = {
-  montar: 'Diga as cores do seu look e veja qual relógio da coleção combina.',
-}
-
 function App() {
   const [tab, setTab] = useState('hoje') // 'hoje' | 'guardaroupa' | 'montar' | 'historico'
   const [query, setQuery] = useState('')
@@ -39,6 +35,7 @@ function App() {
   const [showBackup, setShowBackup] = useState(false)
   const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
+  const [lockedWatchId, setLockedWatchId] = useState(null)
 
   const { collection, favorites, addWatch, updateWatch, deleteWatch, resetCollection, toggleFavorite, refresh: refreshCollection } = useWatchCollection()
   const wardrobe = useWardrobe()
@@ -136,9 +133,15 @@ function App() {
           isFavorite={favorites.includes(selectedWatch.id)}
           onToggleFavorite={() => toggleFavorite(selectedWatch.id)}
           lastWorn={lastWornDate(selectedWatch.id, history)}
+          history={history}
           onLogWornToday={() => logWornToday(selectedWatch.id)}
           onEdit={() => setFormTarget(selectedWatch.id)}
           onDelete={() => handleDeleteWatch(selectedWatch.id)}
+          onBuildAroundThis={() => {
+            setLockedWatchId(selectedWatch.id)
+            setSelectedId(null)
+            setTab('montar')
+          }}
         />
       </div>
     )
@@ -151,7 +154,6 @@ function App() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <MoodeLogo className="text-xl" />
-              {TAB_SUBTITLE[tab] && <p className="mt-1.5 text-sm text-text-muted">{TAB_SUBTITLE[tab]}</p>}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button
@@ -207,6 +209,8 @@ function App() {
             onLogFeedback={logFeedback}
             sneakers={sneakers}
             perfumes={perfumes}
+            lockedWatchId={lockedWatchId}
+            onUnlockWatch={() => setLockedWatchId(null)}
           />
         )}
 

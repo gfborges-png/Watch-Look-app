@@ -2,6 +2,9 @@ import ColorSwatch from './ColorSwatch.jsx'
 import { COLOR_LABELS, generateLooks } from '../lib/outfitEngine.js'
 import { daysSince } from '../lib/storage.js'
 import { suggestPerfume } from '../lib/perfumeEngine.js'
+import { usageStats, rotationLevel } from '../lib/rotationEngine.js'
+
+const ROTATION_LABEL = { baixa: 'Baixa', média: 'Média', alta: 'Alta' }
 
 function LookPiece({ label, value }) {
   if (!value) return null
@@ -29,9 +32,11 @@ function lastWornLabel(dateStr) {
   return `Você usou esse há ${days} dias`
 }
 
-export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorite, lastWorn, onLogWornToday, onEdit, onDelete }) {
+export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorite, lastWorn, history, onLogWornToday, onEdit, onDelete, onBuildAroundThis }) {
   const looks = generateLooks(watch)
   const wornLabel = lastWornLabel(lastWorn)
+  const stats = history ? usageStats(watch.id, history) : null
+  const rotation = history ? rotationLevel(watch.id, history) : null
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
@@ -42,7 +47,7 @@ export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorit
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Voltar à coleção
+        Voltar ao guarda-roupa
       </button>
 
       <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface-2/60 p-5">
@@ -52,49 +57,62 @@ export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorit
           <h1 className="mt-0.5 text-lg font-bold text-text">{watch.nome}</h1>
           <p className="mt-1 text-sm text-text-muted">{watch.estilo}</p>
         </div>
-        <button
-          onClick={onToggleFavorite}
-          aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          aria-pressed={isFavorite}
-          className="shrink-0 rounded-full p-1.5 text-text-muted transition hover:text-accent"
-        >
-          <svg
-            className={`h-6 w-6 ${isFavorite ? 'fill-accent text-accent' : 'fill-none'}`}
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 20.6l-1.4-1.3C5.4 14.9 2 11.8 2 8.1 2 5.3 4.2 3 7 3c1.6 0 3.1.8 4 2 .9-1.2 2.4-2 4-2 2.8 0 5 2.3 5 5.1 0 3.7-3.4 6.8-8.6 11.2l-1.4 1.3z"
-            />
-          </svg>
-        </button>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface-2/60 px-4 py-3">
-        <p className="text-xs text-text-muted">{wornLabel ?? 'Você ainda não registrou ter usado esse relógio'}</p>
+      {stats && (
+        <div className="mt-3 grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface-2/60 p-4 text-center">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-text-muted">Último uso</p>
+            <p className="mt-1 text-sm font-semibold text-text">{wornLabel ? wornLabel.replace('Você usou esse ', '') : '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-text-muted">30 dias</p>
+            <p className="mt-1 text-sm font-semibold text-text">{stats.uses30}×</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-text-muted">90 dias</p>
+            <p className="mt-1 text-sm font-semibold text-text">{stats.uses90}×</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-text-muted">Rotação</p>
+            <p className="mt-1 text-sm font-semibold text-text">{ROTATION_LABEL[rotation] ?? '—'}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           onClick={onLogWornToday}
-          className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90"
+          className="rounded-full bg-accent px-3 py-2.5 text-xs font-semibold text-bone transition hover:opacity-90"
         >
-          Usei hoje
+          Usar hoje
         </button>
-      </div>
-
-      <div className="mt-3 flex gap-2">
+        <button
+          onClick={onToggleFavorite}
+          aria-pressed={isFavorite}
+          className={`rounded-full border px-3 py-2.5 text-xs font-semibold transition ${
+            isFavorite ? 'border-accent/40 bg-accent/10 text-accent' : 'border-border bg-surface-2 text-text-muted hover:bg-surface-3'
+          }`}
+        >
+          {isFavorite ? '★ Favoritado' : 'Favoritar'}
+        </button>
+        <button
+          onClick={onBuildAroundThis}
+          className="col-span-2 rounded-full border border-border bg-surface-2 px-3 py-2.5 text-xs font-semibold text-text transition hover:bg-surface-3"
+        >
+          Montar um MOODE com isso
+        </button>
         <button
           onClick={onEdit}
-          className="flex-1 rounded-full border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-text-muted transition hover:bg-surface-3"
+          className="rounded-full border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-text-muted transition hover:bg-surface-3"
         >
-          Editar relógio
+          Editar
         </button>
         <button
           onClick={onDelete}
-          className="flex-1 rounded-full border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+          className="rounded-full border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
         >
-          Remover da coleção
+          Remover
         </button>
       </div>
 
