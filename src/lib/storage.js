@@ -1,39 +1,28 @@
-// Persistência local (coleção editável + favoritos + histórico de uso).
-// Tudo fica só no navegador do usuário — não tem backend, então cada
-// leitura/escrita é protegida contra localStorage indisponível (modo
-// privado, etc) pela camada db.js.
+// Regras de negócio de persistência (CRUD de coleção, guarda-roupa,
+// histórico, escolhas, feedback). Fala só com storageAdapter.js — nunca
+// toca localStorage/db.js diretamente — pra manter a porta aberta pra
+// uma futura RemoteStorageAdapter sem reescrever nada daqui.
 import { watches as defaultWatches } from '../data/watches.js'
-import { db } from './db.js'
+import { storageAdapter } from './storageAdapter.js'
 
-const COLLECTION_KEY = 'watchlook:collection'
-const FAVORITES_KEY = 'watchlook:favorites'
-const HISTORY_KEY = 'watchlook:history'
-const CHOICES_KEY = 'watchlook:choices'
-const SNEAKERS_KEY = 'watchlook:sneakers'
-const PERFUMES_KEY = 'watchlook:perfumes'
-const WARDROBE_ITEMS_KEY = 'watchlook:wardrobeItems'
-const FEEDBACK_KEY = 'watchlook:feedback'
 const HISTORY_LIMIT = 200
 const CHOICES_LIMIT = 150
 const FEEDBACK_LIMIT = 300
 const BASE_GROUPS = ['quente', 'frio', 'terroso', 'neutro']
 
-const safeGet = db.get
-const safeSet = db.set
-
 // Coleção: começa como os 23 relógios padrão, mas qualquer edição
 // (adicionar/editar/remover) passa a persistir a lista inteira do usuário.
 export function getCollection() {
-  return safeGet(COLLECTION_KEY, null) ?? defaultWatches
+  return storageAdapter.get('collection', null) ?? defaultWatches
 }
 
 function saveCollection(collection) {
-  safeSet(COLLECTION_KEY, collection)
+  storageAdapter.set('collection', collection)
   return collection
 }
 
 export function resetCollection() {
-  db.remove(COLLECTION_KEY)
+  storageAdapter.remove('collection')
   return defaultWatches
 }
 
@@ -78,11 +67,11 @@ export function deleteWatch(id) {
 // pra sugestão poder apontar pras suas próprias coisas em vez de só um
 // tipo genérico ("tênis branco") ou uma referência de mercado.
 export function getSneakers() {
-  return safeGet(SNEAKERS_KEY, [])
+  return storageAdapter.get('sneakers', [])
 }
 
 function saveSneakers(list) {
-  safeSet(SNEAKERS_KEY, list)
+  storageAdapter.set('sneakers', list)
   return list
 }
 
@@ -115,11 +104,11 @@ export function addSneakers(dataList) {
 }
 
 export function getPerfumes() {
-  return safeGet(PERFUMES_KEY, [])
+  return storageAdapter.get('perfumes', [])
 }
 
 function savePerfumes(list) {
-  safeSet(PERFUMES_KEY, list)
+  storageAdapter.set('perfumes', list)
   return list
 }
 
@@ -139,40 +128,47 @@ export function deletePerfume(id) {
   return savePerfumes(list.filter((p) => p.id !== id))
 }
 
-// Item genérico de guarda-roupa — categorias futuras além de tênis e
-// perfume (camisa, calça, jaqueta, óculos...). Tênis e perfume continuam
-// em suas próprias coleções dedicadas (não vale a pena migrar dado real
-// do usuário só por uniformidade), mas qualquer categoria nova entra por
-// aqui em vez de precisar de mais uma tabela própria.
-// Forma: { id, category, brand, model, name, colors: [hex], style,
-//          formality, seasonality, image, favorite, createdAt, lastUsedAt }
+// Item genérico de guarda-roupa — categorias além de relógio/tênis/
+// perfume (camisa, calça, jaqueta, óculos, acessório...). Relógio/tênis/
+// perfume continuam em suas próprias coleções dedicadas (não vale a
+// pena migrar dado real do usuário só por uniformidade), mas qualquer
+// categoria nova entra por aqui em vez de precisar de mais uma tabela.
+// Forma (ver docs/wardrobeItem.md): id, ownerId, category, subcategory,
+// brand, model, name, colors, materials, style, formality, seasonality,
+// weatherSuitability, occasions, image, favorite, createdAt, updatedAt,
+// lastUsedAt, usageCount, attributes.
 export function getWardrobeItems() {
-  return safeGet(WARDROBE_ITEMS_KEY, [])
+  return storageAdapter.get('wardrobeItems', [])
 }
 
 function saveWardrobeItems(list) {
-  safeSet(WARDROBE_ITEMS_KEY, list)
+  storageAdapter.set('wardrobeItems', list)
   return list
 }
 
 export function addWardrobeItem(data) {
   const list = getWardrobeItems()
   const id = makeItemId(data.name || data.model || data.category, list.map((i) => i.id))
+  const now = new Date().toISOString()
   const item = {
+    ownerId: storageAdapter.profileId,
     favorite: false,
     colors: [],
     image: null,
     lastUsedAt: null,
+    usageCount: 0,
+    attributes: {},
     ...data,
     id,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   }
   return saveWardrobeItems([...list, item])
 }
 
 export function updateWardrobeItem(id, data) {
   const list = getWardrobeItems()
-  return saveWardrobeItems(list.map((i) => (i.id === id ? { ...i, ...data, id } : i)))
+  return saveWardrobeItems(list.map((i) => (i.id === id ? { ...i, ...data, id, updatedAt: new Date().toISOString() } : i)))
 }
 
 export function deleteWardrobeItem(id) {
@@ -183,16 +179,16 @@ export function deleteWardrobeItem(id) {
 // Feedback pós-recomendação (👍 boa sugestão / ❤️ ficou perfeito / 👎 não
 // usaria, com motivo opcional) — sinal mais direto que "escolhi outro
 // relógio" (choices): aqui a pessoa está avaliando a sugestão em si, não
-// só registrando o que vestiu. Alimenta o personalBias v2.
+// só registrando o que vestiu. Alimenta o personalBias / UserStyleProfile.
 export function getFeedback() {
-  return safeGet(FEEDBACK_KEY, [])
+  return storageAdapter.get('feedback', [])
 }
 
 export function logFeedback(entry) {
   const list = getFeedback()
   const id = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   const next = [{ ...entry, id, date: new Date().toISOString() }, ...list].slice(0, FEEDBACK_LIMIT)
-  safeSet(FEEDBACK_KEY, next)
+  storageAdapter.set('feedback', next)
   return next
 }
 
@@ -261,29 +257,29 @@ export function importData(data) {
   validateBackup(data)
   const normalized = normalizeBackup(data)
   saveCollection(normalized.collection)
-  safeSet(FAVORITES_KEY, normalized.favorites)
-  safeSet(HISTORY_KEY, normalized.history)
-  safeSet(CHOICES_KEY, normalized.choices)
-  safeSet(FEEDBACK_KEY, normalized.feedback)
-  safeSet(SNEAKERS_KEY, normalized.sneakers)
-  safeSet(PERFUMES_KEY, normalized.perfumes)
-  safeSet(WARDROBE_ITEMS_KEY, normalized.wardrobeItems)
+  storageAdapter.set('favorites', normalized.favorites)
+  storageAdapter.set('history', normalized.history)
+  storageAdapter.set('choices', normalized.choices)
+  storageAdapter.set('feedback', normalized.feedback)
+  storageAdapter.set('sneakers', normalized.sneakers)
+  storageAdapter.set('perfumes', normalized.perfumes)
+  storageAdapter.set('wardrobeItems', normalized.wardrobeItems)
 }
 
 export function getFavorites() {
-  return safeGet(FAVORITES_KEY, [])
+  return storageAdapter.get('favorites', [])
 }
 
 export function toggleFavorite(watchId) {
   const favorites = getFavorites()
   const next = favorites.includes(watchId) ? favorites.filter((id) => id !== watchId) : [...favorites, watchId]
-  safeSet(FAVORITES_KEY, next)
+  storageAdapter.set('favorites', next)
   return next
 }
 
 // Histórico: uma entrada por dia por relógio, mais recente primeiro.
 export function getHistory() {
-  return safeGet(HISTORY_KEY, [])
+  return storageAdapter.get('history', [])
 }
 
 function todayStr() {
@@ -294,7 +290,7 @@ export function logWornToday(watchId) {
   const today = todayStr()
   const history = getHistory().filter((h) => !(h.watchId === watchId && h.date === today))
   const next = [{ watchId, date: today }, ...history].slice(0, HISTORY_LIMIT)
-  safeSet(HISTORY_KEY, next)
+  storageAdapter.set('history', next)
   return next
 }
 
@@ -321,13 +317,13 @@ export function daysSince(dateStr) {
 // alimenta o `personalBias` — a "inteligência" aprendendo com o uso real,
 // não só com a regra de cor.
 export function getChoices() {
-  return safeGet(CHOICES_KEY, [])
+  return storageAdapter.get('choices', [])
 }
 
 export function logChoice(entry) {
   const choices = getChoices()
   const next = [{ ...entry, date: new Date().toISOString() }, ...choices].slice(0, CHOICES_LIMIT)
-  safeSet(CHOICES_KEY, next)
+  storageAdapter.set('choices', next)
   return next
 }
 
