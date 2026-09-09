@@ -14,6 +14,9 @@ import { DEFAULT_OUTFIT, LOOK_COLORS } from './matchEngine.js'
 import { recommendWatchesForLook } from './recommendationEngine.js'
 import { lookForOccasion, paletteGroup } from './outfitEngine.js'
 import { suggestPerfume } from './perfumeEngine.js'
+import { pickBestSneakerForGarments } from './sneakerMatch.js'
+import { pickAccessoriesForLook } from './accessoryMatch.js'
+import { matchColorNameToHexes } from './colorNameMatch.js'
 import { closestLookColorId } from './colorDetect.js'
 import { getWatchDimensions } from './watchModel.js'
 import { rotationScore } from './rotationEngine.js'
@@ -30,24 +33,28 @@ export function greetingForNow(date = new Date()) {
   return 'Boa noite'
 }
 
-// Primeiro tênis cadastrado cuja cor pertence à mesma paleta do relógio —
-// reaproveitado também no bundle de resultado do Look → Relógio.
-export function pickOwnedSneakerForGroup(sneakers, group) {
+// Escolhe o tênis do acervo pra hoje via o SneakerScore de verdade
+// (sneakerMatch.js) — não só cor. Bug real que isso corrige: sem
+// ocasião no cálculo, um Jordan bem casual podia ganhar de um mocassim
+// só porque a cor batia mais com o mostrador, mesmo pedindo "reunião
+// importante". `watch` vira um "peça" pseudo-peça (cor + peso 1) pra
+// harmoniaSubScore ainda ter algum sinal de cor sem precisar de um
+// look completo — o resto (ocasião, clima, preferência) já funciona
+// sem peça nenhuma, pelo mesmo redistribuidor de peso que os outros
+// motores usam.
+function pickSneakerForWatch(sneakers, watch, contextId, opts = {}) {
   if (!sneakers || sneakers.length === 0) return null
-  return (
-    sneakers.find((s) => {
-      const id = closestLookColorId(s.hexes[0])
-      const color = LOOK_COLORS.find((c) => c.id === id)
-      return color?.groups.includes(group)
-    }) ?? null
-  )
+  const watchColorId = closestLookColorId(watch.hexes[0])
+  const watchColor = LOOK_COLORS.find((c) => c.id === watchColorId)
+  const pseudoGarments = watchColor ? [{ color: watchColor, weight: 1, pronoun: 'do', label: 'mostrador' }] : []
+  return pickBestSneakerForGarments(sneakers, pseudoGarments, contextId, opts)
 }
 
 // Gera até `count` candidatos pra hoje, do melhor pro "quero variar" —
 // cada um já com relógio, look, tênis e perfume sugeridos, score e
 // motivos prontos pra exibir.
 export function buildTodayCandidates(watches, opts = {}) {
-  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], count = 6 } = opts
+  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], accessories = [], count = 6 } = opts
   if (!watches || watches.length === 0) return []
 
   const ranked = recommendWatchesForLook(watches, DEFAULT_OUTFIT, contextId, { weatherBias, history, personalBias })
@@ -56,8 +63,13 @@ export function buildTodayCandidates(watches, opts = {}) {
     const { watch } = result
     const group = paletteGroup(watch.cor)
     const look = lookForOccasion(watch, contextId)
-    const sneaker = pickOwnedSneakerForGroup(sneakers, group)
+    const sneaker = pickSneakerForWatch(sneakers, watch, contextId, { weatherBias, personalBias })
     const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes })
+    // Acessório é sempre opcional — referenceHexes junta o mostrador com
+    // a cor das peças já sugeridas pro look de hoje, pra o sub-score de
+    // cor comparar contra o conjunto inteiro, não só o relógio isolado.
+    const referenceHexes = [...watch.hexes, ...matchColorNameToHexes(look.top, 2), ...matchColorNameToHexes(look.bottom, 2)]
+    const accessoryPicks = pickAccessoriesForLook(accessories, { referenceHexes, contextId, watch, sneaker })
 
     const reasons = [...new Set(['cores harmonizam com o mostrador', ...result.reasons])]
 
@@ -71,6 +83,7 @@ export function buildTodayCandidates(watches, opts = {}) {
       look,
       sneaker,
       perfume,
+      accessoryPicks,
     }
   })
 }

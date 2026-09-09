@@ -2,9 +2,15 @@ import { COLOR_FILTERS, COLOR_LABELS } from '../lib/outfitEngine.js'
 import { WATCH_TYPES, BRACELET_MATERIALS } from '../lib/watchModel.js'
 import { SORT_OPTIONS } from '../lib/collectionSort.js'
 
+// type="button" é obrigatório aqui: sem ele, um <button> dentro de um
+// <form> (SneakerForm, AccessoryForm) vira type="submit" por padrão do
+// HTML — cada toque num Chip (tipo, estilo...) submeteria o formulário
+// inteiro no estado em que estivesse naquele instante, em vez de só
+// atualizar a seleção.
 export function Chip({ active, onClick, children }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-pressed={active}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickAdjustedIndex, defaultOccasionForToday, greetingForNow } from './dailyRecommendation.js'
+import { pickAdjustedIndex, defaultOccasionForToday, greetingForNow, buildTodayCandidates } from './dailyRecommendation.js'
 import { daysAgoStr } from './test-helpers.js'
 
 // candidatos sintéticos — só precisam de `watch` (com estilo/cor válidos
@@ -64,5 +64,35 @@ describe('defaultOccasionForToday / greetingForNow — sanidade', () => {
     expect(greetingForNow(new Date('2026-01-01T08:00:00'))).toBe('Bom dia')
     expect(greetingForNow(new Date('2026-01-01T14:00:00'))).toBe('Boa tarde')
     expect(greetingForNow(new Date('2026-01-01T20:00:00'))).toBe('Boa noite')
+  })
+})
+
+describe('buildTodayCandidates — o tênis escolhido respeita a ocasião (bug real reportado)', () => {
+  const watch = { id: 'w1', nome: 'Relógio Neutro', cor: 'neutro', estilo: 'Dress clássico elegante', hexes: ['#1B1B1D'] }
+
+  it('reunião importante prefere sapato social sobre tênis casual, mesmo quando o tênis bate mais na cor', () => {
+    // Jordan tem a cor IDÊNTICA ao relógio (harmonia máxima) — antes desse
+    // fix, pickOwnedSneakerForGroup só olhava cor e sempre escolhia ele.
+    const sneakers = [
+      { id: 's-jordan', nome: 'Air Jordan 1 High', tipo: 'Tênis', hexes: ['#1B1B1D'] },
+      { id: 's-social', nome: 'Sapato social preto', tipo: 'Sapato social', hexes: ['#8C8C8C'] },
+    ]
+    const [candidate] = buildTodayCandidates([watch], { contextId: 'reuniaoImportante', sneakers })
+    expect(candidate.sneaker.id).toBe('s-social')
+  })
+
+  it('treino, ao contrário, prefere o tênis sobre o sapato social (mesma cor pros dois, só ocasião decide)', () => {
+    const sneakers = [
+      { id: 's-jordan', nome: 'Air Jordan 1 High', tipo: 'Tênis', hexes: ['#1B1B1D'] },
+      { id: 's-social', nome: 'Sapato social preto', tipo: 'Sapato social', hexes: ['#1B1B1D'] },
+    ]
+    const [candidate] = buildTodayCandidates([watch], { contextId: 'treino', sneakers })
+    expect(candidate.sneaker.id).toBe('s-jordan')
+  })
+
+  it('sem tênis cadastrado, não quebra — sneaker fica null e o resto do candidato continua íntegro', () => {
+    const [candidate] = buildTodayCandidates([watch], { contextId: 'trabalho', sneakers: [] })
+    expect(candidate.sneaker).toBeNull()
+    expect(candidate.watch.id).toBe('w1')
   })
 })

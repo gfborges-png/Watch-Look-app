@@ -11,6 +11,10 @@ import {
   toggleFavoriteLook,
   addPerfumes,
   getPerfumes,
+  getAccessories,
+  addAccessory,
+  updateAccessory,
+  deleteAccessory,
 } from './storage.js'
 
 describe('personalBias', () => {
@@ -128,14 +132,44 @@ describe('addPerfumes — importação em lote', () => {
   })
 })
 
+describe('Acessórios (CRUD + acervo demo)', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('começa com o acervo de demonstração (pelo menos 6 acessórios), sem precisar cadastrar nada', () => {
+    expect(getAccessories().length).toBeGreaterThanOrEqual(6)
+  })
+
+  it('adicionar acessório acrescenta à lista (demo + novo), sem apagar os que já existiam', () => {
+    const before = getAccessories().length
+    addAccessory({ type: 'anel', name: 'Anel de prata', brand: '', primaryColor: '#8C8C8C', material: 'prata', style: ['minimalista'], watchCompatibility: 'yes', image: null })
+    expect(getAccessories()).toHaveLength(before + 1)
+  })
+
+  it('id do acessório vem prefixado com "acc-" (evita colisão com id de relógio no array de favoritos compartilhado)', () => {
+    const [novo] = addAccessory({ type: 'anel', name: 'Teste', brand: '', primaryColor: '#000', material: 'prata', style: [], watchCompatibility: 'neutral', image: null }).slice(-1)
+    expect(novo.id.startsWith('acc-')).toBe(true)
+  })
+
+  it('atualizar e remover acessório funcionam pelo id, sem afetar os outros', () => {
+    const list = addAccessory({ type: 'anel', name: 'Original', brand: '', primaryColor: '#000', material: 'prata', style: [], watchCompatibility: 'neutral', image: null })
+    const novo = list.at(-1)
+    const afterUpdate = updateAccessory(novo.id, { ...novo, name: 'Editado' })
+    expect(afterUpdate.find((a) => a.id === novo.id).name).toBe('Editado')
+
+    const afterDelete = deleteAccessory(novo.id)
+    expect(afterDelete.find((a) => a.id === novo.id)).toBeUndefined()
+  })
+})
+
 describe('backup versionado (export/import)', () => {
   beforeEach(() => localStorage.clear())
 
-  it('exporta no formato v3, com tênis/perfumes agrupados sob wardrobe', () => {
+  it('exporta no formato v4, com tênis/perfumes/acessórios agrupados sob wardrobe', () => {
     const data = exportData()
-    expect(data.version).toBe(3)
+    expect(data.version).toBe(4)
     expect(data.wardrobe).toHaveProperty('sneakers')
     expect(data.wardrobe).toHaveProperty('perfumes')
+    expect(data.wardrobe).toHaveProperty('accessories')
     expect(data.wardrobe).toHaveProperty('items')
   })
 
@@ -168,6 +202,28 @@ describe('backup versionado (export/import)', () => {
       importData({ collection: before, wardrobe: { sneakers: [], perfumes: [{ id: 'p1' }] } }),
     ).toThrow(/perfumes/)
     expect(getCollection()).toEqual(before)
+  })
+
+  it('importa acessórios (v4) e sobrevive ao roundtrip export/import', () => {
+    addAccessory({ type: 'anel', name: 'Anel exportado', brand: '', primaryColor: '#000', material: 'prata', style: ['minimalista'], watchCompatibility: 'yes', image: null })
+    const data = exportData()
+    localStorage.clear()
+    importData(data)
+    expect(getAccessories().some((a) => a.name === 'Anel exportado')).toBe(true)
+  })
+
+  it('rejeita acessório sem id/tipo, sem alterar o estado atual', () => {
+    const before = getCollection()
+    expect(() =>
+      importData({ collection: before, wardrobe: { sneakers: [], perfumes: [], accessories: [{ name: 'Sem id nem tipo' }] } }),
+    ).toThrow(/acessório/)
+    expect(getCollection()).toEqual(before)
+  })
+
+  it('backup antigo (v1-v3, sem campo accessories) não apaga o acervo de acessórios atual — só ignora o que não conhece', () => {
+    const before = getAccessories()
+    expect(() => importData({ collection: getCollection(), sneakers: [], perfumes: [] })).not.toThrow()
+    expect(getAccessories()).toEqual(before)
   })
 
   it('rejeita JSON sem coleção de relógios, sem alterar o estado atual', () => {

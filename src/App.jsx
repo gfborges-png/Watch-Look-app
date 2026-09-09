@@ -40,7 +40,7 @@ function App() {
 
   const { collection, favorites, addWatch, updateWatch, deleteWatch, resetCollection, toggleFavorite, refresh: refreshCollection } = useWatchCollection()
   const wardrobe = useWardrobe()
-  const { sneakers, perfumes } = wardrobe
+  const { sneakers, perfumes, accessories } = wardrobe
   const rec = useRecommendationHistory()
   const { history, logWornToday, logChoice, logFeedback } = rec
   const { weather, fetchWeather } = useWeather()
@@ -186,6 +186,7 @@ function App() {
             bias={bias}
             sneakers={sneakers}
             perfumes={perfumes}
+            accessories={accessories}
             onLogWornToday={logWornToday}
             onLogFeedback={logFeedback}
             onGoToMontar={() => setTab('montar')}
@@ -211,6 +212,7 @@ function App() {
             onLogFeedback={logFeedback}
             sneakers={sneakers}
             perfumes={perfumes}
+            accessories={accessories}
             lockedWatchId={lockedWatchId}
             onUnlockWatch={() => setLockedWatchId(null)}
           />
@@ -220,6 +222,7 @@ function App() {
           <WardrobePanel
             sneakers={sneakers}
             perfumes={perfumes}
+            accessories={accessories}
             styleInsights={styleInsights}
             onAddSneaker={wardrobe.addSneaker}
             onImportSneakers={wardrobe.addSneakers}
@@ -229,6 +232,9 @@ function App() {
             onImportPerfumes={wardrobe.addPerfumes}
             onUpdatePerfume={wardrobe.updatePerfume}
             onDeletePerfume={wardrobe.deletePerfume}
+            onAddAccessory={wardrobe.addAccessory}
+            onUpdateAccessory={wardrobe.updateAccessory}
+            onDeleteAccessory={wardrobe.deleteAccessory}
             watches={{
               collection,
               filtered,

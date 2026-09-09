@@ -32,9 +32,10 @@ ou "IA".
   dia, com score explicado, ação de travar uma peça específica ("lock
   item") e ajustes rápidos (Mais casual/sofisticado/ousado, Quero variar).
 - **Guarda-roupa** — Relógios (com filtros, ordenação e "esquecidos na
-  caixa"), Tênis, Perfumes e um resumo do seu estilo, tudo cadastrado por
-  você — pra sugestão apontar pras suas próprias coisas, não referências
-  genéricas.
+  caixa"), Tênis, Perfumes, Acessórios (pulseira, colar, anel, óculos,
+  cinto, boné/chapéu, lenço) e um resumo do seu estilo, tudo cadastrado
+  por você — pra sugestão apontar pras suas próprias coisas, não
+  referências genéricas.
 - **Montar** — descreve um look (por foto ou manual) e vê quais relógios
   combinam, cada um com tênis e perfume sugeridos junto. Também é onde
   "Montar um MOODE com isso" (a partir do detalhe de qualquer relógio)
@@ -85,6 +86,8 @@ src/
     recommendationEngine.js  StylingScore do relógio — absoluto, com sub-scores e explicações
     sneakerMatch.js          SneakerScore (harmonia/ocasião/estilo/clima/preferência)
     perfumeEngine.js         família de perfume por ocasião + FragranceScore do catálogo próprio
+    accessoryModel.js        taxonomia de acessório (tipo/material/estilo) + formalidade derivada
+    accessoryMatch.js        AccessoryScore (cor/material/formalidade/relação com o relógio) — sempre opcional
     rotationEngine.js        rotação de uso (último uso, frequência 7/30/90d, esquecidos)
     dailyRecommendation.js   monta "Seu MOODE de hoje" + ações de ajuste (pickAdjustedIndex)
     moodeHistory.js          junta history+feedback em "Meus Moodes"
@@ -109,7 +112,7 @@ src/
     TodayScreen.jsx            "Seu MOODE de hoje"
     MeusMoodesScreen.jsx       histórico ("Meus Moodes") + Moodes favoritos
     BottomNav.jsx               navegação por abas (mobile + desktop)
-    WardrobePanel.jsx           Relógios/Tênis/Perfumes/Seu estilo (com importação em lote pra tênis e perfumes)
+    WardrobePanel.jsx           Relógios/Tênis/Perfumes/Acessórios/Seu estilo (com importação em lote pra tênis e perfumes)
     ThemeToggle.jsx              botão de tema claro/escuro/sistema no header
     ErrorBoundary.jsx            rede de segurança pra erro de render não virar tela branca
     WatchCard, WatchDetail, WatchForm, FilterBar, BackupPanel, ForgottenWatches, ColorSwatch
@@ -124,8 +127,8 @@ ou heurística local.
 
 ## Modelo de recomendação
 
-Três motores de score, todos seguindo o mesmo padrão: média ponderada de
-sub-scores 0–100, cada um explicável, com peso redistribuído (nunca
+Quatro motores de score, todos seguindo o mesmo padrão: média ponderada
+de sub-scores 0–100, cada um explicável, com peso redistribuído (nunca
 inventado) quando um sub-score não tem dado disponível.
 
 **StylingScore** (relógio):
@@ -144,9 +147,20 @@ estilo/formalidade 15% · clima 10% · preferência pessoal 15%.
 
 **FragranceScore** (perfume, sobre o catálogo cadastrado): ocasião 70% ·
 clima 30% — um perfume "nativo" de outra ocasião nunca zera, pontua pela
-proximidade real entre as duas ocasiões (`occasionDimensions.js`).
+proximidade real entre as duas ocasiões (`occasionDimensions.js`). Notas
+cadastradas (bergamota/cítrico = leve, âmbar/couro = denso) refinam o
+sub-score de clima quando há mais de um perfume da mesma família.
 
-Faixas de interpretação (as mesmas pras três, contextualizadas na
+**AccessoryScore** (acessório, sempre opcional): cor 30% · relação com o
+relógio 30% · formalidade 25% · material 15%. Nunca aparece se o
+acessório tem `watchCompatibility="não"` e há relógio no resultado
+(filtrado antes de pontuar, não só penalizado); com o relógio
+visualmente marcante (statement level alto), acessórios discretos
+(minimalista/clássico) sobem e os ousados descem — o relógio não deveria
+disputar atenção com o acessório. Só entra no resultado quem pontua
+acima de um piso de relevância, no máximo 2 por vez.
+
+Faixas de interpretação (as mesmas pras quatro, contextualizadas na
 interface — nunca um "Match" genérico):
 
 | Faixa | Rótulo |
@@ -169,10 +183,12 @@ mesma interface já suporta uma futura troca por um `userId` autenticado
 sem reescrever nada do resto do app.
 
 **Backup** (Dados e backup → Exportar/Importar) gera um JSON versionado
-(v3), com validação item a item antes de tocar em qualquer dado —
+(v4), com validação item a item antes de tocar em qualquer dado —
 rejeita JSON inválido, sem coleção reconhecível, ou com um relógio/tênis/
-perfume sem id/nome, sem corromper o estado atual — e aceita tanto o
-formato atual quanto os dois formatos mais antigos já emitidos (v1/v2).
+perfume/acessório sem id/nome (ou id/tipo, no caso do acessório), sem
+corromper o estado atual — e aceita todos os formatos mais antigos já
+emitidos (v1/v2/v3); um backup de antes de acessórios existir nunca
+apaga o acervo/demo atual, só ignora o campo que não conhece.
 
 ## Como rodar
 
@@ -189,15 +205,17 @@ npm run lint      # oxlint
 npm test          # Vitest
 ```
 
-113 testes cobrindo os três motores de score (relógio/tênis/perfume),
-rotação, storage/migração de dados e backup versionado (v1→v3, inclusive
-rejeição de item malformado em qualquer categoria), preferência aprendida
-(`UserStyleProfile`), ações de ajuste da Home, histórico/Moodes favoritos,
-clima enriquecido, preferência de tema e reconhecimento de cor/família em
-texto livre — com cenários usando dados realistas (ex: camisa branca +
-calça bege + trabalho + relógio dress deve pontuar alto; o mesmo look com
-um relógio esportivo statement deve ser penalizado). Os testes verificam
-comportamento esperado, não números mágicos exatos.
+153 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
+acessório), rotação, storage/migração de dados e backup versionado
+(v1→v4, inclusive rejeição de item malformado em qualquer categoria),
+preferência aprendida (`UserStyleProfile`), ações de ajuste da Home
+(inclusive o tênis escolhido respeitando a ocasião, não só a cor),
+histórico/Moodes favoritos, clima enriquecido, preferência de tema e
+reconhecimento de cor/família em texto livre — com cenários usando
+dados realistas (ex: camisa branca + calça bege + trabalho + relógio
+dress deve pontuar alto; o mesmo look com um relógio esportivo
+statement deve ser penalizado). Os testes verificam comportamento
+esperado, não números mágicos exatos.
 
 Ambiente Node puro (sem jsdom): `src/test-setup.js` instala um polyfill
 de `localStorage` em memória.
@@ -227,15 +245,19 @@ pede pro usuário sobre como cada sugestão é calculada.
   error boundary global, auditoria de estados vazios, acessibilidade
   (foco visível e preso em diálogos, `aria-pressed`, tamanho mínimo de
   toque, contraste AA), tema claro/escuro selecionável no app, backup
-  v3 com validação item a item, importação em lote para tênis e
+  v4 com validação item a item, importação em lote para tênis e
   perfumes.
+- **Acessórios** — pulseira, colar, anel, óculos, cinto, boné/chapéu e
+  lenço como mais uma dimensão do look (AccessoryScore explicável,
+  sempre opcional, nunca competindo com um relógio marcante), favoritos
+  reaproveitando a mesma lógica dos relógios.
 
 ### Próximos passos (candidatos, não compromissos)
 
-1. **Guarda-roupa completo** — migrar tênis/perfumes pro modelo
-   genérico de item (`wardrobeItems`, arquitetura já pronta) e abrir
-   cadastro pra mais categorias (camisa, calça, jaqueta, óculos,
-   acessórios).
+1. **Guarda-roupa completo** — abrir cadastro pra mais categorias
+   (camisa, calça, jaqueta) no mesmo padrão dos acessórios, e migrar
+   tênis/perfumes pro modelo genérico de item (`wardrobeItems`,
+   arquitetura já pronta) quando fizer sentido.
 2. **Reconhecimento de imagem de verdade** — hoje `colorDetect.js` é
    uma estimativa por zonas da foto, deixada assim de propósito; um
    modelo real de visão computacional entraria aqui sem mudar o resto

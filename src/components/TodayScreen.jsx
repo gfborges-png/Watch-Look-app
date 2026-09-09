@@ -3,6 +3,8 @@ import { CONTEXTS } from '../lib/matchEngine.js'
 import { buildTodayCandidates, defaultOccasionForToday, greetingForNow, pickAdjustedIndex } from '../lib/dailyRecommendation.js'
 import { matchColorNameToHexes } from '../lib/colorNameMatch.js'
 import { SNEAKER_REFERENCES } from '../lib/outfitEngine.js'
+import { accessoryJustification } from '../lib/accessoryMatch.js'
+import { accessoryDisplayName } from '../lib/accessoryModel.js'
 import { weatherSummaryParts } from '../lib/weather.js'
 import { Chip } from './FilterBar.jsx'
 import BottomSheet from './ds/BottomSheet.jsx'
@@ -105,6 +107,7 @@ export default function TodayScreen({
   bias,
   sneakers,
   perfumes,
+  accessories,
   onLogWornToday,
   onLogFeedback,
   onGoToMontar,
@@ -122,8 +125,8 @@ export default function TodayScreen({
   const weatherBias = weather.status === 'ready' ? weather.bias : null
 
   const candidates = useMemo(
-    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes }),
-    [watches, contextId, weatherBias, history, bias, sneakers, perfumes],
+    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes, accessories }),
+    [watches, contextId, weatherBias, history, bias, sneakers, perfumes, accessories],
   )
 
   if (watches.length === 0) {
@@ -226,6 +229,14 @@ export default function TodayScreen({
           onReset={() => setLockedPerfumeId(null)}
           references={candidate.perfume.referencias}
         />
+        {candidate.accessoryPicks.map((pick, i) => (
+          <MoodeTile
+            key={pick.accessory.id}
+            label={candidate.accessoryPicks.length > 1 ? `Acessório ${i + 1}` : 'Acessório'}
+            value={accessoryDisplayName(pick.accessory)}
+            hexes={[pick.accessory.primaryColor]}
+          />
+        ))}
       </div>
 
       <div className="border-t border-border pt-4">
@@ -237,6 +248,9 @@ export default function TodayScreen({
           <p className="mt-2 font-serif text-[15px] italic leading-snug text-text-muted">
             "{candidate.reasons[0][0].toUpperCase() + candidate.reasons[0].slice(1)}."
           </p>
+        )}
+        {candidate.accessoryPicks[0] && (
+          <p className="mt-1 text-xs text-text-muted">{accessoryJustification(candidate.accessoryPicks[0])}</p>
         )}
       </div>
 

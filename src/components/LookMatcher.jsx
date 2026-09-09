@@ -27,6 +27,7 @@ export default function LookMatcher({
   onLogFeedback,
   sneakers,
   perfumes,
+  accessories,
   lockedWatchId,
   onUnlockWatch,
 }) {
@@ -106,6 +107,8 @@ export default function LookMatcher({
             onLogFeedback={onLogFeedback}
             sneakers={sneakers}
             perfumes={perfumes}
+            accessories={accessories}
+            outfit={outfit}
           />
         )}
       </div>

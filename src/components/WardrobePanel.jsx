@@ -2,6 +2,15 @@ import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
 import { KNOWN_FAMILIES, matchFamilyName, notasFromImportItem } from '../lib/perfumeEngine.js'
 import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
+import {
+  ACCESSORY_TYPES,
+  ACCESSORY_MATERIALS,
+  ACCESSORY_STYLES,
+  WATCH_COMPATIBILITY,
+  ACCESSORY_MATERIAL_LABEL,
+  ACCESSORY_STYLE_LABEL,
+  accessoryDisplayName,
+} from '../lib/accessoryModel.js'
 import FilterBar, { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
 import ForgottenWatches from './ForgottenWatches.jsx'
@@ -13,6 +22,16 @@ const inputClass =
 const SNEAKER_TIPOS = GARMENTS.find((g) => g.key === 'calcado').tipos
 const BLANK_SNEAKER = { nome: '', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] }
 const BLANK_PERFUME = { nome: '', marca: '', familia: KNOWN_FAMILIES[0], notas: '' }
+const BLANK_ACCESSORY = {
+  type: ACCESSORY_TYPES[0].id,
+  name: '',
+  brand: '',
+  primaryColor: LOOK_COLORS[0].hex,
+  material: ACCESSORY_MATERIALS[0].id,
+  style: [],
+  watchCompatibility: 'neutral',
+  image: null,
+}
 
 // Rótulo de uma cor cadastrada, buscando o hex exato na paleta do app
 // (o seletor de cor do tênis só oferece esses hexes, então sempre bate).
@@ -214,6 +233,166 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
         </button>
       </div>
     </form>
+  )
+}
+
+// Cor principal do acessório — uma só (ao contrário do seletor de tênis,
+// que permite até 2), da mesma paleta LOOK_COLORS usada em todo o app,
+// pra o motor de match comparar sem precisar aproximar cor depois.
+function AccessoryColorPicker({ hex, onChange }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {LOOK_COLORS.map((c) => {
+        const active = hex === c.hex
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onChange(c.hex)}
+            title={c.label}
+            aria-label={c.label}
+            aria-pressed={active}
+            className={`h-8 w-8 shrink-0 rounded-full ring-2 transition ${
+              active ? 'ring-accent scale-110' : 'ring-transparent hover:ring-border'
+            }`}
+            style={{ background: c.hex }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+// Cadastro rápido de acessório — nada obrigatório além do tipo (nome e
+// marca são opcionais, por espec), então sem estado de erro/validação
+// como Sneaker/PerfumeForm têm: qualquer combinação de campos já é um
+// acessório válido.
+function AccessoryForm({ initial, onSave, onCancel, onDelete }) {
+  const [form, setForm] = useState(initial ? { ...BLANK_ACCESSORY, ...initial } : BLANK_ACCESSORY)
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const toggleStyle = (styleId) =>
+    setForm((f) => ({
+      ...f,
+      style: f.style.includes(styleId) ? f.style.filter((s) => s !== styleId) : [...f.style, styleId],
+    }))
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave({ ...form, name: form.name.trim(), brand: form.brand.trim() })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-surface-2/60 p-5">
+      <Field label="Tipo" required>
+        <div className="flex flex-wrap gap-1.5">
+          {ACCESSORY_TYPES.map((t) => (
+            <Chip key={t.id} active={form.type === t.id} onClick={() => setForm((f) => ({ ...f, type: t.id }))}>
+              {t.label}
+            </Chip>
+          ))}
+        </div>
+      </Field>
+      <Field label="Nome">
+        <input className={inputClass} value={form.name} onChange={set('name')} placeholder="Ex: Pulseira de couro preta (opcional)" />
+      </Field>
+      <Field label="Marca">
+        <input className={inputClass} value={form.brand} onChange={set('brand')} placeholder="Opcional" />
+      </Field>
+      <div>
+        <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">Cor principal</span>
+        <AccessoryColorPicker hex={form.primaryColor} onChange={(hex) => setForm((f) => ({ ...f, primaryColor: hex }))} />
+      </div>
+      <Field label="Material">
+        <select className={inputClass} value={form.material} onChange={set('material')}>
+          {ACCESSORY_MATERIALS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <div>
+        <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">Estilo (um ou mais)</span>
+        <div className="flex flex-wrap gap-1.5">
+          {ACCESSORY_STYLES.map((s) => (
+            <Chip key={s.id} active={form.style.includes(s.id)} onClick={() => toggleStyle(s.id)}>
+              {s.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+      <div>
+        <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">Usar junto com relógio?</span>
+        <div className="flex flex-wrap gap-1.5">
+          {WATCH_COMPATIBILITY.map((w) => (
+            <Chip key={w.id} active={form.watchCompatibility === w.id} onClick={() => setForm((f) => ({ ...f, watchCompatibility: w.id }))}>
+              {w.label}
+            </Chip>
+          ))}
+        </div>
+        <span className="mt-1 block text-xs text-text-muted">
+          Especialmente importante pra pulseiras — "Não" evita sugerir esse acessório em qualquer look com relógio.
+        </span>
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button type="submit" className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90">
+          Salvar
+        </button>
+        {onDelete && (
+          <button type="button" onClick={onDelete} className="rounded-full border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10">
+            Remover
+          </button>
+        )}
+        <button type="button" onClick={onCancel} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// Mesmo HeartButton de WatchCard.jsx/MeusMoodesScreen.jsx — favoritos de
+// acessório reaproveitam o array `favorites` já existente (ver
+// storage.toggleFavorite), compartilhado com relógios; id prefixado
+// "acc-" evita colisão entre as duas categorias nesse array comum.
+function AccessoryHeartButton({ active, onToggle }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+      aria-label={active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+      aria-pressed={active}
+      className="shrink-0 rounded-full p-2 text-text-muted transition hover:text-accent"
+    >
+      <svg className={`h-4 w-4 ${active ? 'fill-accent text-accent' : 'fill-none'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 20.6l-1.4-1.3C5.4 14.9 2 11.8 2 8.1 2 5.3 4.2 3 7 3c1.6 0 3.1.8 4 2 .9-1.2 2.4-2 4-2 2.8 0 5 2.3 5 5.1 0 3.7-3.4 6.8-8.6 11.2l-1.4 1.3z"
+        />
+      </svg>
+    </button>
+  )
+}
+
+function AccessoryRow({ accessory, isFavorite, onToggleFavorite, onEdit }) {
+  const styleLabel = (accessory.style ?? []).map((s) => ACCESSORY_STYLE_LABEL[s]).filter(Boolean).join(' / ')
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-2/60 p-3">
+      <span className="h-9 w-9 shrink-0 rounded-full ring-1 ring-border" style={{ background: accessory.primaryColor }} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-text">{accessoryDisplayName(accessory)}</p>
+        <p className="truncate text-xs text-text-muted">
+          {ACCESSORY_MATERIAL_LABEL[accessory.material]} · {colorLabel(accessory.primaryColor)}
+        </p>
+        {styleLabel && <p className="truncate text-[11px] text-text-muted/80">{styleLabel}</p>}
+      </div>
+      <AccessoryHeartButton active={isFavorite} onToggle={onToggleFavorite} />
+      <EditIconButton onClick={onEdit} label={`Editar ${accessoryDisplayName(accessory)}`} />
+    </div>
   )
 }
 
@@ -495,6 +674,7 @@ export default function WardrobePanel({
   onBack,
   sneakers,
   perfumes,
+  accessories,
   styleInsights,
   onAddSneaker,
   onImportSneakers,
@@ -504,20 +684,28 @@ export default function WardrobePanel({
   onImportPerfumes,
   onUpdatePerfume,
   onDeletePerfume,
+  onAddAccessory,
+  onUpdateAccessory,
+  onDeleteAccessory,
   watches,
 }) {
-  const [tab, setTab] = useState('relogios') // 'relogios' | 'tenis' | 'perfumes' | 'estilo'
+  const [tab, setTab] = useState('relogios') // 'relogios' | 'tenis' | 'perfumes' | 'acessorios' | 'estilo'
   const [editingSneaker, setEditingSneaker] = useState(null) // null | 'new' | id
   const [editingPerfume, setEditingPerfume] = useState(null)
+  const [editingAccessory, setEditingAccessory] = useState(null)
+  const [accessoryTypeFilter, setAccessoryTypeFilter] = useState('todos')
   const [importingSneakers, setImportingSneakers] = useState(false)
   const [importingPerfumes, setImportingPerfumes] = useState(false)
 
   const closeForms = () => {
     setEditingSneaker(null)
     setEditingPerfume(null)
+    setEditingAccessory(null)
     setImportingSneakers(false)
     setImportingPerfumes(false)
   }
+
+  const filteredAccessories = accessoryTypeFilter === 'todos' ? accessories : accessories.filter((a) => a.type === accessoryTypeFilter)
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
@@ -563,6 +751,15 @@ export default function WardrobePanel({
           }}
         >
           Perfumes ({perfumes.length})
+        </Chip>
+        <Chip
+          active={tab === 'acessorios'}
+          onClick={() => {
+            setTab('acessorios')
+            closeForms()
+          }}
+        >
+          Acessórios ({accessories.length})
         </Chip>
         <Chip
           active={tab === 'estilo'}
@@ -685,6 +882,67 @@ export default function WardrobePanel({
           )
         ) : tab === 'estilo' ? (
           <StyleInsightsPanel insights={styleInsights} />
+        ) : tab === 'acessorios' ? (
+          editingAccessory !== null ? (
+            <AccessoryForm
+              initial={editingAccessory === 'new' ? null : accessories.find((a) => a.id === editingAccessory)}
+              onSave={(data) => {
+                if (editingAccessory === 'new') onAddAccessory(data)
+                else onUpdateAccessory(editingAccessory, data)
+                setEditingAccessory(null)
+              }}
+              onCancel={() => setEditingAccessory(null)}
+              onDelete={
+                editingAccessory === 'new'
+                  ? null
+                  : () => {
+                      onDeleteAccessory(editingAccessory)
+                      setEditingAccessory(null)
+                    }
+              }
+            />
+          ) : (
+            <div className="space-y-3">
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]">
+                <Chip active={accessoryTypeFilter === 'todos'} onClick={() => setAccessoryTypeFilter('todos')}>
+                  Todos
+                </Chip>
+                {ACCESSORY_TYPES.map((t) => (
+                  <Chip key={t.id} active={accessoryTypeFilter === t.id} onClick={() => setAccessoryTypeFilter(t.id)}>
+                    {t.label}
+                  </Chip>
+                ))}
+              </div>
+              <button
+                onClick={() => setEditingAccessory('new')}
+                className="w-full rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
+              >
+                + Adicionar acessório
+              </button>
+              {filteredAccessories.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text">
+                    {accessories.length === 0 ? 'Ainda sem acessórios' : 'Nada por aqui'}
+                  </p>
+                  <p className="mt-1.5 text-sm text-text-muted">
+                    {accessories.length === 0
+                      ? 'Pulseira, colar, óculos, cinto... qualquer coisa que enriquece o look sem dominar ele.'
+                      : 'Ajuste o filtro pra ver seus acessórios.'}
+                  </p>
+                </div>
+              ) : (
+                filteredAccessories.map((a) => (
+                  <AccessoryRow
+                    key={a.id}
+                    accessory={a}
+                    isFavorite={watches.favorites.includes(a.id)}
+                    onToggleFavorite={() => watches.onToggleFavorite(a.id)}
+                    onEdit={() => setEditingAccessory(a.id)}
+                  />
+                ))
+              )}
+            </div>
+          )
         ) : importingPerfumes ? (
           <PerfumeImportPanel
             onImport={(items) => {

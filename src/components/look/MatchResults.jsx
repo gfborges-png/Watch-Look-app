@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
-import { CONTEXTS, GROUP_LABEL } from '../../lib/matchEngine.js'
+import { CONTEXTS, GROUP_LABEL, coloredActiveGarments } from '../../lib/matchEngine.js'
 import { paletteGroup } from '../../lib/outfitEngine.js'
-import { pickOwnedSneakerForGroup } from '../../lib/dailyRecommendation.js'
+import { pickBestSneakerForGarments } from '../../lib/sneakerMatch.js'
 import { suggestPerfume } from '../../lib/perfumeEngine.js'
 import { SNEAKER_REFERENCES } from '../../lib/outfitEngine.js'
+import { pickAccessoriesForLook, accessoryJustification } from '../../lib/accessoryMatch.js'
+import { accessoryDisplayName } from '../../lib/accessoryModel.js'
 import WatchCard from '../WatchCard.jsx'
 
 const SUBSCORE_LABELS = { cor: 'Cor', ocasiao: 'Ocasião', estilo: 'Estilo', clima: 'Clima', rotacao: 'Rotação', preferencia: 'Preferência' }
@@ -106,16 +108,36 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
 // o perfume deixa de ser um recurso à parte e vira parte do resultado em
 // si. Deixa também escolher manualmente outro perfume da coleção, se a
 // sugestão automática não for a que a pessoa quer usar hoje.
-function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
+function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accessories, outfit }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [overrideId, setOverrideId] = useState(null)
 
   const group = paletteGroup(watch.cor)
-  const sneaker = useMemo(() => pickOwnedSneakerForGroup(sneakers, group), [sneakers, group])
+  // Peças com cor já resolvida no outfit (sem o próprio calçado, senão
+  // ele "se recomendaria") — usadas tanto pra harmonia de cor quanto
+  // (via sneakerMatch) pra ocasião/estilo. Bug real que isso corrige:
+  // antes o tênis vinha só da cor (pickOwnedSneakerForGroup, sem noção
+  // de ocasião), então um tênis bem casual podia ganhar de um sapato
+  // social só por bater mais na cor, mesmo pra "Reunião importante".
+  const otherGarments = useMemo(() => (outfit ? coloredActiveGarments(outfit).filter((g) => g.key !== 'calcado') : []), [outfit])
+  const sneaker = useMemo(
+    () => pickBestSneakerForGarments(sneakers, otherGarments, context, { weatherBias }),
+    [sneakers, otherGarments, context, weatherBias],
+  )
   const suggestion = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes: perfumes }), [weatherBias, context, perfumes])
   const overridden = overrideId ? perfumes.find((p) => p.id === overrideId) : null
   const perfumeLabel = overridden?.nome ?? suggestion.owned[0]?.nome ?? suggestion.familia
   const contextLabel = CONTEXTS.find((c) => c.id === context)?.label
+
+  // Cor de referência pro match de acessório: o relógio + as peças do
+  // look que já têm cor resolvida (não só o relógio) — quanto mais
+  // pistas de cor, mais preciso o sub-score de continuidade/contraste.
+  const referenceHexes = useMemo(() => [...watch.hexes, ...otherGarments.map((g) => g.color.hex)], [watch.hexes, otherGarments])
+
+  const accessoryPicks = useMemo(
+    () => pickAccessoriesForLook(accessories ?? [], { referenceHexes, contextId: context, watch, sneaker }),
+    [accessories, referenceHexes, context, watch, sneaker],
+  )
 
   const justification = `O relógio combina com o look ${GROUP_LABEL[group]}${
     weatherBias && weatherBias !== 'ameno' ? ` e o clima ${weatherBias === 'quente' ? 'quente' : 'frio'} de hoje` : ''
@@ -132,6 +154,13 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
       {sneakerReferences.length > 0 && (
         <p className="mt-0.5 truncate text-right text-[10px] text-text-muted/70">Outras opções: {sneakerReferences.slice(0, 2).join(' · ')}</p>
       )}
+      {accessoryPicks.length > 0 &&
+        accessoryPicks.map((pick) => (
+          <div key={pick.accessory.id} className="mt-1 flex items-center justify-between gap-2">
+            <span className="text-text-muted">Acessório</span>
+            <span className="text-text">{accessoryDisplayName(pick.accessory)}</span>
+          </div>
+        ))}
       <div className="mt-1 flex items-center justify-between gap-2">
         <span className="text-text-muted">Perfume</span>
         <div className="flex items-center gap-1.5">
@@ -164,11 +193,12 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
         </select>
       )}
       <p className="mt-2 text-[11px] leading-relaxed text-text-muted">{justification}</p>
+      {accessoryPicks[0] && <p className="mt-1 text-[11px] leading-relaxed text-text-muted">{accessoryJustification(accessoryPicks[0])}</p>}
     </div>
   )
 }
 
-function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes }) {
+function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit }) {
   const [expanded, setExpanded] = useState(false)
   const { watch, match, band, subScores, reasons } = result
 
@@ -182,7 +212,7 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
         isFavorite={favorites.includes(watch.id)}
         onToggleFavorite={() => onToggleFavorite(watch.id)}
       />
-      <ResultBundle watch={watch} weatherBias={weatherBias} context={context} sneakers={sneakers} perfumes={perfumes} />
+      <ResultBundle watch={watch} weatherBias={weatherBias} context={context} sneakers={sneakers} perfumes={perfumes} accessories={accessories} outfit={outfit} />
       <div className="flex items-center justify-between gap-2 px-1">
         <button onClick={() => setExpanded((v) => !v)} className="text-[11px] font-medium text-text-muted transition hover:text-text">
           {expanded ? 'Ocultar motivos' : 'Por que escolhi este?'} · <span className="text-accent">{band.label}</span>
@@ -194,7 +224,7 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
   )
 }
 
-export default function MatchResults({ results, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes }) {
+export default function MatchResults({ results, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-text-muted">
@@ -212,6 +242,8 @@ export default function MatchResults({ results, context, weatherBias, onSelectWa
           onLogFeedback={onLogFeedback}
           sneakers={sneakers}
           perfumes={perfumes}
+          accessories={accessories}
+          outfit={outfit}
         />
       ))}
     </div>

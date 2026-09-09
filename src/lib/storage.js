@@ -3,6 +3,7 @@
 // toca localStorage/db.js diretamente — pra manter a porta aberta pra
 // uma futura RemoteStorageAdapter sem reescrever nada daqui.
 import { watches as defaultWatches } from '../data/watches.js'
+import { accessories as defaultAccessories } from '../data/accessories.js'
 import { storageAdapter } from './storageAdapter.js'
 
 const HISTORY_LIMIT = 200
@@ -140,6 +141,42 @@ export function addPerfumes(dataList) {
   return savePerfumes([...list, ...added])
 }
 
+// Acessórios (pulseira, colar, anel, óculos, cinto, boné/chapéu, lenço,
+// outro) — mais uma dimensão da composição de estilo, sempre opcional.
+// Começa com um pequeno acervo de demonstração (mesmo padrão de
+// getCollection para os relógios), mas qualquer edição passa a
+// persistir a lista inteira do usuário.
+//
+// Id prefixado com "acc-" (em vez do slug puro que sneakers/perfumes
+// usam) porque acessórios compartilham o array `favorites` com
+// relógios (ver toggleFavorite) — sem o prefixo, um acessório e um
+// relógio com nomes parecidos poderiam colidir no mesmo id.
+export function getAccessories() {
+  return storageAdapter.get('accessories', null) ?? defaultAccessories
+}
+
+function saveAccessories(list) {
+  storageAdapter.set('accessories', list)
+  return list
+}
+
+export function addAccessory(data) {
+  const list = getAccessories()
+  const existing = list.map((a) => a.id.replace(/^acc-/, ''))
+  const id = `acc-${makeItemId(data.name || data.type, existing)}`
+  return saveAccessories([...list, { ...data, id }])
+}
+
+export function updateAccessory(id, data) {
+  const list = getAccessories()
+  return saveAccessories(list.map((a) => (a.id === id ? { ...data, id } : a)))
+}
+
+export function deleteAccessory(id) {
+  const list = getAccessories()
+  return saveAccessories(list.filter((a) => a.id !== id))
+}
+
 // Item genérico de guarda-roupa — categorias além de relógio/tênis/
 // perfume (camisa, calça, jaqueta, óculos, acessório...). Relógio/tênis/
 // perfume continuam em suas próprias coleções dedicadas (não vale a
@@ -213,9 +250,9 @@ export function logFeedback(entry) {
 // baixados) tinha `sneakers`/`perfumes` soltos no nível raiz. v3 não
 // muda o formato — só estende a validação (ver validateBackup) pra
 // checar id/nome em tênis e perfumes também, não só na coleção de
-// relógios. A leitura aceita as três versões já emitidas — ver
-// normalizeBackup.
-const BACKUP_VERSION = 3
+// relógios. v4 adiciona `wardrobe.accessories`. A leitura aceita todas
+// as versões já emitidas — ver normalizeBackup.
+const BACKUP_VERSION = 4
 
 export function exportData() {
   return {
@@ -231,14 +268,15 @@ export function exportData() {
     wardrobe: {
       sneakers: getSneakers(),
       perfumes: getPerfumes(),
+      accessories: getAccessories(),
       items: getWardrobeItems(),
     },
   }
 }
 
 // Aceita qualquer versão de backup já emitida por este app e devolve um
-// objeto no formato interno canônico (v2), pronto pra aplicar. Nunca
-// lança por causa de campo ausente — cada coleção vira [] se não existir.
+// objeto no formato interno canônico, pronto pra aplicar. Nunca lança
+// por causa de campo ausente — cada coleção vira [] se não existir.
 function normalizeBackup(data) {
   const wardrobe = data.wardrobe && typeof data.wardrobe === 'object' ? data.wardrobe : null
   return {
@@ -250,6 +288,7 @@ function normalizeBackup(data) {
     feedback: Array.isArray(data.feedback) ? data.feedback : [],
     sneakers: Array.isArray(wardrobe?.sneakers) ? wardrobe.sneakers : Array.isArray(data.sneakers) ? data.sneakers : [],
     perfumes: Array.isArray(wardrobe?.perfumes) ? wardrobe.perfumes : Array.isArray(data.perfumes) ? data.perfumes : [],
+    accessories: Array.isArray(wardrobe?.accessories) ? wardrobe.accessories : [],
     wardrobeItems: Array.isArray(wardrobe?.items) ? wardrobe.items : [],
   }
 }
@@ -262,11 +301,21 @@ function validateItemsHaveIdAndNome(items, label) {
   }
 }
 
+// Acessórios usam `name` (opcional) em vez de `nome` — só `id` e `type`
+// são exigidos, mesmo padrão de campo obrigatório mínimo do cadastro.
+function validateAccessoryItems(items) {
+  for (const item of items) {
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || typeof item.type !== 'string') {
+      throw new Error('Arquivo inválido: um acessório está sem id/tipo.')
+    }
+  }
+}
+
 // Validação mínima antes de tocar em qualquer storage — um JSON qualquer
 // (ou um backup de outro app) não pode corromper o estado atual. Checa
-// id/nome não só na coleção de relógios como também em tênis e perfumes
-// (v3) — um item malformado em qualquer categoria rejeita o backup
-// inteiro, em vez de deixar passar um card quebrado silenciosamente.
+// id/nome não só na coleção de relógios como também em tênis, perfumes
+// e acessórios — um item malformado em qualquer categoria rejeita o
+// backup inteiro, em vez de deixar passar um card quebrado silenciosamente.
 function validateBackup(data) {
   if (!data || typeof data !== 'object') {
     throw new Error('Arquivo inválido: não é um JSON de backup.')
@@ -279,8 +328,10 @@ function validateBackup(data) {
   const wardrobe = data.wardrobe && typeof data.wardrobe === 'object' ? data.wardrobe : null
   const sneakers = Array.isArray(wardrobe?.sneakers) ? wardrobe.sneakers : Array.isArray(data.sneakers) ? data.sneakers : []
   const perfumes = Array.isArray(wardrobe?.perfumes) ? wardrobe.perfumes : Array.isArray(data.perfumes) ? data.perfumes : []
+  const accessories = Array.isArray(wardrobe?.accessories) ? wardrobe.accessories : []
   validateItemsHaveIdAndNome(sneakers, 'tênis')
   validateItemsHaveIdAndNome(perfumes, 'perfumes')
+  validateAccessoryItems(accessories)
 }
 
 export function importData(data) {
@@ -294,6 +345,14 @@ export function importData(data) {
   storageAdapter.set('feedback', normalized.feedback)
   storageAdapter.set('sneakers', normalized.sneakers)
   storageAdapter.set('perfumes', normalized.perfumes)
+  // Só grava acessórios se o backup realmente trazia essa chave — um
+  // backup v1-v3 (de antes de acessórios existir) não deveria apagar o
+  // acervo/demo atual só por não conhecer o campo; um backup v4 que
+  // intencionalmente exportou uma lista vazia (usuário apagou tudo) é
+  // respeitado normalmente.
+  if (Array.isArray(data.wardrobe?.accessories)) {
+    storageAdapter.set('accessories', normalized.accessories)
+  }
   storageAdapter.set('wardrobeItems', normalized.wardrobeItems)
 }
 
