@@ -25,7 +25,7 @@ export default defineConfig({
       manifest: {
         name: 'Watch & Look',
         short_name: 'Watch & Look',
-        description: 'Escolha um relógio da sua coleção e veja sugestões de look, ou monte seu look e veja qual relógio combina.',
+        description: 'Seu personal stylist pessoal: veja o que usar hoje — relógio, tênis e perfume — baseado na sua própria coleção.',
         theme_color: '#0b0b0d',
         background_color: '#0a0a0b',
         display: 'standalone',
