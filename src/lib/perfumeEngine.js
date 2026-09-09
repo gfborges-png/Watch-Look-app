@@ -133,15 +133,26 @@ export function notasFromImportItem(item) {
   return layers.join(', ')
 }
 
+// Piso de relevância pra `owned` (mesma ideia do `minScore` de
+// pickAccessoriesForLook): abaixo disso, o perfume cadastrado não é
+// próximo o bastante da ocasião de hoje pra valer a pena sugerir.
+const FRAGRANCE_RELEVANCE_FLOOR = 55
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null — só vira uma nota de
 // ajuste na concentração, não muda a família. context: um dos ids de
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário
-// (src/lib/storage.js) — quando um deles bate com a família sugerida,
-// entra em `owned` pra aparecer como sugestão primária, na frente das
-// referências genéricas. Quando a pessoa tem mais de um perfume da
-// mesma família, `owned` vem ordenado por rankOwnedPerfumes — as notas
-// de cada um (ver notesWeatherFit) desempatam a favor do que combina
-// mais com o clima de hoje, em vez de só pegar o primeiro cadastrado.
+// (src/lib/storage.js) — os que pontuam bem pro dia de hoje (via
+// rankOwnedPerfumes/FragranceScore, não mais um "família === família"
+// exato) entram em `owned` pra aparecer como sugestão primária, na
+// frente das referências genéricas. Isso importa de verdade porque
+// família de perfume importado raramente bate na risca com uma das 8
+// famílias internas (ver matchFamilyName): exigir igualdade exata
+// deixava `owned` vazio pra quase toda ocasião fora daquela em que a
+// família caiu no import — agora um perfume "próximo" (ex: família da
+// ocasião de trabalho, mas hoje é fim de semana) ainda pontua o
+// bastante pra aparecer, só não em primeiro lugar. Quando a pessoa tem
+// mais de um perfume relevante, `owned` vem ordenado por match — as
+// notas de cada um (ver notesWeatherFit) também entram na conta.
 export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
   const profile = OCCASION_PROFILES[context] ?? OCCASION_PROFILES[DEFAULT_OCCASION]
 
@@ -149,8 +160,9 @@ export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
   if (weatherBias === 'quente') climaNota = 'Dia quente — prefira a versão mais leve (EDT) dessa família.'
   else if (weatherBias === 'frio') climaNota = 'Dia frio — pode ir na versão mais concentrada (EDP/Parfum) sem medo.'
 
-  const matchingFamily = ownedPerfumes.filter((p) => p.familia === profile.familia)
-  const owned = rankOwnedPerfumes(matchingFamily, { contextId: context, weatherBias }).map((r) => r.perfume)
+  const owned = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias })
+    .filter((r) => r.match >= FRAGRANCE_RELEVANCE_FLOOR)
+    .map((r) => r.perfume)
   return { ...profile, climaNota, owned }
 }
 

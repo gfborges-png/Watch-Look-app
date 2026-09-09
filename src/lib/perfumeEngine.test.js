@@ -47,6 +47,24 @@ describe('suggestPerfume', () => {
     expect(p.owned[0].nome).toBe('Fresco')
     expect(p.owned[1].nome).toBe('Denso')
   })
+
+  it('bug real reportado: perfume cadastrado com família de OUTRA ocasião ainda aparece em `owned` se a ocasião de hoje for próxima o bastante (não só na igualdade exata) — família importada raramente bate na risca com as 8 internas', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'fimDeSemana',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume do trabalho', familia: 'Aromático limpo' }],
+    })
+    expect(p.owned.map((o) => o.nome)).toContain('Perfume do trabalho')
+  })
+
+  it('mas some de `owned` quando a ocasião é longe demais da família cadastrada (nunca sugere qualquer coisa só pra preencher)', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'treino',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume do trabalho', familia: 'Aromático limpo' }],
+    })
+    expect(p.owned).toHaveLength(0)
+  })
 })
 
 describe('rankOwnedPerfumes — FragranceScore explicável', () => {
