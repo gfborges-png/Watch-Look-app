@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CONTEXTS } from '../lib/matchEngine.js'
 import { buildTodayCandidates, defaultOccasionForToday, greetingForNow, pickAdjustedIndex } from '../lib/dailyRecommendation.js'
 import { matchColorNameToHexes } from '../lib/colorNameMatch.js'
+import { weatherSummaryParts } from '../lib/weather.js'
 import { Chip } from './FilterBar.jsx'
 import BottomSheet from './ds/BottomSheet.jsx'
 import SwitchMoode from './ds/SwitchMoode.jsx'
@@ -176,11 +177,7 @@ export default function TodayScreen({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        {weather.status === 'ready' && (
-          <span className="text-text-muted">
-            {weather.tempC}°C, {weather.description}
-          </span>
-        )}
+        {weather.status === 'ready' && <span className="text-text-muted">{weatherSummaryParts(weather).join(', ')}</span>}
         {weather.status === 'loading' && <span className="text-text-muted">Buscando clima...</span>}
         {weather.status === 'error' && <span className="text-text-muted">Não conseguimos atualizar o clima agora — seu MOODE segue sem ele.</span>}
         {(weather.status === 'idle' || weather.status === 'error') && (
@@ -196,6 +193,10 @@ export default function TodayScreen({
           </svg>
         </button>
       </div>
+
+      {weather.status === 'ready' && weather.precipitationMm > 0 && (
+        <p className="text-xs text-text-muted">☔ Hoje tem chuva — leve algo à prova d'água.</p>
+      )}
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         <MoodeTile label="Parte de cima" value={candidate.look.top} hexes={topHexes} />

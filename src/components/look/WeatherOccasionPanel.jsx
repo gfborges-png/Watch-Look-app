@@ -1,4 +1,5 @@
 import { CONTEXTS } from '../../lib/matchEngine.js'
+import { weatherSummaryParts } from '../../lib/weather.js'
 import { Chip } from '../FilterBar.jsx'
 
 export default function WeatherOccasionPanel({ weather, onFetchWeather, context, onContextChange }) {
@@ -9,7 +10,7 @@ export default function WeatherOccasionPanel({ weather, onFetchWeather, context,
           <p className="text-sm font-semibold text-text">Clima de hoje</p>
           {weather.status === 'ready' && (
             <p className="mt-0.5 text-xs text-text-muted">
-              {weather.tempC}°C, {weather.description} —{' '}
+              {weatherSummaryParts(weather).join(' · ')} —{' '}
               {weather.bias === 'ameno'
                 ? 'temperatura amena, então relógio e perfume seguem só pelo look e ocasião'
                 : `puxando a sugestão pra mostradores e perfume mais ${weather.bias === 'quente' ? 'claros' : 'quentes'}`}

@@ -49,8 +49,14 @@ export function getLocation() {
   })
 }
 
+// Campos "current" do provedor — trocar de provedor (ex: outro serviço
+// sem chave) significa só reescrever fetchWeather pra devolver esse
+// mesmo formato {tempC, description, bias, feelsLikeC, humidity,
+// precipitationMm}; nada fora deste arquivo sabe que existe Open-Meteo.
+const CURRENT_FIELDS = 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code'
+
 export async function fetchWeather({ lat, lon }) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${CURRENT_FIELDS}&timezone=auto`
   let res
   try {
     res = await fetch(url)
@@ -59,10 +65,28 @@ export async function fetchWeather({ lat, lon }) {
   }
   if (!res.ok) throw new Error(`Falha ao buscar o clima (servidor respondeu ${res.status}).`)
   const data = await res.json()
-  const tempC = Math.round(data.current.temperature_2m)
-  const description = WEATHER_DESCRIPTIONS[data.current.weather_code] ?? 'tempo variável'
+  const current = data.current ?? {}
+  const tempC = Math.round(current.temperature_2m)
+  const description = WEATHER_DESCRIPTIONS[current.weather_code] ?? 'tempo variável'
   const bias = tempC >= 27 ? 'quente' : tempC <= 16 ? 'frio' : 'ameno'
-  return { tempC, description, bias }
+  const feelsLikeC = typeof current.apparent_temperature === 'number' ? Math.round(current.apparent_temperature) : null
+  const humidity = typeof current.relative_humidity_2m === 'number' ? Math.round(current.relative_humidity_2m) : null
+  const precipitationMm = typeof current.precipitation === 'number' ? current.precipitation : null
+  return { tempC, description, bias, feelsLikeC, humidity, precipitationMm }
+}
+
+// Linha de resumo pra exibir — só entra o que realmente ajuda: sensação
+// térmica só quando difere de verdade da temperatura (senão é ruído
+// repetindo o mesmo número), umidade quando o provedor manda, chuva só
+// quando está chovendo agora (não "0mm", que não diz nada útil).
+export function weatherSummaryParts(weather) {
+  const parts = [`${weather.tempC}°C`, weather.description]
+  if (weather.feelsLikeC != null && Math.abs(weather.feelsLikeC - weather.tempC) >= 2) {
+    parts.push(`sensação de ${weather.feelsLikeC}°C`)
+  }
+  if (weather.humidity != null) parts.push(`${weather.humidity}% umidade`)
+  if (weather.precipitationMm > 0) parts.push('chovendo agora')
+  return parts
 }
 
 export async function getWeatherForCurrentLocation() {
