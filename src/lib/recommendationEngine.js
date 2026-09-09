@@ -4,8 +4,12 @@
 // chega em 100 se realmente for um match excelente em todas as frentes).
 //
 // O score é a média ponderada de 6 sub-scores, cada um também 0-100:
-//   cor 35% · ocasião 20% · estilo/formalidade 15% · clima 10% ·
+//   ocasião 29% · estilo/formalidade 23% · cor 18% · clima 10% ·
 //   rotação 10% · preferência pessoal 10%
+//
+// Contexto e formalidade pesam mais que cor sozinha — cor combinando não
+// basta se a ocasião pede outra coisa (ver conversa que motivou isso:
+// tênis casual sugerido pra reunião importante só porque a cor batia).
 //
 // Qualquer sub-score cuja informação não esteja disponível (sem clima
 // buscado, sem contexto definido, sem histórico de uso, etc.) é excluído
@@ -16,11 +20,11 @@ import { paletteGroup } from './outfitEngine.js'
 import { GROUP_LABEL, colorDistance, netVibe, coloredActiveGarments, activeGarments } from './matchEngine.js'
 import { getWatchDimensions } from './watchModel.js'
 import { rotationScore, usageStats } from './rotationEngine.js'
-import { OCCASION_DIMENSIONS as OCCASION_PROFILES, OCCASION_LABELS } from './occasionDimensions.js'
+import { OCCASION_DIMENSIONS as OCCASION_PROFILES, OCCASION_LABELS, occasionProfileWithVibe } from './occasionDimensions.js'
 import { scorePersonalPreference } from './preferenceScore.js'
 import { combineWeightedScore } from './scoreCombine.js'
 
-const WEIGHTS = { cor: 35, ocasiao: 20, estilo: 15, clima: 10, rotacao: 10, preferencia: 10 }
+const WEIGHTS = { cor: 18, ocasiao: 29, estilo: 23, clima: 10, rotacao: 10, preferencia: 10 }
 
 export const SCORE_BANDS = [
   { id: 'excelente', label: 'Excelente', min: 90 },
@@ -65,8 +69,8 @@ function colorSubScore(watch, coloredGarments) {
 // Score é o quão perto o relógio chega do perfil-alvo da ocasião (ver
 // occasionDimensions.js, compartilhado com tênis e perfume), não uma
 // lista de if/else por ocasião.
-function occasionSubScore(watchDims, contextId) {
-  const profile = OCCASION_PROFILES[contextId]
+function occasionSubScore(watchDims, contextId, vibeId) {
+  const profile = vibeId ? occasionProfileWithVibe(contextId, vibeId) : OCCASION_PROFILES[contextId]
   if (!profile) return { value: null, reasons: [] }
 
   const diff =
@@ -126,7 +130,7 @@ function rotationSubScore(watchId, history) {
 // os relógios ordenados por `match` (0-100 absoluto), cada um com `band`,
 // `subScores` e `reasons` explicando o porquê.
 export function recommendWatchesForLook(watches, outfit, contextId, opts = {}) {
-  const { weatherBias = null, history = [], personalBias = {} } = opts
+  const { weatherBias = null, history = [], personalBias = {}, vibeId = null } = opts
   const garments = activeGarments(outfit)
   const coloredGarments = coloredActiveGarments(outfit)
 
@@ -135,7 +139,7 @@ export function recommendWatchesForLook(watches, outfit, contextId, opts = {}) {
     const dims = getWatchDimensions(watch)
 
     const cor = colorSubScore(watch, coloredGarments)
-    const ocasiao = occasionSubScore(dims, contextId)
+    const ocasiao = occasionSubScore(dims, contextId, vibeId)
     const estilo = formalitySubScore(dims, garments)
     const clima = weatherSubScore(watch, weatherBias)
     const rotacao = rotationSubScore(watch.id, history)

@@ -1,7 +1,7 @@
 // AccessoryScore — mesmo padrão dos outros motores (média ponderada de
 // sub-scores 0-100, explicável, peso redistribuído quando um dado não
-// está disponível): cor 30% · relação com o relógio 30% · formalidade
-// 25% · material 15%.
+// está disponível): relação com o relógio 30% · formalidade 32% · cor
+// 23% · material 15%.
 //
 // Acessório é sempre OPCIONAL: pickAccessoriesForLook só devolve algo
 // acima de um piso de relevância (nunca "força" um resultado fraco só
@@ -10,12 +10,12 @@
 // mesmo que o resto do look combine.
 import { LOOK_COLORS, colorDistance } from './matchEngine.js'
 import { closestLookColorId } from './colorDetect.js'
-import { OCCASION_DIMENSIONS } from './occasionDimensions.js'
+import { OCCASION_DIMENSIONS, occasionProfileWithVibe } from './occasionDimensions.js'
 import { combineWeightedScore } from './scoreCombine.js'
 import { inferAccessoryFormality, accessoryDisplayName } from './accessoryModel.js'
 import { inferStatementLevel, inferBraceletMaterial } from './watchModel.js'
 
-const WEIGHTS = { cor: 30, relogio: 30, formalidade: 25, material: 15 }
+const WEIGHTS = { cor: 23, relogio: 30, formalidade: 32, material: 15 }
 
 const DISCREET_STYLES = ['minimalista', 'classico']
 const BOLD_STYLES = ['fashion', 'criativo', 'streetwear']
@@ -62,8 +62,8 @@ function materialSubScore(accessory, sneaker) {
   return { value: 55, reasons: [] }
 }
 
-function formalidadeSubScore(accessory, contextId) {
-  const profile = OCCASION_DIMENSIONS[contextId]
+function formalidadeSubScore(accessory, contextId, vibeId) {
+  const profile = vibeId ? occasionProfileWithVibe(contextId, vibeId) : OCCASION_DIMENSIONS[contextId]
   if (!profile) return { value: null, reasons: [] }
   const accessoryFormality = inferAccessoryFormality(accessory)
   const diff = Math.abs(accessoryFormality - profile.formality)
@@ -122,13 +122,13 @@ function relogioSubScore(accessory, watch) {
 // cada tela monta essa lista). `watch`/`sneaker` são objetos completos,
 // não só cor — usados pra ler formalidade/material/statement level.
 export function scoreAccessoriesForLook(accessories, opts = {}) {
-  const { referenceHexes = [], contextId = null, watch = null, sneaker = null } = opts
+  const { referenceHexes = [], contextId = null, watch = null, sneaker = null, vibeId = null } = opts
   return accessories
     .filter((a) => !(watch && a.watchCompatibility === 'no'))
     .map((accessory) => {
       const cor = corSubScore(accessory, referenceHexes)
       const material = materialSubScore(accessory, sneaker)
-      const formalidade = formalidadeSubScore(accessory, contextId)
+      const formalidade = formalidadeSubScore(accessory, contextId, vibeId)
       const relogio = relogioSubScore(accessory, watch)
 
       const subScores = { cor: cor.value, material: material.value, formalidade: formalidade.value, relogio: relogio.value }

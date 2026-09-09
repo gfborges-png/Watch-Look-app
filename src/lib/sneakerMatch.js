@@ -1,8 +1,13 @@
 // SneakerScore — mesmo padrão de motor do relógio (recommendationEngine):
 // média ponderada de sub-scores 0-100, cada um explicável, com peso
 // redistribuído quando um dado não está disponível.
-//   harmonia com as roupas 40% · ocasião 20% · estilo/formalidade 15% ·
-//   clima 10% · preferência pessoal 15%
+//   ocasião 31% · estilo/formalidade 24% · harmonia com as roupas 20% ·
+//   preferência pessoal 15% · clima 10%
+//
+// Harmonia de cor não é mais o fator dominante — um tênis casual que só
+// combina na cor não deveria vencer um mais formal quando a ocasião pede
+// formalidade (bug real: "reunião importante" sugerindo um Jordan
+// puramente por combinar de cor com o resto do look).
 //
 // "Preferência pessoal" aqui reaproveita o mesmo grupo de paleta (quente/
 // frio/terroso/neutro) que o relógio já usa — ainda não existe registro
@@ -11,11 +16,11 @@
 // (e redistribuir peso) do que fingir um dado que não existe.
 import { LOOK_COLORS, colorDistance, netVibe } from './matchEngine.js'
 import { closestLookColorId } from './colorDetect.js'
-import { OCCASION_DIMENSIONS } from './occasionDimensions.js'
+import { OCCASION_DIMENSIONS, occasionProfileWithVibe } from './occasionDimensions.js'
 import { scorePersonalPreference } from './preferenceScore.js'
 import { combineWeightedScore } from './scoreCombine.js'
 
-const WEIGHTS = { harmonia: 40, ocasiao: 20, estilo: 15, clima: 10, preferencia: 15 }
+const WEIGHTS = { harmonia: 20, ocasiao: 31, estilo: 24, clima: 10, preferencia: 15 }
 
 // Formalidade relativa de cada tipo de calçado (GARMENTS.calcado.tipos).
 const TIPO_FORMALITY = { 'Sapato social': 90, Loafer: 70, Bota: 45, Tênis: 25 }
@@ -54,8 +59,8 @@ function harmoniaSubScore(sneaker, coloredGarments) {
 // Quão bem o TIPO do calçado serve a ocasião nomeada (sapato social pra
 // reunião importante, tênis de verdade liberado no treino) — a mesma
 // tabela de formalidade-alvo por ocasião usada pelo relógio.
-function ocasiaoSubScore(sneaker, contextId) {
-  const profile = OCCASION_DIMENSIONS[contextId]
+function ocasiaoSubScore(sneaker, contextId, vibeId) {
+  const profile = vibeId ? occasionProfileWithVibe(contextId, vibeId) : OCCASION_DIMENSIONS[contextId]
   if (!profile) return { value: null, reasons: [] }
   const tipoFormality = TIPO_FORMALITY[sneaker.tipo] ?? 25
   const diff = Math.abs(tipoFormality - profile.formality)
@@ -96,11 +101,11 @@ function preferenciaSubScore(sneaker, personalBias) {
 // `garments`: todas as peças ativas (formalidade geral do look);
 // `coloredGarments`: só as com cor resolvida (harmonia cromática).
 export function scoreSneakersForLook(sneakers, opts = {}) {
-  const { coloredGarments = [], garments = coloredGarments, contextId = null, weatherBias = null, personalBias = {} } = opts
+  const { coloredGarments = [], garments = coloredGarments, contextId = null, weatherBias = null, personalBias = {}, vibeId = null } = opts
   return sneakers
     .map((sneaker) => {
       const harmonia = harmoniaSubScore(sneaker, coloredGarments)
-      const ocasiao = ocasiaoSubScore(sneaker, contextId)
+      const ocasiao = ocasiaoSubScore(sneaker, contextId, vibeId)
       const estilo = estiloSubScore(sneaker, garments)
       const clima = climaSubScore(sneaker, weatherBias)
       const preferencia = preferenciaSubScore(sneaker, personalBias)

@@ -36,6 +36,7 @@ function App() {
   const [showBackup, setShowBackup] = useState(false)
   const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
+  const [lookVibe, setLookVibe] = useState(null)
   const [lockedWatchId, setLockedWatchId] = useState(null)
 
   const { collection, favorites, addWatch, updateWatch, deleteWatch, resetCollection, toggleFavorite, refresh: refreshCollection } = useWatchCollection()
@@ -202,6 +203,8 @@ function App() {
             onOutfitChange={setLookOutfit}
             context={lookContext}
             onContextChange={setLookContext}
+            vibeId={lookVibe}
+            onVibeChange={setLookVibe}
             history={history}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}

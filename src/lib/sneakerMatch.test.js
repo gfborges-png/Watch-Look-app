@@ -81,4 +81,10 @@ describe('scoreSneakersForLook — SneakerScore explicável', () => {
       expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
     }
   })
+
+  it('vibeId "relaxado" reduz o sub-score de ocasião do sapato social pro trabalho (perfil-alvo menos formal)', () => {
+    const semVibe = scoreSneakersForLook([sapatoSocialPreto], { coloredGarments: [calcaPreta], contextId: 'trabalho' })[0]
+    const relaxado = scoreSneakersForLook([sapatoSocialPreto], { coloredGarments: [calcaPreta], contextId: 'trabalho', vibeId: 'relaxado' })[0]
+    expect(relaxado.subScores.ocasiao).toBeLessThan(semVibe.subScores.ocasiao)
+  })
 })

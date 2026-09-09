@@ -6,6 +6,7 @@ import WeatherOccasionPanel from './look/WeatherOccasionPanel.jsx'
 import PerfumeRecommendation from './look/PerfumeRecommendation.jsx'
 import MatchResults from './look/MatchResults.jsx'
 import ChoiceFeedback from './look/ChoiceFeedback.jsx'
+import VibePicker from './ds/VibePicker.jsx'
 
 // Orquestrador do fluxo Look → Relógio: cada responsabilidade (entrada do
 // look, clima/ocasião, perfume, resultados, feedback) mora no seu próprio
@@ -17,6 +18,8 @@ export default function LookMatcher({
   onOutfitChange,
   context,
   onContextChange,
+  vibeId,
+  onVibeChange,
   history,
   favorites,
   onToggleFavorite,
@@ -33,8 +36,8 @@ export default function LookMatcher({
 }) {
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
-    () => recommendWatchesForLook(watches, outfit, context, { weatherBias, history, personalBias: bias }),
-    [watches, outfit, context, history, weatherBias, bias],
+    () => recommendWatchesForLook(watches, outfit, context, { weatherBias, history, personalBias: bias, vibeId }),
+    [watches, outfit, context, history, weatherBias, bias, vibeId],
   )
 
   const hasSelection = GARMENTS.some((g) => {
@@ -75,6 +78,7 @@ export default function LookMatcher({
           context={context}
           weatherBias={weatherBias}
           personalBias={bias}
+          vibeId={vibeId}
         />
       </div>
 
@@ -82,6 +86,7 @@ export default function LookMatcher({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">2. Contexto do dia</p>
         <div className="space-y-3">
           <WeatherOccasionPanel weather={weather} onFetchWeather={onFetchWeather} context={context} onContextChange={onContextChange} />
+          <VibePicker vibeId={vibeId} onChange={onVibeChange} />
           <PerfumeRecommendation weatherBias={weatherBias} context={context} ownedPerfumes={perfumes} />
         </div>
       </div>
@@ -109,6 +114,7 @@ export default function LookMatcher({
             perfumes={perfumes}
             accessories={accessories}
             outfit={outfit}
+            vibeId={vibeId}
           />
         )}
       </div>

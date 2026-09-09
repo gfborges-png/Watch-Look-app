@@ -25,6 +25,41 @@ export const OCCASION_LABELS = Object.fromEntries([
   ['casamento', 'um casamento'],
 ])
 
+// "Como você quer se sentir" — um ajuste leve (nunca substitui a
+// ocasião) sobre o perfil-alvo de formalidade/statement. Linguagem não
+// técnica, pensada pra quem não fala de moda: cada vibe desloca o
+// perfil-alvo, nunca troca a ocasião escolhida por outra.
+export const VIBES = [
+  { id: 'relaxado', label: 'Relaxado', formalityShift: -15, statementShift: -5 },
+  { id: 'elegante', label: 'Elegante', formalityShift: 12, statementShift: 0 },
+  { id: 'confiante', label: 'Confiante', formalityShift: 0, statementShift: 12 },
+  { id: 'discreto', label: 'Discreto', formalityShift: 0, statementShift: -15 },
+  { id: 'marcante', label: 'Marcante', formalityShift: 5, statementShift: 18 },
+  { id: 'sofisticado', label: 'Sofisticado', formalityShift: 15, statementShift: 5 },
+  { id: 'confortavel', label: 'Confortável', formalityShift: -12, statementShift: -8 },
+  { id: 'criativo', label: 'Criativo', formalityShift: -5, statementShift: 10 },
+]
+
+function clamp100(n) {
+  return Math.max(0, Math.min(100, n))
+}
+
+// Perfil-alvo da ocasião com o deslocamento da vibe aplicado — usado no
+// lugar de OCCASION_DIMENSIONS[contextId] direto sempre que uma vibe foi
+// escolhida. Sem vibe (ou vibe desconhecida), devolve o perfil original
+// sem clonar à toa.
+export function occasionProfileWithVibe(contextId, vibeId) {
+  const base = OCCASION_DIMENSIONS[contextId]
+  if (!base) return null
+  const vibe = VIBES.find((v) => v.id === vibeId)
+  if (!vibe) return base
+  return {
+    formality: clamp100(base.formality + vibe.formalityShift),
+    sportiness: base.sportiness,
+    statement: clamp100(base.statement + vibe.statementShift),
+  }
+}
+
 // Quão "parecidas" duas ocasiões são, pelas mesmas 3 dimensões — usado
 // quando algo só faz sentido pra uma ocasião específica (ex: um perfume
 // cadastrado pensado pro "jantar romântico") mas o dia pede outra: em

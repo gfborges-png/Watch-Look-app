@@ -92,6 +92,12 @@ describe('scoreAccessoriesForLook', () => {
       expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
     }
   })
+
+  it('vibeId "sofisticado" pede mais formalidade — uma peça de formalidade média (couro minimalista) fica mais destoante no trabalho', () => {
+    const [semVibe] = scoreAccessoriesForLook([pulseiraCouroPreta], { contextId: 'trabalho' })
+    const [sofisticado] = scoreAccessoriesForLook([pulseiraCouroPreta], { contextId: 'trabalho', vibeId: 'sofisticado' })
+    expect(sofisticado.subScores.formalidade).toBeLessThan(semVibe.subScores.formalidade)
+  })
 })
 
 describe('pickAccessoriesForLook — opcional por natureza', () => {

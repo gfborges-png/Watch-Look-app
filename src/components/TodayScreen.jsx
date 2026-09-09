@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CONTEXTS } from '../lib/matchEngine.js'
+import { VIBES } from '../lib/occasionDimensions.js'
 import { buildTodayCandidates, defaultOccasionForToday, greetingForNow, pickAdjustedIndex } from '../lib/dailyRecommendation.js'
 import { matchColorNameToHexes } from '../lib/colorNameMatch.js'
 import { SNEAKER_REFERENCES } from '../lib/outfitEngine.js'
@@ -119,14 +120,17 @@ export default function TodayScreen({
   const [lockedPerfumeId, setLockedPerfumeId] = useState(null)
   const [contextOverride, setContextOverride] = useState(null)
   const [contextSheetOpen, setContextSheetOpen] = useState(false)
+  const [vibeId, setVibeId] = useState(null)
+  const [vibeSheetOpen, setVibeSheetOpen] = useState(false)
 
   const contextId = contextOverride ?? defaultOccasionForToday()
   const contextLabel = CONTEXTS.find((c) => c.id === contextId)?.label
+  const vibeLabel = VIBES.find((v) => v.id === vibeId)?.label
   const weatherBias = weather.status === 'ready' ? weather.bias : null
 
   const candidates = useMemo(
-    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes, accessories }),
-    [watches, contextId, weatherBias, history, bias, sneakers, perfumes, accessories],
+    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes, accessories, vibeId }),
+    [watches, contextId, weatherBias, history, bias, sneakers, perfumes, accessories, vibeId],
   )
 
   if (watches.length === 0) {
@@ -194,6 +198,13 @@ export default function TodayScreen({
         <span className="text-text-muted">·</span>
         <button onClick={() => setContextSheetOpen(true)} className="inline-flex items-center gap-1 font-medium text-text hover:text-accent">
           {contextLabel}
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+        <span className="text-text-muted">·</span>
+        <button onClick={() => setVibeSheetOpen(true)} className="inline-flex items-center gap-1 font-medium text-text hover:text-accent">
+          {vibeLabel ?? 'Qual vibe?'}
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
           </svg>
@@ -287,6 +298,23 @@ export default function TodayScreen({
               }}
             >
               {ctx.label}
+            </Chip>
+          ))}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={vibeSheetOpen} onClose={() => setVibeSheetOpen(false)} title="Como você quer se sentir?">
+        <div className="flex flex-wrap gap-2">
+          {VIBES.map((v) => (
+            <Chip
+              key={v.id}
+              active={vibeId === v.id}
+              onClick={() => {
+                setVibeId(vibeId === v.id ? null : v.id)
+                setVibeSheetOpen(false)
+              }}
+            >
+              {v.label}
             </Chip>
           ))}
         </div>

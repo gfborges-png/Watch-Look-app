@@ -52,24 +52,26 @@ function pickSneakerForWatch(sneakers, watch, contextId, opts = {}) {
 
 // Gera até `count` candidatos pra hoje, do melhor pro "quero variar" —
 // cada um já com relógio, look, tênis e perfume sugeridos, score e
-// motivos prontos pra exibir.
+// motivos prontos pra exibir. `vibeId` é opcional ("Como você quer se
+// sentir?") — desloca o perfil-alvo da ocasião nos 3 motores que usam
+// ocasião (relógio/tênis/acessório), nunca substitui a ocasião escolhida.
 export function buildTodayCandidates(watches, opts = {}) {
-  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], accessories = [], count = 6 } = opts
+  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], accessories = [], vibeId = null, count = 6 } = opts
   if (!watches || watches.length === 0) return []
 
-  const ranked = recommendWatchesForLook(watches, DEFAULT_OUTFIT, contextId, { weatherBias, history, personalBias })
+  const ranked = recommendWatchesForLook(watches, DEFAULT_OUTFIT, contextId, { weatherBias, history, personalBias, vibeId })
 
   return ranked.slice(0, Math.max(count, 1)).map((result) => {
     const { watch } = result
     const group = paletteGroup(watch.cor)
     const look = lookForOccasion(watch, contextId)
-    const sneaker = pickSneakerForWatch(sneakers, watch, contextId, { weatherBias, personalBias })
+    const sneaker = pickSneakerForWatch(sneakers, watch, contextId, { weatherBias, personalBias, vibeId })
     const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes })
     // Acessório é sempre opcional — referenceHexes junta o mostrador com
     // a cor das peças já sugeridas pro look de hoje, pra o sub-score de
     // cor comparar contra o conjunto inteiro, não só o relógio isolado.
     const referenceHexes = [...watch.hexes, ...matchColorNameToHexes(look.top, 2), ...matchColorNameToHexes(look.bottom, 2)]
-    const accessoryPicks = pickAccessoriesForLook(accessories, { referenceHexes, contextId, watch, sneaker })
+    const accessoryPicks = pickAccessoriesForLook(accessories, { referenceHexes, contextId, watch, sneaker, vibeId })
 
     const reasons = [...new Set(['cores harmonizam com o mostrador', ...result.reasons])]
 

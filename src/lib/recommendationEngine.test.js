@@ -108,6 +108,26 @@ describe('ocasiões expandidas (treino, casamento, reunião importante, jantar r
   })
 })
 
+describe('vibeId — "como você quer se sentir" desloca o sub-score de ocasião, nunca troca a ocasião', () => {
+  it('vibe "relaxado" reduz o sub-score de ocasião de um relógio formal no trabalho (perfil-alvo fica menos formal)', () => {
+    const semVibe = recommendWatchesForLook([relogioFormal], lookTrabalho, 'trabalho', {})[0]
+    const relaxado = recommendWatchesForLook([relogioFormal], lookTrabalho, 'trabalho', { vibeId: 'relaxado' })[0]
+    expect(relaxado.subScores.ocasiao).toBeLessThan(semVibe.subScores.ocasiao)
+  })
+
+  it('vibe "sofisticado" no trabalho favorece ainda mais o relógio formal sobre o esportivo', () => {
+    const semVibe = recommendWatchesForLook([relogioEsportivoBold], lookTrabalho, 'trabalho', {})[0]
+    const sofisticado = recommendWatchesForLook([relogioEsportivoBold], lookTrabalho, 'trabalho', { vibeId: 'sofisticado' })[0]
+    expect(sofisticado.subScores.ocasiao).toBeLessThanOrEqual(semVibe.subScores.ocasiao)
+  })
+
+  it('vibe desconhecida ou nula não muda o resultado', () => {
+    const semVibe = recommendWatchesForLook([relogioFormal], lookTrabalho, 'trabalho', {})[0]
+    const vibeNula = recommendWatchesForLook([relogioFormal], lookTrabalho, 'trabalho', { vibeId: null })[0]
+    expect(vibeNula.match).toBe(semVibe.match)
+  })
+})
+
 describe('scoreBand — faixas de interpretação', () => {
   it('classifica cada faixa corretamente', () => {
     expect(scoreBand(95).id).toBe('excelente')
