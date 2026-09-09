@@ -246,7 +246,7 @@ function validateBackup(data) {
     throw new Error('Arquivo inválido: não é um JSON de backup.')
   }
   if (!Array.isArray(data.collection)) {
-    throw new Error('Arquivo inválido: não parece um backup do Watch & Look (sem coleção de relógios).')
+    throw new Error('Arquivo inválido: não parece um backup do MOODE (sem coleção de relógios).')
   }
   for (const w of data.collection) {
     if (!w || typeof w !== 'object' || typeof w.id !== 'string' || typeof w.nome !== 'string') {

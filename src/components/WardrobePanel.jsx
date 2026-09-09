@@ -488,8 +488,13 @@ export default function WardrobePanel({
               </button>
             </div>
             {watches.filtered.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
-                {watches.favoritesOnly ? 'Você ainda não favoritou nenhum relógio.' : 'Nenhum relógio encontrado com esses filtros.'}
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text">
+                  {watches.favoritesOnly ? 'Ainda sem favoritos' : 'Nada por aqui'}
+                </p>
+                <p className="mt-1.5 text-sm text-text-muted">
+                  {watches.favoritesOnly ? 'Favorite um relógio pra ele aparecer aqui.' : 'Ajuste os filtros ou a busca pra ver seus relógios.'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
