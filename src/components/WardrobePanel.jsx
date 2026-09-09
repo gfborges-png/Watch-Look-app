@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
 import { KNOWN_FAMILIES } from '../lib/perfumeEngine.js'
 import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
-import { Chip } from './FilterBar.jsx'
+import FilterBar, { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
+import ForgottenWatches from './ForgottenWatches.jsx'
+import WatchCard from './WatchCard.jsx'
 
 const inputClass =
   'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none'
@@ -384,8 +386,9 @@ export default function WardrobePanel({
   onAddPerfume,
   onUpdatePerfume,
   onDeletePerfume,
+  watches,
 }) {
-  const [tab, setTab] = useState('tenis') // 'tenis' | 'perfumes'
+  const [tab, setTab] = useState('relogios') // 'relogios' | 'tenis' | 'perfumes' | 'estilo'
   const [editingSneaker, setEditingSneaker] = useState(null) // null | 'new' | id
   const [editingPerfume, setEditingPerfume] = useState(null)
   const [importingSneakers, setImportingSneakers] = useState(false)
@@ -407,12 +410,22 @@ export default function WardrobePanel({
         </button>
       )}
 
-      <h1 className="text-lg font-bold text-text">Guarda-roupa</h1>
-      <p className="mt-1 text-sm text-text-muted">
-        Cadastra o que você realmente tem — assim as sugestões de tênis e perfume apontam pras suas próprias coisas.
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">Guarda-roupa</p>
+      <h1 className="mt-1 font-serif text-2xl text-text">Meu guarda-roupa</h1>
+      <p className="mt-1.5 text-sm text-text-muted">
+        Cadastra o que você realmente tem — assim as sugestões apontam pras suas próprias coisas.
       </p>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Chip
+          active={tab === 'relogios'}
+          onClick={() => {
+            setTab('relogios')
+            closeForms()
+          }}
+        >
+          Relógios ({watches.total})
+        </Chip>
         <Chip
           active={tab === 'tenis'}
           onClick={() => {
@@ -443,7 +456,56 @@ export default function WardrobePanel({
       </div>
 
       <div className="mt-4">
-        {tab === 'tenis' ? (
+        {tab === 'relogios' ? (
+          <div className="space-y-3">
+            <ForgottenWatches watches={watches.collection} history={watches.history} onSelectWatch={watches.onSelectWatch} />
+            <FilterBar
+              query={watches.query}
+              onQueryChange={watches.onQueryChange}
+              colorFilter={watches.colorFilter}
+              onColorChange={watches.onColorChange}
+              typeFilter={watches.typeFilter}
+              onTypeChange={watches.onTypeChange}
+              brandFilter={watches.brandFilter}
+              onBrandChange={watches.onBrandChange}
+              brands={watches.brands}
+              materialFilter={watches.materialFilter}
+              onMaterialChange={watches.onMaterialChange}
+              favoritesOnly={watches.favoritesOnly}
+              onFavoritesOnlyChange={watches.onFavoritesOnlyChange}
+              sortBy={watches.sortBy}
+              onSortChange={watches.onSortChange}
+            />
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-text-muted">
+                {watches.filtered.length} {watches.filtered.length === 1 ? 'relógio' : 'relógios'}
+              </p>
+              <button
+                onClick={watches.onAddWatch}
+                className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90"
+              >
+                + Adicionar relógio
+              </button>
+            </div>
+            {watches.filtered.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
+                {watches.favoritesOnly ? 'Você ainda não favoritou nenhum relógio.' : 'Nenhum relógio encontrado com esses filtros.'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {watches.filtered.map((w) => (
+                  <WatchCard
+                    key={w.id}
+                    watch={w}
+                    onClick={() => watches.onSelectWatch(w.id)}
+                    isFavorite={watches.favorites.includes(w.id)}
+                    onToggleFavorite={() => watches.onToggleFavorite(w.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : tab === 'tenis' ? (
           importingSneakers ? (
             <SneakerImportPanel
               onImport={(items) => {

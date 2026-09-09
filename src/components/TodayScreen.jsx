@@ -103,7 +103,7 @@ export default function TodayScreen({
   onLogWornToday,
   onLogFeedback,
   onGoToMontar,
-  onGoToColecao,
+  onGoToGuardaroupa,
 }) {
   const [candidateIndex, setCandidateIndex] = useState(0)
   const [usedToday, setUsedToday] = useState(false)
@@ -246,8 +246,8 @@ export default function TodayScreen({
         <button onClick={onGoToMontar} className="hover:text-text">
           Montar meu look
         </button>
-        <button onClick={onGoToColecao} className="hover:text-text">
-          Escolher relógio
+        <button onClick={onGoToGuardaroupa} className="hover:text-text">
+          Meu guarda-roupa
         </button>
       </div>
 

@@ -11,25 +11,22 @@ import { useWeather } from './hooks/useWeather.js'
 import { usePreferences } from './hooks/usePreferences.js'
 import { useLocalProfile } from './hooks/useLocalProfile.js'
 import { useUserStyleProfile } from './hooks/useUserStyleProfile.js'
-import WatchCard from './components/WatchCard.jsx'
-import FilterBar from './components/FilterBar.jsx'
-import ForgottenWatches from './components/ForgottenWatches.jsx'
 import WatchDetail from './components/WatchDetail.jsx'
 import LookMatcher from './components/LookMatcher.jsx'
 import WatchForm from './components/WatchForm.jsx'
 import BackupPanel from './components/BackupPanel.jsx'
 import WardrobePanel from './components/WardrobePanel.jsx'
 import TodayScreen from './components/TodayScreen.jsx'
+import MeusMoodesScreen from './components/MeusMoodesScreen.jsx'
 import BottomNav from './components/BottomNav.jsx'
 import MoodeLogo from './components/brand/MoodeLogo.jsx'
 
 const TAB_SUBTITLE = {
-  colecao: 'Escolha um relógio da coleção e veja sugestões de look combinando.',
   montar: 'Diga as cores do seu look e veja qual relógio da coleção combina.',
 }
 
 function App() {
-  const [tab, setTab] = useState('hoje') // 'hoje' | 'colecao' | 'montar' | 'guardaroupa'
+  const [tab, setTab] = useState('hoje') // 'hoje' | 'guardaroupa' | 'montar' | 'historico'
   const [query, setQuery] = useState('')
   const [colorFilter, setColorFilter] = useState('todos')
   const [typeFilter, setTypeFilter] = useState('todos')
@@ -170,27 +167,6 @@ function App() {
             </div>
           </div>
 
-          {tab === 'colecao' && (
-            <div className="mt-4">
-              <FilterBar
-                query={query}
-                onQueryChange={setQuery}
-                colorFilter={colorFilter}
-                onColorChange={setColorFilter}
-                typeFilter={typeFilter}
-                onTypeChange={setTypeFilter}
-                brandFilter={brandFilter}
-                onBrandChange={setBrandFilter}
-                brands={brands}
-                materialFilter={materialFilter}
-                onMaterialChange={setMaterialFilter}
-                favoritesOnly={favoritesOnly}
-                onFavoritesOnlyChange={setFavoritesOnly}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-              />
-            </div>
-          )}
         </div>
       </header>
 
@@ -209,7 +185,7 @@ function App() {
             onLogWornToday={logWornToday}
             onLogFeedback={logFeedback}
             onGoToMontar={() => setTab('montar')}
-            onGoToColecao={() => setTab('colecao')}
+            onGoToGuardaroupa={() => setTab('guardaroupa')}
           />
         )}
 
@@ -246,41 +222,56 @@ function App() {
             onAddPerfume={wardrobe.addPerfume}
             onUpdatePerfume={wardrobe.updatePerfume}
             onDeletePerfume={wardrobe.deletePerfume}
+            watches={{
+              collection,
+              filtered,
+              total: collection.length,
+              favorites,
+              history,
+              brands,
+              query,
+              onQueryChange: setQuery,
+              colorFilter,
+              onColorChange: setColorFilter,
+              typeFilter,
+              onTypeChange: setTypeFilter,
+              brandFilter,
+              onBrandChange: setBrandFilter,
+              materialFilter,
+              onMaterialChange: setMaterialFilter,
+              favoritesOnly,
+              onFavoritesOnlyChange: setFavoritesOnly,
+              sortBy,
+              onSortChange: setSortBy,
+              onSelectWatch: setSelectedId,
+              onToggleFavorite: toggleFavorite,
+              onAddWatch: () => setFormTarget('new'),
+            }}
           />
         )}
 
-        {tab === 'colecao' && (
-          <>
-            <ForgottenWatches watches={collection} history={history} onSelectWatch={setSelectedId} />
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-text-muted">
-                {filtered.length} {filtered.length === 1 ? 'relógio' : 'relógios'}
-              </p>
-              <button
-                onClick={() => setFormTarget('new')}
-                className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90"
-              >
-                + Adicionar relógio
-              </button>
-            </div>
-            {filtered.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
-                {favoritesOnly ? 'Você ainda não favoritou nenhum relógio.' : 'Nenhum relógio encontrado com esses filtros.'}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {filtered.map((w) => (
-                  <WatchCard
-                    key={w.id}
-                    watch={w}
-                    onClick={() => setSelectedId(w.id)}
-                    isFavorite={favorites.includes(w.id)}
-                    onToggleFavorite={() => toggleFavorite(w.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+        {tab === 'historico' && (
+          <MeusMoodesScreen
+            history={history}
+            feedback={rec.feedback}
+            collection={collection}
+            onUseAgain={(entry) => {
+              logWornToday(entry.watch.id)
+              logFeedback({
+                watchId: entry.watch.id,
+                group: getColorFilterGroup(entry.watch.cor),
+                rating: 'love',
+                reason: null,
+                match: entry.score,
+                context: entry.context,
+              })
+              setTab('hoje')
+            }}
+            onCreateVariation={(entry) => {
+              if (entry.context) setLookContext(entry.context)
+              setTab('montar')
+            }}
+          />
         )}
       </main>
     </div>
