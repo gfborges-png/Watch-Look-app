@@ -1,8 +1,9 @@
 // Persistência local (coleção editável + favoritos + histórico de uso).
 // Tudo fica só no navegador do usuário — não tem backend, então cada
 // leitura/escrita é protegida contra localStorage indisponível (modo
-// privado, etc).
+// privado, etc) pela camada db.js.
 import { watches as defaultWatches } from '../data/watches.js'
+import { db } from './db.js'
 
 const COLLECTION_KEY = 'watchlook:collection'
 const FAVORITES_KEY = 'watchlook:favorites'
@@ -10,27 +11,16 @@ const HISTORY_KEY = 'watchlook:history'
 const CHOICES_KEY = 'watchlook:choices'
 const SNEAKERS_KEY = 'watchlook:sneakers'
 const PERFUMES_KEY = 'watchlook:perfumes'
+const WARDROBE_ITEMS_KEY = 'watchlook:wardrobeItems'
+const FEEDBACK_KEY = 'watchlook:feedback'
 const HISTORY_LIMIT = 200
 const CHOICES_LIMIT = 150
+const FEEDBACK_LIMIT = 300
 const RECENT_DAYS = 2
 const BASE_GROUPS = ['quente', 'frio', 'terroso', 'neutro']
 
-function safeGet(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function safeSet(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // localStorage indisponível (modo privado, storage cheio) — segue sem persistir
-  }
-}
+const safeGet = db.get
+const safeSet = db.set
 
 // Coleção: começa como os 23 relógios padrão, mas qualquer edição
 // (adicionar/editar/remover) passa a persistir a lista inteira do usuário.
@@ -44,11 +34,7 @@ function saveCollection(collection) {
 }
 
 export function resetCollection() {
-  try {
-    localStorage.removeItem(COLLECTION_KEY)
-  } catch {
-    // localStorage indisponível — nada pra limpar
-  }
+  db.remove(COLLECTION_KEY)
   return defaultWatches
 }
 
@@ -142,32 +128,135 @@ export function deletePerfume(id) {
   return savePerfumes(list.filter((p) => p.id !== id))
 }
 
-// Backup: um único JSON com coleção + favoritos + histórico + guarda-roupa,
-// pra não perder tudo se limpar os dados do navegador ou trocar de aparelho.
+// Item genérico de guarda-roupa — categorias futuras além de tênis e
+// perfume (camisa, calça, jaqueta, óculos...). Tênis e perfume continuam
+// em suas próprias coleções dedicadas (não vale a pena migrar dado real
+// do usuário só por uniformidade), mas qualquer categoria nova entra por
+// aqui em vez de precisar de mais uma tabela própria.
+// Forma: { id, category, brand, model, name, colors: [hex], style,
+//          formality, seasonality, image, favorite, createdAt, lastUsedAt }
+export function getWardrobeItems() {
+  return safeGet(WARDROBE_ITEMS_KEY, [])
+}
+
+function saveWardrobeItems(list) {
+  safeSet(WARDROBE_ITEMS_KEY, list)
+  return list
+}
+
+export function addWardrobeItem(data) {
+  const list = getWardrobeItems()
+  const id = makeItemId(data.name || data.model || data.category, list.map((i) => i.id))
+  const item = {
+    favorite: false,
+    colors: [],
+    image: null,
+    lastUsedAt: null,
+    ...data,
+    id,
+    createdAt: new Date().toISOString(),
+  }
+  return saveWardrobeItems([...list, item])
+}
+
+export function updateWardrobeItem(id, data) {
+  const list = getWardrobeItems()
+  return saveWardrobeItems(list.map((i) => (i.id === id ? { ...i, ...data, id } : i)))
+}
+
+export function deleteWardrobeItem(id) {
+  const list = getWardrobeItems()
+  return saveWardrobeItems(list.filter((i) => i.id !== id))
+}
+
+// Feedback pós-recomendação (👍 boa sugestão / ❤️ ficou perfeito / 👎 não
+// usaria, com motivo opcional) — sinal mais direto que "escolhi outro
+// relógio" (choices): aqui a pessoa está avaliando a sugestão em si, não
+// só registrando o que vestiu. Alimenta o personalBias v2.
+export function getFeedback() {
+  return safeGet(FEEDBACK_KEY, [])
+}
+
+export function logFeedback(entry) {
+  const list = getFeedback()
+  const id = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  const next = [{ ...entry, id, date: new Date().toISOString() }, ...list].slice(0, FEEDBACK_LIMIT)
+  safeSet(FEEDBACK_KEY, next)
+  return next
+}
+
+// Backup: um único JSON com tudo — coleção, favoritos, histórico,
+// escolhas, feedback e guarda-roupa — pra não perder nada se limpar os
+// dados do navegador ou trocar de aparelho.
+//
+// v2 agrupa tênis/perfumes/itens genéricos sob `wardrobe` e adiciona
+// `feedback`; v1 (formato antigo, ainda pode estar em backups já
+// baixados) tinha `sneakers`/`perfumes` soltos no nível raiz. A leitura
+// aceita os dois formatos — ver normalizeBackup.
+const BACKUP_VERSION = 2
+
 export function exportData() {
   return {
     app: 'watch-look',
-    version: 1,
+    version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     collection: getCollection(),
     favorites: getFavorites(),
     history: getHistory(),
     choices: getChoices(),
-    sneakers: getSneakers(),
-    perfumes: getPerfumes(),
+    feedback: getFeedback(),
+    wardrobe: {
+      sneakers: getSneakers(),
+      perfumes: getPerfumes(),
+      items: getWardrobeItems(),
+    },
+  }
+}
+
+// Aceita qualquer versão de backup já emitida por este app e devolve um
+// objeto no formato interno canônico (v2), pronto pra aplicar. Nunca
+// lança por causa de campo ausente — cada coleção vira [] se não existir.
+function normalizeBackup(data) {
+  const wardrobe = data.wardrobe && typeof data.wardrobe === 'object' ? data.wardrobe : null
+  return {
+    collection: Array.isArray(data.collection) ? data.collection : [],
+    favorites: Array.isArray(data.favorites) ? data.favorites : [],
+    history: Array.isArray(data.history) ? data.history : [],
+    choices: Array.isArray(data.choices) ? data.choices : [],
+    feedback: Array.isArray(data.feedback) ? data.feedback : [],
+    sneakers: Array.isArray(wardrobe?.sneakers) ? wardrobe.sneakers : Array.isArray(data.sneakers) ? data.sneakers : [],
+    perfumes: Array.isArray(wardrobe?.perfumes) ? wardrobe.perfumes : Array.isArray(data.perfumes) ? data.perfumes : [],
+    wardrobeItems: Array.isArray(wardrobe?.items) ? wardrobe.items : [],
+  }
+}
+
+// Validação mínima antes de tocar em qualquer storage — um JSON qualquer
+// (ou um backup de outro app) não pode corromper o estado atual.
+function validateBackup(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Arquivo inválido: não é um JSON de backup.')
+  }
+  if (!Array.isArray(data.collection)) {
+    throw new Error('Arquivo inválido: não parece um backup do Watch & Look (sem coleção de relógios).')
+  }
+  for (const w of data.collection) {
+    if (!w || typeof w !== 'object' || typeof w.id !== 'string' || typeof w.nome !== 'string') {
+      throw new Error('Arquivo inválido: um item da coleção está sem id/nome.')
+    }
   }
 }
 
 export function importData(data) {
-  if (!data || typeof data !== 'object' || !Array.isArray(data.collection)) {
-    throw new Error('Arquivo inválido: não parece um backup do Watch & Look.')
-  }
-  saveCollection(data.collection)
-  if (Array.isArray(data.favorites)) safeSet(FAVORITES_KEY, data.favorites)
-  if (Array.isArray(data.history)) safeSet(HISTORY_KEY, data.history)
-  if (Array.isArray(data.choices)) safeSet(CHOICES_KEY, data.choices)
-  if (Array.isArray(data.sneakers)) safeSet(SNEAKERS_KEY, data.sneakers)
-  if (Array.isArray(data.perfumes)) safeSet(PERFUMES_KEY, data.perfumes)
+  validateBackup(data)
+  const normalized = normalizeBackup(data)
+  saveCollection(normalized.collection)
+  safeSet(FAVORITES_KEY, normalized.favorites)
+  safeSet(HISTORY_KEY, normalized.history)
+  safeSet(CHOICES_KEY, normalized.choices)
+  safeSet(FEEDBACK_KEY, normalized.feedback)
+  safeSet(SNEAKERS_KEY, normalized.sneakers)
+  safeSet(PERFUMES_KEY, normalized.perfumes)
+  safeSet(WARDROBE_ITEMS_KEY, normalized.wardrobeItems)
 }
 
 export function getFavorites() {
@@ -237,20 +326,39 @@ export function logChoice(entry) {
   return next
 }
 
-// Compara, nas últimas `sampleSize` escolhas, com que frequência cada
-// grupo de paleta foi escolhido contra uma base uniforme (25% cada) —
-// vira um pequeno bônus/penalidade de pontuação por grupo. Só age depois
-// de um mínimo de dados, senão qualquer escolha isolada vira ruído.
-export function personalBias(choices, sampleSize = 20) {
-  const recent = choices.slice(0, sampleSize)
-  if (recent.length < 4) return {}
-  const counts = Object.fromEntries(BASE_GROUPS.map((g) => [g, 0]))
-  for (const c of recent) {
-    if (c.group in counts) counts[c.group] += 1
+// Compara, nas últimas `sampleSize` escolhas + feedback, com que
+// frequência (ponderada) cada grupo de paleta foi bem avaliado contra uma
+// base uniforme (25% cada) — vira um pequeno bônus/penalidade de
+// pontuação por grupo. Escolhas manuais (logChoice) valem 1 voto; feedback
+// pós-sugestão (logFeedback) vale mais ou menos dependendo da reação:
+// ❤️ ficou perfeito = +2, 👍 boa sugestão = +1, 👎 não usaria = -1.5 —
+// sinal mais direto de gosto do que só "foi isso que eu escolhi". Só age
+// depois de um mínimo de dados, senão qualquer avaliação isolada vira ruído.
+const FEEDBACK_WEIGHT = { love: 2, like: 1, dislike: -1.5 }
+
+export function personalBias(choices, feedback = [], sampleSize = 20) {
+  const recentChoices = choices.slice(0, sampleSize)
+  const recentFeedback = feedback.slice(0, sampleSize)
+  if (recentChoices.length + recentFeedback.length < 4) return {}
+
+  const weight = Object.fromEntries(BASE_GROUPS.map((g) => [g, 0]))
+  let totalWeight = 0
+  for (const c of recentChoices) {
+    if (!(c.group in weight)) continue
+    weight[c.group] += 1
+    totalWeight += 1
   }
+  for (const f of recentFeedback) {
+    if (!(f.group in weight)) continue
+    const w = FEEDBACK_WEIGHT[f.rating] ?? 0
+    weight[f.group] += w
+    totalWeight += Math.abs(w)
+  }
+  if (totalWeight === 0) return {}
+
   const bias = {}
   for (const g of BASE_GROUPS) {
-    bias[g] = (counts[g] / recent.length - 1 / BASE_GROUPS.length) * 4
+    bias[g] = (weight[g] / totalWeight - 1 / BASE_GROUPS.length) * 4
   }
   return bias
 }

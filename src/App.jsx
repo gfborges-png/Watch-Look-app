@@ -14,9 +14,10 @@ import {
   getHistory,
   logWornToday,
   lastWornDate,
-  recentlyWornIds,
   getChoices,
   logChoice,
+  getFeedback,
+  logFeedback,
   personalBias,
   getSneakers,
   addSneaker,
@@ -52,16 +53,17 @@ function App() {
   const [favorites, setFavorites] = useState(() => getFavorites())
   const [history, setHistory] = useState(() => getHistory())
   const [choices, setChoices] = useState(() => getChoices())
+  const [feedback, setFeedback] = useState(() => getFeedback())
   const [sneakers, setSneakers] = useState(() => getSneakers())
   const [perfumes, setPerfumes] = useState(() => getPerfumes())
   const [weather, setWeather] = useState({ status: 'idle' })
 
-  const recentIds = useMemo(() => recentlyWornIds(history), [history])
-  const bias = useMemo(() => personalBias(choices), [choices])
+  const bias = useMemo(() => personalBias(choices, feedback), [choices, feedback])
 
   const handleToggleFavorite = (id) => setFavorites(toggleFavorite(id))
   const handleLogWornToday = (id) => setHistory(logWornToday(id))
   const handleLogChoice = (entry) => setChoices(logChoice(entry))
+  const handleLogFeedback = (entry) => setFeedback(logFeedback(entry))
   const handleAddSneaker = (data) => setSneakers(addSneaker(data))
   const handleUpdateSneaker = (id, data) => setSneakers(updateSneaker(id, data))
   const handleDeleteSneaker = (id) => setSneakers(deleteSneaker(id))
@@ -102,6 +104,7 @@ function App() {
     setFavorites(getFavorites())
     setHistory(getHistory())
     setChoices(getChoices())
+    setFeedback(getFeedback())
     setSneakers(getSneakers())
     setPerfumes(getPerfumes())
   }
@@ -272,13 +275,14 @@ function App() {
             onOutfitChange={setLookOutfit}
             context={lookContext}
             onContextChange={setLookContext}
-            recentIds={recentIds}
+            history={history}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             weather={weather}
             onFetchWeather={handleFetchWeather}
             bias={bias}
             onLogChoice={handleLogChoice}
+            onLogFeedback={handleLogFeedback}
             sneakers={sneakers}
             perfumes={perfumes}
           />

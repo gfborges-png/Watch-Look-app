@@ -1,10 +1,131 @@
 import { useId, useMemo, useState } from 'react'
-import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
+import { LOOK_COLORS, CONTEXTS, GARMENTS } from '../lib/matchEngine.js'
+import { recommendWatchesForLook } from '../lib/recommendationEngine.js'
 import { paletteGroup } from '../lib/outfitEngine.js'
 import { detectDominantColorId, detectLookZones, closestLookColorId } from '../lib/colorDetect.js'
 import { suggestPerfume } from '../lib/perfumeEngine.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
+
+const SUBSCORE_LABELS = { cor: 'Cor', ocasiao: 'Ocasião', estilo: 'Estilo', clima: 'Clima', rotacao: 'Rotação', preferencia: 'Preferência' }
+
+const DISLIKE_REASONS = [
+  { id: 'cor', label: 'Cor' },
+  { id: 'formal-demais', label: 'Formal demais' },
+  { id: 'casual-demais', label: 'Casual demais' },
+  { id: 'relogio-errado', label: 'Relógio errado' },
+  { id: 'tenis-errado', label: 'Tênis errado' },
+  { id: 'perfume-errado', label: 'Perfume errado' },
+  { id: 'outro', label: 'Outro' },
+]
+
+function MatchExplanation({ subScores, reasons }) {
+  const entries = Object.entries(subScores).filter(([, v]) => v != null)
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs">
+      {entries.length > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-400">
+          {entries.map(([key, v]) => (
+            <span key={key}>
+              {SUBSCORE_LABELS[key]}: <span className="font-semibold text-neutral-200">{v}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {reasons.length > 0 && (
+        <ul className="mt-2 space-y-1 text-neutral-400">
+          {reasons.map((r) => (
+            <li key={r}>• {r[0].toUpperCase() + r.slice(1)}</li>
+          ))}
+        </ul>
+      )}
+      {entries.length === 0 && reasons.length === 0 && (
+        <p className="text-neutral-500">Com mais dados (clima, ocasião, histórico de uso) esse match fica mais preciso.</p>
+      )}
+    </div>
+  )
+}
+
+function FeedbackButtons({ result, context, onLogFeedback }) {
+  const [state, setState] = useState('idle') // 'idle' | 'asking' | 'done'
+  const [ratingDone, setRatingDone] = useState(null)
+
+  const submit = (rating, reason = null) => {
+    onLogFeedback({
+      watchId: result.watch.id,
+      group: paletteGroup(result.watch.cor),
+      rating,
+      reason,
+      match: result.match,
+      context,
+    })
+    setRatingDone(rating)
+    setState('done')
+  }
+
+  if (state === 'done') {
+    const label = ratingDone === 'love' ? '❤️ Ficou perfeito — anotado' : ratingDone === 'like' ? '👍 Anotado' : '👎 Anotado'
+    return <span className="text-[11px] text-neutral-500">{label}</span>
+  }
+
+  if (state === 'asking') {
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        {DISLIKE_REASONS.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => submit('dislike', r.id)}
+            className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-neutral-400 transition hover:bg-white/10"
+          >
+            {r.label}
+          </button>
+        ))}
+        <button onClick={() => submit('dislike', null)} className="text-[10px] text-neutral-600 hover:text-neutral-400">
+          pular
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <button onClick={() => submit('like')} aria-label="Boa sugestão" title="Boa sugestão" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+        👍
+      </button>
+      <button onClick={() => submit('love')} aria-label="Ficou perfeito" title="Ficou perfeito" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+        ❤️
+      </button>
+      <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+        👎
+      </button>
+    </div>
+  )
+}
+
+function MatchResultCard({ result, context, onSelectWatch, favorites, onToggleFavorite, onLogFeedback }) {
+  const [expanded, setExpanded] = useState(false)
+  const { watch, match, band, subScores, reasons } = result
+
+  return (
+    <div className="space-y-1.5">
+      <WatchCard
+        watch={watch}
+        onClick={() => onSelectWatch(watch.id)}
+        reason={reasons[0] ? reasons[0][0].toUpperCase() + reasons[0].slice(1) : undefined}
+        percent={match}
+        isFavorite={favorites.includes(watch.id)}
+        onToggleFavorite={() => onToggleFavorite(watch.id)}
+      />
+      <div className="flex items-center justify-between gap-2 px-1">
+        <button onClick={() => setExpanded((v) => !v)} className="text-[11px] font-medium text-neutral-500 transition hover:text-neutral-300">
+          {expanded ? 'Ocultar motivos' : 'Por que escolhi este?'} · <span className="text-amber-400">{band.label}</span>
+        </button>
+        <FeedbackButtons result={result} context={context} onLogFeedback={onLogFeedback} />
+      </div>
+      {expanded && <MatchExplanation subScores={subScores} reasons={reasons} />}
+    </div>
+  )
+}
 
 function ColorRow({ colorId, onChange }) {
   return (
@@ -211,8 +332,7 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
     onLogChoice({
       watchId: entry.watch.id,
       group: paletteGroup(entry.watch.cor),
-      score: entry.score,
-      percent: entry.percent,
+      match: entry.match,
       context,
       wasSuggested,
     })
@@ -242,9 +362,11 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
         <div className="mt-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-amber-400" style={{ width: `${entry.percent}%` }} />
+              <div className="h-full rounded-full bg-amber-400" style={{ width: `${entry.match}%` }} />
             </div>
-            <span className="text-xs font-semibold tabular-nums text-neutral-400">{entry.percent}% de match</span>
+            <span className="text-xs font-semibold tabular-nums text-neutral-400">
+              {entry.match} — {entry.band.label}
+            </span>
           </div>
           <p className="text-xs text-neutral-500">
             {wasSuggested ? 'Estava entre os sugeridos.' : 'Fora do top sugerido — anotado, isso pesa mais no aprendizado.'}
@@ -371,27 +493,28 @@ export default function LookMatcher({
   onOutfitChange,
   context,
   onContextChange,
-  recentIds,
+  history,
   favorites,
   onToggleFavorite,
   weather,
   onFetchWeather,
   bias,
   onLogChoice,
+  onLogFeedback,
   sneakers,
   perfumes,
 }) {
   const weatherBias = weather.status === 'ready' ? weather.bias : null
   const results = useMemo(
-    () => matchWatchesToLook(watches, outfit, context, { recentIds, weatherBias, personalBias: bias }),
-    [watches, outfit, context, recentIds, weatherBias, bias],
+    () => recommendWatchesForLook(watches, outfit, context, { weatherBias, history, personalBias: bias }),
+    [watches, outfit, context, history, weatherBias, bias],
   )
 
   const hasSelection = GARMENTS.some((g) => {
     const piece = outfit[g.key]
     return (!g.optional || piece.enabled) && piece.colorId
   })
-  const topResults = hasSelection ? results.filter((r) => r.score > 0).slice(0, 5) : []
+  const topResults = hasSelection ? results.slice(0, 5) : []
 
   const handleWholeLookPhoto = (zones) => {
     onOutfitChange({
@@ -443,15 +566,15 @@ export default function LookMatcher({
             <p className="text-xs text-neutral-500">
               {topResults.length} {topResults.length === 1 ? 'resultado' : 'resultados'}, do que mais pro que menos combina
             </p>
-            {topResults.map(({ watch, reasons, percent }) => (
-              <WatchCard
-                key={watch.id}
-                watch={watch}
-                onClick={() => onSelectWatch(watch.id)}
-                reason={reasons[0] ? reasons[0][0].toUpperCase() + reasons[0].slice(1) : undefined}
-                percent={percent}
-                isFavorite={favorites.includes(watch.id)}
-                onToggleFavorite={() => onToggleFavorite(watch.id)}
+            {topResults.map((result) => (
+              <MatchResultCard
+                key={result.watch.id}
+                result={result}
+                context={context}
+                onSelectWatch={onSelectWatch}
+                favorites={favorites}
+                onToggleFavorite={onToggleFavorite}
+                onLogFeedback={onLogFeedback}
               />
             ))}
           </div>
