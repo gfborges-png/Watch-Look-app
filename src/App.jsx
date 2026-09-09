@@ -20,6 +20,7 @@ import TodayScreen from './components/TodayScreen.jsx'
 import MeusMoodesScreen from './components/MeusMoodesScreen.jsx'
 import BottomNav from './components/BottomNav.jsx'
 import MoodeLogo from './components/brand/MoodeLogo.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 function App() {
   const [tab, setTab] = useState('hoje') // 'hoje' | 'guardaroupa' | 'montar' | 'historico'
@@ -156,6 +157,7 @@ function App() {
               <MoodeLogo className="text-xl" />
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <ThemeToggle />
               <button
                 onClick={() => setShowBackup(true)}
                 aria-label="Dados e backup"

@@ -33,12 +33,18 @@
   --radius-editorial: 0.625rem;
 }
 
+/* Claro é o padrão. Escuro entra por duas portas: o sistema
+   (prefers-color-scheme) OU a escolha explícita da pessoa no app
+   (data-theme, ver src/lib/theme.js) — a escolha explícita sempre
+   vence o sistema, nos dois sentidos: data-theme="light" força claro
+   mesmo com o SO em escuro, e data-theme="dark" força escuro mesmo
+   com o SO em claro. Sem escolha (sem o atributo), segue o sistema. */
 :root {
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --color-surface: #0f0f0f;
     --color-surface-2: #1a1a18;
@@ -50,6 +56,19 @@
     --color-accent-dinner: #9a5262;
     --color-accent-work: #5b7099;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-surface: #0f0f0f;
+  --color-surface-2: #1a1a18;
+  --color-surface-3: #242420;
+  --color-text: #f8f6f2;
+  --color-text-muted: #a7a39b;
+  --color-border: rgba(248, 246, 242, 0.12);
+  --color-accent: #8b9180;
+  --color-accent-dinner: #9a5262;
+  --color-accent-work: #5b7099;
 }
 
 body {

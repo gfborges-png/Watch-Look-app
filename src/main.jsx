@@ -4,6 +4,12 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { getThemePreference, applyThemePreference } from './lib/theme.js'
+
+// Aplica a preferência de tema ANTES do primeiro render — se isso
+// esperasse um useEffect dentro de um componente, haveria um flash do
+// tema errado (sistema) antes de reaplicar a escolha da pessoa.
+applyThemePreference(getThemePreference())
 
 if ('serviceWorker' in navigator) {
   // Quando o novo service worker assume o controle, a aba/app continua
