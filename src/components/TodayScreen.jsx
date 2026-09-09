@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CONTEXTS } from '../lib/matchEngine.js'
-import { buildTodayCandidates, defaultOccasionForToday, greetingForNow } from '../lib/dailyRecommendation.js'
+import { buildTodayCandidates, defaultOccasionForToday, greetingForNow, pickAdjustedIndex } from '../lib/dailyRecommendation.js'
 import ColorSwatch from './ColorSwatch.jsx'
 
 const BAND_COLOR = {
@@ -11,14 +11,59 @@ const BAND_COLOR = {
   evitaria: 'text-red-400',
 }
 
-const TIER_LABELS = ['Melhor escolha', 'Alternativa', 'Quero variar']
+const ADJUST_ACTIONS = [
+  { direction: 'outra', label: 'Outra opção' },
+  { direction: 'casual', label: 'Mais casual' },
+  { direction: 'sofisticado', label: 'Mais sofisticado' },
+  { direction: 'variar', label: 'Quero variar' },
+  { direction: 'ousado', label: 'Mais ousado' },
+]
 
-function LookLine({ label, value }) {
+// Uma linha do look; se `onSwap` vier, ganha um "trocar" que abre um
+// select com o catálogo — o mesmo mecanismo de "lock item" pra qualquer
+// categoria (aqui: tênis, perfume), não só o relógio que já guia a
+// recomendação do dia.
+function LookLine({ label, value, locked, onSwap, swapOptions, onReset }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
   if (!value) return null
+
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className="text-[11px] uppercase tracking-wide text-neutral-500">{label}</span>
-      <span className="truncate text-right text-sm text-neutral-200">{value}</span>
+    <div className="py-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] uppercase tracking-wide text-neutral-500">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-right text-sm text-neutral-200">
+            {locked && <span title="Fixado por você — o resto do look se ajusta em volta">🔒 </span>}
+            {value}
+          </span>
+          {onSwap && (
+            <button onClick={() => setPickerOpen((v) => !v)} className="shrink-0 text-[10px] font-medium text-amber-400 hover:underline">
+              trocar
+            </button>
+          )}
+        </div>
+      </div>
+      {pickerOpen && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value === '__auto__') onReset()
+            else onSwap(e.target.value)
+            setPickerOpen(false)
+          }}
+          className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-neutral-100 focus:border-amber-400/60 focus:outline-none"
+        >
+          <option value="" disabled>
+            Escolher da sua coleção...
+          </option>
+          {locked && <option value="__auto__">← Voltar pra sugestão automática</option>}
+          {swapOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.nome}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   )
 }
@@ -36,15 +81,17 @@ export default function TodayScreen({
   onGoToMontar,
   onGoToColecao,
 }) {
-  const [tierIndex, setTierIndex] = useState(0)
+  const [candidateIndex, setCandidateIndex] = useState(0)
   const [usedToday, setUsedToday] = useState(false)
+  const [lockedSneakerId, setLockedSneakerId] = useState(null)
+  const [lockedPerfumeId, setLockedPerfumeId] = useState(null)
 
   const contextId = useMemo(() => defaultOccasionForToday(), [])
   const contextLabel = CONTEXTS.find((c) => c.id === contextId)?.label
   const weatherBias = weather.status === 'ready' ? weather.bias : null
 
   const candidates = useMemo(
-    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes, count: 3 }),
+    () => buildTodayCandidates(watches, { contextId, weatherBias, history, personalBias: bias, sneakers, perfumes }),
     [watches, contextId, weatherBias, history, bias, sneakers, perfumes],
   )
 
@@ -56,7 +103,15 @@ export default function TodayScreen({
     )
   }
 
-  const candidate = candidates[tierIndex % candidates.length]
+  const candidate = candidates[candidateIndex % candidates.length]
+
+  // Tênis/perfume "travados" sobrepõem a sugestão do motor, mas nunca
+  // impedem a tela de funcionar sem eles — resto do look continua vindo
+  // normal (isFullCategoryOptional, §13: categoria vazia nunca bloqueia).
+  const lockedSneaker = lockedSneakerId ? sneakers.find((s) => s.id === lockedSneakerId) : null
+  const lockedPerfume = lockedPerfumeId ? perfumes.find((p) => p.id === lockedPerfumeId) : null
+  const effectiveSneakerName = lockedSneaker?.nome ?? (candidate.sneaker ? candidate.sneaker.nome : candidate.look.tenis)
+  const effectivePerfumeName = lockedPerfume?.nome ?? candidate.perfume.owned[0]?.nome ?? candidate.perfume.familia
 
   const handleUseLook = () => {
     onLogWornToday(candidate.watch.id)
@@ -71,9 +126,9 @@ export default function TodayScreen({
     setUsedToday(true)
   }
 
-  const handleAnotherSuggestion = () => {
+  const handleAdjust = (direction) => {
     setUsedToday(false)
-    setTierIndex((i) => (i + 1) % candidates.length)
+    setCandidateIndex((i) => pickAdjustedIndex(candidates, i % candidates.length, direction, { history }))
   }
 
   return (
@@ -98,7 +153,7 @@ export default function TodayScreen({
       </div>
 
       <div className="relative overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-400/10 via-neutral-900 to-neutral-900 p-5 shadow-lg shadow-black/40">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">{TIER_LABELS[tierIndex % TIER_LABELS.length]} pra hoje</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">Melhor escolha pra hoje</p>
 
         <div className="mt-3 flex items-center gap-4">
           <ColorSwatch hexes={candidate.watch.hexes} size="lg" />
@@ -116,8 +171,22 @@ export default function TodayScreen({
         <div className="mt-4 divide-y divide-white/5 rounded-2xl bg-black/25 px-3.5 py-1">
           <LookLine label="Parte de cima" value={candidate.look.top} />
           <LookLine label="Calça" value={candidate.look.bottom} />
-          <LookLine label="Tênis" value={candidate.sneaker ? candidate.sneaker.nome : candidate.look.tenis} />
-          <LookLine label="Perfume" value={candidate.perfume.owned[0]?.nome ?? candidate.perfume.familia} />
+          <LookLine
+            label="Tênis"
+            value={effectiveSneakerName}
+            locked={!!lockedSneaker}
+            swapOptions={sneakers}
+            onSwap={setLockedSneakerId}
+            onReset={() => setLockedSneakerId(null)}
+          />
+          <LookLine
+            label="Perfume"
+            value={effectivePerfumeName}
+            locked={!!lockedPerfume}
+            swapOptions={perfumes}
+            onSwap={setLockedPerfumeId}
+            onReset={() => setLockedPerfumeId(null)}
+          />
         </div>
 
         <div className="mt-3">
@@ -137,13 +206,18 @@ export default function TodayScreen({
           >
             {usedToday ? '✓ Marcado como usado hoje' : 'Vou usar esse look'}
           </button>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={handleAnotherSuggestion}
-              className="rounded-full border border-white/10 bg-white/5 px-2 py-2 text-[11px] font-medium text-neutral-300 transition hover:bg-white/10"
-            >
-              Outra sugestão
-            </button>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {ADJUST_ACTIONS.map((a) => (
+              <button
+                key={a.direction}
+                onClick={() => handleAdjust(a.direction)}
+                className="rounded-full border border-white/10 bg-white/5 px-2 py-2 text-[11px] font-medium text-neutral-300 transition hover:bg-white/10"
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={onGoToMontar}
               className="rounded-full border border-white/10 bg-white/5 px-2 py-2 text-[11px] font-medium text-neutral-300 transition hover:bg-white/10"

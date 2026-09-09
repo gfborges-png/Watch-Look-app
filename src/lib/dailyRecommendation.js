@@ -14,6 +14,8 @@ import { recommendWatchesForLook } from './recommendationEngine.js'
 import { generateLooks, paletteGroup } from './outfitEngine.js'
 import { suggestPerfume } from './perfumeEngine.js'
 import { closestLookColorId } from './colorDetect.js'
+import { getWatchDimensions } from './watchModel.js'
+import { rotationScore } from './rotationEngine.js'
 
 export function defaultOccasionForToday(date = new Date()) {
   const day = date.getDay()
@@ -50,7 +52,7 @@ function lookForContext(watch, contextId) {
 // cada um já com relógio, look, tênis e perfume sugeridos, score e
 // motivos prontos pra exibir.
 export function buildTodayCandidates(watches, opts = {}) {
-  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], count = 3 } = opts
+  const { contextId = 'casual', weatherBias = null, history = [], personalBias = {}, sneakers = [], perfumes = [], count = 6 } = opts
   if (!watches || watches.length === 0) return []
 
   const ranked = recommendWatchesForLook(watches, DEFAULT_OUTFIT, contextId, { weatherBias, history, personalBias })
@@ -76,4 +78,53 @@ export function buildTodayCandidates(watches, opts = {}) {
       perfume,
     }
   })
+}
+
+// Ações "ajustar" da tela Hoje — nunca recalcula tudo do zero, só
+// escolhe outro índice dentro do POOL já ranqueado pra hoje (evita
+// trocar pra um relógio mal avaliado só pra satisfazer o eixo pedido).
+//   'outra' — próximo candidato da lista (ciclo simples)
+//   'variar' — o mais "pedindo pra ser usado" do pool (rotação), não
+//     necessariamente o mais parecido com o atual
+//   'casual' / 'sofisticado' — desloca a formalidade do relógio
+//   'ousado' — desloca o "statement level" do relógio
+// Sem alternativa que satisfaça o eixo pedido, mantém o índice atual —
+// nunca troca pra pior só por trocar.
+export function pickAdjustedIndex(candidates, currentIndex, direction, opts = {}) {
+  if (!candidates || candidates.length <= 1) return currentIndex
+  const { history = [] } = opts
+
+  if (direction === 'outra') return (currentIndex + 1) % candidates.length
+
+  if (direction === 'variar') {
+    let bestIdx = currentIndex
+    let bestValue = -Infinity
+    candidates.forEach((c, idx) => {
+      if (idx === currentIndex) return
+      const value = rotationScore(c.watch.id, history)
+      if (value > bestValue || (value === bestValue && c.match > candidates[bestIdx].match)) {
+        bestValue = value
+        bestIdx = idx
+      }
+    })
+    return bestIdx
+  }
+
+  const dimKey = direction === 'ousado' ? 'statementLevel' : 'formality'
+  const wantHigher = direction === 'sofisticado' || direction === 'ousado'
+  const currentDim = getWatchDimensions(candidates[currentIndex].watch)[dimKey]
+
+  let bestIdx = currentIndex
+  let bestMatch = -Infinity
+  candidates.forEach((c, idx) => {
+    if (idx === currentIndex) return
+    const dim = getWatchDimensions(c.watch)[dimKey]
+    const satisfies = wantHigher ? dim > currentDim : dim < currentDim
+    if (!satisfies) return
+    if (c.match > bestMatch) {
+      bestMatch = c.match
+      bestIdx = idx
+    }
+  })
+  return bestIdx
 }
