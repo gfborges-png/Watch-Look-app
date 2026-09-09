@@ -718,8 +718,8 @@ export default function WardrobePanel({
         </button>
       )}
 
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">Guarda-roupa</p>
-      <h1 className="mt-1 font-serif text-2xl text-text">Meu guarda-roupa</h1>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">Acervo</p>
+      <h1 className="mt-1 font-serif text-2xl text-text">Meu Acervo</h1>
       <p className="mt-1.5 text-sm text-text-muted">
         Cadastra o que você realmente tem — assim as sugestões apontam pras suas próprias coisas.
       </p>

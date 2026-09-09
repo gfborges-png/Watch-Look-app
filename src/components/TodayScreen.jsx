@@ -176,11 +176,10 @@ export default function TodayScreen({
     <div className="space-y-6">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">{greetingForNow()}</p>
-        <h1 className="mt-1 font-serif text-[2rem] leading-[1.08] text-text">
-          Seu MOODE
-          <br />
-          de hoje
-        </h1>
+        <h1 className="mt-1 font-serif text-[2rem] leading-[1.08] text-text">Qual é o seu mood hoje?</h1>
+        <p className="mt-1.5 max-w-xs text-sm text-text-muted">
+          Conte o contexto e o MOODE monta uma combinação usando seu estilo, clima e acervo.
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -264,12 +263,15 @@ export default function TodayScreen({
 
       <SwitchMoode onSelect={handleAdjust} />
 
-      <div className="flex items-center justify-between gap-3 border-t border-border pt-4 text-xs font-medium text-text-muted">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs font-medium text-text-muted">
         <button onClick={onGoToMontar} className="hover:text-text">
-          Montar meu look
+          Já escolhi uma peça
+        </button>
+        <button onClick={() => handleAdjust('outra')} className="hover:text-text">
+          Surpreenda-me
         </button>
         <button onClick={onGoToGuardaroupa} className="hover:text-text">
-          Meu guarda-roupa
+          Meu Acervo
         </button>
       </div>
 

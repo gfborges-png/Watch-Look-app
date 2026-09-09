@@ -2,7 +2,7 @@ import MoodeSymbol from './brand/MoodeSymbol.jsx'
 
 const TABS = [
   { id: 'hoje', label: 'Hoje' },
-  { id: 'guardaroupa', label: 'Guarda-roupa' },
+  { id: 'guardaroupa', label: 'Acervo' },
   { id: 'montar', label: 'Montar' },
   { id: 'historico', label: 'Histórico' },
 ]
