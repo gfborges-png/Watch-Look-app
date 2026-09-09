@@ -135,15 +135,20 @@ inventado) quando um sub-score não tem dado disponível.
 
 | Dimensão | Peso | O que mede |
 |---|---|---|
-| Cor | 35% | Compatibilidade cromática entre as peças e o mostrador |
-| Ocasião | 20% | Adequação do estilo do relógio ao contexto |
-| Estilo/Formalidade | 15% | Formalidade do relógio vs. formalidade agregada do look |
+| Ocasião | 29% | Adequação do estilo do relógio ao contexto |
+| Estilo/Formalidade | 23% | Formalidade do relógio vs. formalidade agregada do look |
+| Cor | 18% | Compatibilidade cromática entre as peças e o mostrador |
 | Clima | 10% | Clima do dia puxando pra mostradores mais claros/quentes |
 | Rotação | 10% | Favorece relógios parados há mais tempo |
 | Preferência pessoal | 10% | Aprendida de escolhas manuais + feedback (❤️/👍/👎) |
 
-**SneakerScore** (tênis): harmonia com as roupas 40% · ocasião 20% ·
-estilo/formalidade 15% · clima 10% · preferência pessoal 15%.
+Ocasião e formalidade pesam mais que cor sozinha de propósito — cor
+combinando não deveria bastar se a ocasião pede outra coisa (ex: um tênis
+casual não devia vencer um sapato social numa reunião importante só
+porque a cor bateu melhor).
+
+**SneakerScore** (tênis): ocasião 31% · estilo/formalidade 24% ·
+harmonia com as roupas (cor) 20% · preferência pessoal 15% · clima 10%.
 
 **FragranceScore** (perfume, sobre o catálogo cadastrado): ocasião 70% ·
 clima 30% — um perfume "nativo" de outra ocasião nunca zera, pontua pela
@@ -151,14 +156,20 @@ proximidade real entre as duas ocasiões (`occasionDimensions.js`). Notas
 cadastradas (bergamota/cítrico = leve, âmbar/couro = denso) refinam o
 sub-score de clima quando há mais de um perfume da mesma família.
 
-**AccessoryScore** (acessório, sempre opcional): cor 30% · relação com o
-relógio 30% · formalidade 25% · material 15%. Nunca aparece se o
+**AccessoryScore** (acessório, sempre opcional): formalidade 32% ·
+relação com o relógio 30% · cor 23% · material 15%. Nunca aparece se o
 acessório tem `watchCompatibility="não"` e há relógio no resultado
 (filtrado antes de pontuar, não só penalizado); com o relógio
 visualmente marcante (statement level alto), acessórios discretos
 (minimalista/clássico) sobem e os ousados descem — o relógio não deveria
 disputar atenção com o acessório. Só entra no resultado quem pontua
 acima de um piso de relevância, no máximo 2 por vez.
+
+**Vibe** ("Como você quer se sentir?" — Relaxado/Elegante/Confiante/
+Discreto/Marcante/Sofisticado/Confortável/Criativo, opcional): desloca o
+perfil-alvo de formalidade/statement da ocasião escolhida nos três
+motores acima (`occasionProfileWithVibe` em `occasionDimensions.js`) sem
+nunca substituir a ocasião em si.
 
 Faixas de interpretação (as mesmas pras quatro, contextualizadas na
 interface — nunca um "Match" genérico):
@@ -190,6 +201,14 @@ corromper o estado atual — e aceita todos os formatos mais antigos já
 emitidos (v1/v2/v3); um backup de antes de acessórios existir nunca
 apaga o acervo/demo atual, só ignora o campo que não conhece.
 
+**Acervo de demonstração**: relógios (23), acessórios (6), tênis (8,
+cobrindo os 4 tipos de calçado) e perfumes (8, um por família olfativa
+conhecida) já vêm cadastrados de fábrica — a POC nunca abre com um
+catálogo vazio, então toda sugestão (relógio/tênis/perfume/acessório)
+já aponta pra itens reais desde o primeiro uso, sem precisar cadastrar
+nada antes. Editar/remover um item qualquer passa a persistir a lista
+inteira do usuário a partir dali (mesmo padrão de `getCollection`).
+
 ## Como rodar
 
 ```bash
@@ -205,7 +224,7 @@ npm run lint      # oxlint
 npm test          # Vitest
 ```
 
-153 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
+172 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
 acessório), rotação, storage/migração de dados e backup versionado
 (v1→v4, inclusive rejeição de item malformado em qualquer categoria),
 preferência aprendida (`UserStyleProfile`), ações de ajuste da Home

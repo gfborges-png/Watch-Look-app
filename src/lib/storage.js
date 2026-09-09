@@ -4,6 +4,8 @@
 // uma futura RemoteStorageAdapter sem reescrever nada daqui.
 import { watches as defaultWatches } from '../data/watches.js'
 import { accessories as defaultAccessories } from '../data/accessories.js'
+import { sneakers as defaultSneakers } from '../data/sneakers.js'
+import { perfumes as defaultPerfumes } from '../data/perfumes.js'
 import { storageAdapter } from './storageAdapter.js'
 
 const HISTORY_LIMIT = 200
@@ -66,9 +68,12 @@ export function deleteWatch(id) {
 
 // Tênis e perfumes cadastrados — catálogos simples do que você já tem,
 // pra sugestão poder apontar pras suas próprias coisas em vez de só um
-// tipo genérico ("tênis branco") ou uma referência de mercado.
+// tipo genérico ("tênis branco") ou uma referência de mercado. Começam
+// com um acervo de demonstração (mesmo padrão de getCollection/
+// getAccessories) — sem isso a Hoje nunca tem o que sugerir "da sua
+// coleção" pra tênis/perfume, só pro relógio.
 export function getSneakers() {
-  return storageAdapter.get('sneakers', [])
+  return storageAdapter.get('sneakers', null) ?? defaultSneakers
 }
 
 function saveSneakers(list) {
@@ -105,7 +110,7 @@ export function addSneakers(dataList) {
 }
 
 export function getPerfumes() {
-  return storageAdapter.get('perfumes', [])
+  return storageAdapter.get('perfumes', null) ?? defaultPerfumes
 }
 
 function savePerfumes(list) {

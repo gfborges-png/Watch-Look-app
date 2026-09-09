@@ -11,6 +11,8 @@ import {
   toggleFavoriteLook,
   addPerfumes,
   getPerfumes,
+  addSneaker,
+  getSneakers,
   getAccessories,
   addAccessory,
   updateAccessory,
@@ -103,32 +105,59 @@ describe('Moodes Favoritos (favoriteLooks)', () => {
   })
 })
 
+describe('Perfumes (CRUD + acervo demo)', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('começa com o acervo de demonstração (uma família por perfil de ocasião), sem precisar cadastrar nada', () => {
+    expect(getPerfumes().length).toBeGreaterThanOrEqual(8)
+  })
+})
+
 describe('addPerfumes — importação em lote', () => {
   beforeEach(() => localStorage.clear())
 
-  it('acrescenta vários perfumes de uma vez, sem apagar os que já existiam', () => {
+  it('acrescenta vários perfumes de uma vez, sem apagar os que já existiam (demo + importados)', () => {
+    const before = getPerfumes().length
     addPerfumes([{ nome: 'Já tinha', marca: '', familia: 'Aromático limpo', notas: '' }])
-    expect(getPerfumes()).toHaveLength(1)
+    expect(getPerfumes()).toHaveLength(before + 1)
 
     addPerfumes([
       { nome: 'Bleu de Chanel', marca: 'Chanel', familia: 'Aromático limpo', notas: '' },
       { nome: 'Sauvage', marca: 'Dior', familia: 'Aromático limpo', notas: '' },
     ])
-    expect(getPerfumes()).toHaveLength(3)
+    expect(getPerfumes()).toHaveLength(before + 3)
   })
 
   it('preserva o campo notas de cada perfume importado', () => {
     addPerfumes([{ nome: 'Bleu de Chanel', marca: 'Chanel', familia: 'Aromático limpo', notas: 'vetiver, cedro, âmbar seco' }])
-    expect(getPerfumes()[0].notas).toBe('vetiver, cedro, âmbar seco')
+    const importado = getPerfumes().find((p) => p.nome === 'Bleu de Chanel')
+    expect(importado.notas).toBe('vetiver, cedro, âmbar seco')
   })
 
   it('gera ids únicos mesmo quando dois nomes do lote colidem (slug igual)', () => {
+    const antes = new Set(getPerfumes().map((p) => p.id))
     addPerfumes([
       { nome: 'Bleu de Chanel', marca: 'Chanel EDT', familia: 'Aromático limpo', notas: '' },
       { nome: 'Bleu de Chanel', marca: 'Chanel EDP', familia: 'Aromático limpo', notas: '' },
     ])
-    const ids = getPerfumes().map((p) => p.id)
-    expect(new Set(ids).size).toBe(2)
+    const novosIds = getPerfumes().map((p) => p.id).filter((id) => !antes.has(id))
+    expect(new Set(novosIds).size).toBe(2)
+  })
+})
+
+describe('Tênis (CRUD + acervo demo)', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('começa com o acervo de demonstração (cobrindo os 4 tipos de calçado), sem precisar cadastrar nada', () => {
+    const tipos = new Set(getSneakers().map((s) => s.tipo))
+    expect(getSneakers().length).toBeGreaterThanOrEqual(6)
+    expect(tipos).toEqual(new Set(['Tênis', 'Sapato social', 'Loafer', 'Bota']))
+  })
+
+  it('adicionar tênis acrescenta à lista (demo + novo), sem apagar os que já existiam', () => {
+    const before = getSneakers().length
+    addSneaker({ nome: 'Teste QA', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] })
+    expect(getSneakers()).toHaveLength(before + 1)
   })
 })
 
