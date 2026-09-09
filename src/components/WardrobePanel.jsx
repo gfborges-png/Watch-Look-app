@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GARMENTS, LOOK_COLORS } from '../lib/matchEngine.js'
 import { KNOWN_FAMILIES } from '../lib/perfumeEngine.js'
+import { matchColorNameToHexes, guessBrand } from '../lib/colorNameMatch.js'
 import { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
 
@@ -209,6 +210,112 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
   )
 }
 
+// Importação em lote: cola um array [{nome, cor}] (ou já com marca/tipo/
+// hexes prontos) e cada item vira um tênis cadastrado. A cor em texto
+// livre é traduzida pra paleta do app via matchColorNameToHexes — é uma
+// aproximação (jargão de colorway tipo "Solar Flare" não é uma cor
+// exata), por isso mostra uma prévia antes de confirmar.
+function SneakerImportPanel({ onImport, onCancel }) {
+  const [raw, setRaw] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [error, setError] = useState(null)
+
+  const handleParse = () => {
+    setError(null)
+    let data
+    try {
+      data = JSON.parse(raw)
+    } catch {
+      setError('JSON inválido — confere se colou a lista certinha.')
+      return
+    }
+    if (!Array.isArray(data) || data.length === 0) {
+      setError('Esperado um array de itens, ex: [{"nome": "...", "cor": "..."}].')
+      return
+    }
+    const items = data
+      .map((item) => {
+        const nome = String(item?.nome ?? '').trim()
+        const marca = item?.marca?.trim() || guessBrand(nome)
+        const tipo = item?.tipo || 'Tênis'
+        const hexes = Array.isArray(item?.hexes) && item.hexes.length > 0 ? item.hexes : matchColorNameToHexes(item?.cor)
+        return { nome, marca, tipo, hexes }
+      })
+      .filter((i) => i.nome)
+    if (items.length === 0) {
+      setError('Nenhum item com "nome" válido encontrado.')
+      return
+    }
+    setParsed(items)
+  }
+
+  if (parsed) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+        <p className="text-sm font-semibold text-neutral-100">{parsed.length} tênis encontrados</p>
+        <p className="text-xs text-neutral-500">Confere as cores antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
+        <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+          {parsed.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-2.5">
+              <span
+                className="h-6 w-6 shrink-0 rounded-full ring-1 ring-white/20"
+                style={{
+                  background: item.hexes.length > 1 ? `conic-gradient(${item.hexes[0]} 0% 50%, ${item.hexes[1]} 50% 100%)` : item.hexes[0],
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-neutral-100">{item.nome}</p>
+                <p className="truncate text-[11px] text-neutral-500">
+                  {colorComboLabel(item.hexes)}
+                  {item.marca ? ` · ${item.marca}` : ''}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => onImport(parsed)}
+            className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+          >
+            Importar {parsed.length} tênis
+          </button>
+          <button onClick={() => setParsed(null)} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+            Voltar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+      <div>
+        <p className="text-sm font-semibold text-neutral-100">Importar lista de tênis</p>
+        <p className="mt-1 text-xs text-neutral-500">
+          Cola um array JSON com nome e cor de cada tênis — a cor é traduzida pra paleta do app automaticamente.
+        </p>
+      </div>
+      <textarea
+        value={raw}
+        onChange={(e) => setRaw(e.target.value)}
+        rows={8}
+        placeholder='[{"nome": "Air Jordan 1 High", "cor": "Branco/Preto"}, ...]'
+        className={`${inputClass} font-mono text-xs`}
+      />
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <div className="flex gap-2">
+        <button onClick={handleParse} className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+          Ler lista
+        </button>
+        <button onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SneakerRow({ sneaker, onEdit }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
@@ -251,6 +358,7 @@ export default function WardrobePanel({
   sneakers,
   perfumes,
   onAddSneaker,
+  onImportSneakers,
   onUpdateSneaker,
   onDeleteSneaker,
   onAddPerfume,
@@ -260,10 +368,12 @@ export default function WardrobePanel({
   const [tab, setTab] = useState('tenis') // 'tenis' | 'perfumes'
   const [editingSneaker, setEditingSneaker] = useState(null) // null | 'new' | id
   const [editingPerfume, setEditingPerfume] = useState(null)
+  const [importingSneakers, setImportingSneakers] = useState(false)
 
   const closeForms = () => {
     setEditingSneaker(null)
     setEditingPerfume(null)
+    setImportingSneakers(false)
   }
 
   return (
@@ -305,7 +415,15 @@ export default function WardrobePanel({
 
       <div className="mt-4">
         {tab === 'tenis' ? (
-          editingSneaker !== null ? (
+          importingSneakers ? (
+            <SneakerImportPanel
+              onImport={(items) => {
+                onImportSneakers(items)
+                setImportingSneakers(false)
+              }}
+              onCancel={() => setImportingSneakers(false)}
+            />
+          ) : editingSneaker !== null ? (
             <SneakerForm
               initial={editingSneaker === 'new' ? null : sneakers.find((s) => s.id === editingSneaker)}
               onSave={(data) => {
@@ -325,12 +443,20 @@ export default function WardrobePanel({
             />
           ) : (
             <div className="space-y-3">
-              <button
-                onClick={() => setEditingSneaker('new')}
-                className="w-full rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
-              >
-                + Adicionar tênis
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingSneaker('new')}
+                  className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+                >
+                  + Adicionar tênis
+                </button>
+                <button
+                  onClick={() => setImportingSneakers(true)}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10"
+                >
+                  Importar lista
+                </button>
+              </div>
               {sneakers.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
                   Nenhum tênis cadastrado ainda.

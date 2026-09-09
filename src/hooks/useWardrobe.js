@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   getSneakers,
   addSneaker,
+  addSneakers,
   updateSneaker,
   deleteSneaker,
   getPerfumes,
@@ -24,6 +25,7 @@ export function useWardrobe() {
     sneakers,
     perfumes,
     addSneaker: (data) => setSneakers(addSneaker(data)),
+    addSneakers: (dataList) => setSneakers(addSneakers(dataList)),
     updateSneaker: (id, data) => setSneakers(updateSneaker(id, data)),
     deleteSneaker: (id) => setSneakers(deleteSneaker(id)),
     addPerfume: (data) => setPerfumes(addPerfume(data)),

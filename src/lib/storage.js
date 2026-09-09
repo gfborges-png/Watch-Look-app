@@ -102,6 +102,18 @@ export function deleteSneaker(id) {
   return saveSneakers(list.filter((s) => s.id !== id))
 }
 
+// Adiciona vários tênis de uma vez (importação em lote) — só acrescenta
+// à lista existente, nunca substitui; o resto do storage não é tocado.
+export function addSneakers(dataList) {
+  const list = getSneakers()
+  const added = []
+  for (const data of dataList) {
+    const id = makeItemId(data.nome, [...list, ...added].map((s) => s.id))
+    added.push({ ...data, id })
+  }
+  return saveSneakers([...list, ...added])
+}
+
 export function getPerfumes() {
   return safeGet(PERFUMES_KEY, [])
 }
