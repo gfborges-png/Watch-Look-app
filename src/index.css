@@ -1,16 +1,71 @@
 @import "tailwindcss";
 
+/* Design tokens da MOODE — paleta neutra editorial (Bone/Ink/Warm Gray/
+   Muted Olive) com accents contextuais discretos. As roupas/imagens
+   fornecem a maior parte da cor; a interface fica 90% neutra por
+   desenho. Claro é o padrão; escuro redefine as mesmas variáveis
+   semânticas via prefers-color-scheme — nenhum componente escolhe cor
+   "hardcoded" por modo, todos consomem os tokens semânticos abaixo. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+
+  --color-bone: #f8f6f2;
+  --color-ink: #0f0f0f;
+  --color-warm-gray: #a7a39b;
+  --color-muted-olive: #6b705f;
+  --color-fog: #efede7;
+
+  --color-accent-work: #33415c;
+  --color-accent-weekend: #5b6e4f;
+  --color-accent-dinner: #7a3040;
+  --color-accent-bold: #2247c9;
+
+  /* semânticos — redefinidos em bloco no modo escuro logo abaixo */
+  --color-surface: #f8f6f2;
+  --color-surface-2: #efede7;
+  --color-surface-3: #e7e4db;
+  --color-text: #0f0f0f;
+  --color-text-muted: #6e6a61;
+  --color-border: rgba(15, 15, 15, 0.1);
+  --color-accent: #6b705f;
+
+  --radius-editorial: 0.625rem;
 }
 
-html {
-  color-scheme: dark;
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-surface: #0f0f0f;
+    --color-surface-2: #1a1a18;
+    --color-surface-3: #242420;
+    --color-text: #f8f6f2;
+    --color-text-muted: #a7a39b;
+    --color-border: rgba(248, 246, 242, 0.12);
+    --color-accent: #8b9180;
+    --color-accent-dinner: #9a5262;
+    --color-accent-work: #5b7099;
+  }
 }
 
 body {
   margin: 0;
-  background-color: #0a0a0b;
+  background-color: var(--color-surface);
+  color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

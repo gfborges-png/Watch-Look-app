@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }) {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-neutral-950/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 backdrop-blur md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="mx-auto flex max-w-2xl items-stretch justify-around">
@@ -65,7 +65,7 @@ export default function BottomNav({ active, onChange }) {
                 aria-label={t.label}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-[10px] font-medium transition ${
-                  isActive ? 'text-amber-400' : 'text-neutral-500'
+                  isActive ? 'text-accent' : 'text-text-muted'
                 }`}
               >
                 <NavIcon id={t.id} />
@@ -85,7 +85,7 @@ export default function BottomNav({ active, onChange }) {
               onClick={() => onChange(t.id)}
               aria-current={isActive ? 'page' : undefined}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                isActive ? 'bg-amber-400 text-neutral-950' : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
+                isActive ? 'bg-accent text-bone' : 'border border-border bg-surface-2 text-text-muted hover:bg-surface-3'
               }`}
             >
               <NavIcon id={t.id} />

@@ -2,11 +2,11 @@ function MethodCard({ icon, title, subtitle, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-1 flex-col items-center gap-2 rounded-2xl border border-white/10 bg-neutral-900/60 p-5 text-center transition hover:border-amber-400/40 hover:bg-neutral-900"
+      className="flex flex-1 flex-col items-center gap-2 rounded-2xl border border-border bg-surface-2/60 p-5 text-center transition hover:border-accent/40 hover:bg-surface-2"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-400/10 text-amber-400">{icon}</div>
-      <p className="text-sm font-semibold text-neutral-100">{title}</p>
-      <p className="text-[11px] text-neutral-500">{subtitle}</p>
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">{icon}</div>
+      <p className="text-sm font-semibold text-text">{title}</p>
+      <p className="text-[11px] text-text-muted">{subtitle}</p>
     </button>
   )
 }
@@ -17,7 +17,7 @@ function MethodCard({ icon, title, subtitle, onClick }) {
 export default function LookInputMethodPicker({ onPickPhoto, onPickManual }) {
   return (
     <div>
-      <p className="mb-3 text-sm font-semibold text-neutral-100">Como você quer informar seu look?</p>
+      <p className="mb-3 text-sm font-semibold text-text">Como você quer informar seu look?</p>
       <div className="flex gap-3">
         <MethodCard
           onClick={onPickPhoto}

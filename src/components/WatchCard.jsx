@@ -10,10 +10,10 @@ function HeartButton({ active, onToggle }) {
       }}
       aria-label={active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       aria-pressed={active}
-      className="shrink-0 rounded-full p-1 text-neutral-500 transition hover:text-amber-400"
+      className="shrink-0 rounded-full p-1 text-text-muted transition hover:text-accent"
     >
       <svg
-        className={`h-4 w-4 ${active ? 'fill-amber-400 text-amber-400' : 'fill-none'}`}
+        className={`h-4 w-4 ${active ? 'fill-accent text-accent' : 'fill-none'}`}
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
@@ -40,28 +40,28 @@ export default function WatchCard({ watch, onClick, reason, percent, isFavorite,
           onClick()
         }
       }}
-      className="group flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-4 text-left transition hover:border-white/25 hover:bg-neutral-900 active:scale-[0.99]"
+      className="group flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-border bg-surface-2/60 p-4 text-left transition hover:border-white/25 hover:bg-surface-2 active:scale-[0.99]"
     >
       <ColorSwatch hexes={watch.hexes} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-neutral-100">{watch.nome}</p>
-        <p className="mt-0.5 truncate text-xs text-neutral-400">{watch.mostrador}</p>
+        <p className="truncate text-sm font-semibold text-text">{watch.nome}</p>
+        <p className="mt-0.5 truncate text-xs text-text-muted">{watch.mostrador}</p>
         {reason ? (
-          <p className="mt-1 truncate text-xs text-amber-400/90">{reason}</p>
+          <p className="mt-1 truncate text-xs text-accent/90">{reason}</p>
         ) : (
-          <p className="mt-0.5 truncate text-xs text-neutral-500">{watch.pulseira}</p>
+          <p className="mt-0.5 truncate text-xs text-text-muted">{watch.pulseira}</p>
         )}
         {typeof percent === 'number' && (
           <div className="mt-2 flex items-center gap-2">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-amber-400" style={{ width: `${percent}%` }} />
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-3">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
             </div>
-            <span className="text-[11px] font-semibold tabular-nums text-neutral-400">{percent}%</span>
+            <span className="text-[11px] font-semibold tabular-nums text-text-muted">{percent}%</span>
           </div>
         )}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-neutral-300">
+        <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-muted">
           {COLOR_LABELS[watch.cor]}
         </span>
         {onToggleFavorite && <HeartButton active={isFavorite} onToggle={onToggleFavorite} />}

@@ -8,8 +8,8 @@ export function Chip({ active, onClick, children }) {
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
         active
-          ? 'bg-amber-400 text-neutral-950'
-          : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
+          ? 'bg-accent text-bone'
+          : 'border border-border bg-surface-2 text-text-muted hover:bg-surface-3'
       }`}
     >
       {children}
@@ -18,7 +18,7 @@ export function Chip({ active, onClick, children }) {
 }
 
 const selectClass =
-  'rounded-lg border border-white/10 bg-neutral-900/60 px-2.5 py-1.5 text-xs text-neutral-300 focus:border-amber-400/60 focus:outline-none'
+  'rounded-lg border border-border bg-surface-2/60 px-2.5 py-1.5 text-xs text-text-muted focus:border-accent focus:outline-none'
 
 export default function FilterBar({
   query,
@@ -41,7 +41,7 @@ export default function FilterBar({
     <div className="space-y-3">
       <div className="relative">
         <svg
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -54,7 +54,7 @@ export default function FilterBar({
           onChange={(e) => onQueryChange(e.target.value)}
           type="text"
           placeholder="Buscar relógio por nome..."
-          className="w-full rounded-xl border border-white/10 bg-neutral-900/60 py-2.5 pl-9 pr-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-amber-400/60 focus:outline-none"
+          className="w-full rounded-xl border border-border bg-surface-2/60 py-2.5 pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
         />
       </div>
 

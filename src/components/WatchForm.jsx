@@ -25,8 +25,8 @@ const BLANK = {
 function Field({ label, required, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
-        {label} {required && <span className="text-amber-400">*</span>}
+      <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">
+        {label} {required && <span className="text-accent">*</span>}
       </span>
       {children}
     </label>
@@ -34,7 +34,7 @@ function Field({ label, required, children }) {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none'
+  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none'
 
 export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(() => {
@@ -75,7 +75,7 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
     <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
       <button
         onClick={onCancel}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 hover:text-neutral-100"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -83,11 +83,11 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
         Cancelar
       </button>
 
-      <h1 className="text-lg font-bold text-neutral-50">
+      <h1 className="text-lg font-bold text-text">
         {mode === 'new' ? 'Adicionar relógio' : 'Editar relógio'}
       </h1>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4 rounded-2xl border border-border bg-surface-2/60 p-5">
         <Field label="Nome" required>
           <input className={inputClass} value={form.nome} onChange={set('nome')} placeholder="Ex: Rolex Explorer II" />
         </Field>
@@ -105,7 +105,7 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
         </Field>
         <Field label="Estilo" required>
           <input className={inputClass} value={form.estilo} onChange={set('estilo')} placeholder="Ex: Sport-explorer aventureiro" />
-          <span className="mt-1 block text-xs text-neutral-600">
+          <span className="mt-1 block text-xs text-text-muted">
             Palavras como dress/sport/casual/racing/diver ativam os filtros de estilo.
           </span>
         </Field>
@@ -127,8 +127,8 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
         </Field>
 
         <div>
-          <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
-            Cores do mostrador (até 3) <span className="text-amber-400">*</span>
+          <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">
+            Cores do mostrador (até 3) <span className="text-accent">*</span>
           </span>
           <div className="flex flex-wrap items-center gap-2">
             {form.hexes.map((hex, i) => (
@@ -137,13 +137,13 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
                   type="color"
                   value={hex}
                   onChange={(e) => setHex(i, e.target.value)}
-                  className="h-9 w-9 cursor-pointer rounded-lg border border-white/10 bg-transparent p-0.5"
+                  className="h-9 w-9 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
                 />
                 {form.hexes.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeHex(i)}
-                    className="text-xs text-neutral-500 hover:text-red-400"
+                    className="text-xs text-text-muted hover:text-red-400"
                     aria-label="Remover cor"
                   >
                     ×
@@ -155,7 +155,7 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
               <button
                 type="button"
                 onClick={addHex}
-                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-neutral-300 hover:bg-white/10"
+                className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs text-text-muted hover:bg-surface-3"
               >
                 + cor
               </button>
@@ -168,7 +168,7 @@ export default function WatchForm({ mode, initialWatch, onSave, onCancel, onDele
         <div className="flex gap-2 pt-2">
           <button
             type="submit"
-            className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
           >
             Salvar
           </button>

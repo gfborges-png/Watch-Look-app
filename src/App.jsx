@@ -21,6 +21,7 @@ import BackupPanel from './components/BackupPanel.jsx'
 import WardrobePanel from './components/WardrobePanel.jsx'
 import TodayScreen from './components/TodayScreen.jsx'
 import BottomNav from './components/BottomNav.jsx'
+import MoodeLogo from './components/brand/MoodeLogo.jsx'
 
 const TAB_SUBTITLE = {
   colecao: 'Escolha um relógio da coleção e veja sugestões de look combinando.',
@@ -103,7 +104,7 @@ function App() {
 
   if (formTarget !== null) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="min-h-screen bg-surface text-text">
         <WatchForm
           mode={formTarget === 'new' ? 'new' : 'edit'}
           initialWatch={editingWatch}
@@ -117,7 +118,7 @@ function App() {
 
   if (showBackup) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="min-h-screen bg-surface text-text">
         <BackupPanel
           onBack={() => setShowBackup(false)}
           onExport={exportData}
@@ -131,7 +132,7 @@ function App() {
 
   if (selectedWatch) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="min-h-screen bg-surface text-text">
         <WatchDetail
           watch={selectedWatch}
           onBack={() => setSelectedId(null)}
@@ -147,21 +148,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 pb-20 md:pb-0">
-      <header className="sticky top-0 z-10 border-b border-white/5 bg-neutral-950/90 px-4 pb-4 pt-6 backdrop-blur">
+    <div className="min-h-screen bg-surface text-text pb-20 md:pb-0">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/90 px-4 pb-4 pt-6 backdrop-blur">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">
-                Watch <span className="text-amber-400">&amp;</span> Look
-              </h1>
-              {TAB_SUBTITLE[tab] && <p className="mt-1 text-sm text-neutral-400">{TAB_SUBTITLE[tab]}</p>}
+              <MoodeLogo className="text-xl" />
+              {TAB_SUBTITLE[tab] && <p className="mt-1.5 text-sm text-text-muted">{TAB_SUBTITLE[tab]}</p>}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={() => setShowBackup(true)}
                 aria-label="Dados e backup"
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100"
+                className="rounded-full border border-border bg-surface-2 p-2 text-text-muted transition hover:bg-surface-3 hover:text-text"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -254,18 +253,18 @@ function App() {
           <>
             <ForgottenWatches watches={collection} history={history} onSelectWatch={setSelectedId} />
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-text-muted">
                 {filtered.length} {filtered.length === 1 ? 'relógio' : 'relógios'}
               </p>
               <button
                 onClick={() => setFormTarget('new')}
-                className="shrink-0 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+                className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-bone transition hover:opacity-90"
               >
                 + Adicionar relógio
               </button>
             </div>
             {filtered.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
                 {favoritesOnly ? 'Você ainda não favoritou nenhum relógio.' : 'Nenhum relógio encontrado com esses filtros.'}
               </div>
             ) : (

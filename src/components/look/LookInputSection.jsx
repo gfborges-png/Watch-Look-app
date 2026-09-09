@@ -20,7 +20,7 @@ export default function LookInputSection({ outfit, onOutfitChange, sneakers, con
 
   return (
     <div className="space-y-3">
-      <button onClick={() => setMethod(null)} className="text-[11px] font-medium text-neutral-500 transition hover:text-neutral-300">
+      <button onClick={() => setMethod(null)} className="text-[11px] font-medium text-text-muted transition hover:text-text">
         ← Mudar forma de entrada
       </button>
       {method === 'foto' && <PhotoLookDetector outfit={outfit} onOutfitChange={onOutfitChange} onDone={() => setMethod('manual')} />}

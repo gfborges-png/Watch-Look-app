@@ -6,7 +6,7 @@ import { Chip } from './FilterBar.jsx'
 import ColorSwatch from './ColorSwatch.jsx'
 
 const inputClass =
-  'w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-amber-400/60 focus:outline-none'
+  'w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none'
 
 const SNEAKER_TIPOS = GARMENTS.find((g) => g.key === 'calcado').tipos
 const BLANK_SNEAKER = { nome: '', marca: '', tipo: 'Tênis', hexes: ['#F5F3EE'] }
@@ -55,12 +55,12 @@ function SneakerColorPicker({ hexes, onChange }) {
             aria-label={c.label}
             aria-pressed={active}
             className={`relative h-7 w-7 shrink-0 rounded-full ring-2 transition ${
-              active ? 'ring-amber-400 scale-110' : 'ring-transparent hover:ring-white/30'
+              active ? 'ring-accent scale-110' : 'ring-transparent hover:ring-border'
             }`}
             style={{ background: c.hex }}
           >
             {active && hexes.length === 2 && (
-              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold leading-none text-neutral-950">
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold leading-none text-bone">
                 {order + 1}
               </span>
             )}
@@ -74,8 +74,8 @@ function SneakerColorPicker({ hexes, onChange }) {
 function Field({ label, required, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
-        {label} {required && <span className="text-amber-400">*</span>}
+      <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">
+        {label} {required && <span className="text-accent">*</span>}
       </span>
       {children}
     </label>
@@ -84,7 +84,7 @@ function Field({ label, required, children }) {
 
 function EditIconButton({ onClick, label }) {
   return (
-    <button onClick={onClick} aria-label={label} className="rounded-full p-1.5 text-neutral-500 transition hover:bg-white/10 hover:text-neutral-200">
+    <button onClick={onClick} aria-label={label} className="rounded-full p-1.5 text-text-muted transition hover:bg-surface-3 hover:text-text">
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
       </svg>
@@ -107,7 +107,7 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-surface-2/60 p-5">
       <Field label="Nome" required>
         <input className={inputClass} value={form.nome} onChange={set('nome')} placeholder="Ex: Dunk Low Travis Scott Golf" />
       </Field>
@@ -124,11 +124,11 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
         </div>
       </Field>
       <div>
-        <span className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
-          Cor (até 2) <span className="text-amber-400">*</span>
+        <span className="mb-1 block text-xs uppercase tracking-wide text-text-muted">
+          Cor (até 2) <span className="text-accent">*</span>
         </span>
         <SneakerColorPicker hexes={form.hexes} onChange={(hexes) => setForm((f) => ({ ...f, hexes }))} />
-        <p className="mt-1.5 text-xs text-neutral-500">
+        <p className="mt-1.5 text-xs text-text-muted">
           {colorComboLabel(form.hexes)}
           {form.hexes.length < 2 && ' — toca em outra cor pra fazer uma combinação (ex: Branco com Azul)'}
         </p>
@@ -137,7 +137,7 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+        <button type="submit" className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90">
           Salvar
         </button>
         {onDelete && (
@@ -145,7 +145,7 @@ function SneakerForm({ initial, onSave, onCancel, onDelete }) {
             Remover
           </button>
         )}
-        <button type="button" onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+        <button type="button" onClick={onCancel} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
           Cancelar
         </button>
       </div>
@@ -168,7 +168,7 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-amber-400/20 bg-neutral-900/60 p-5">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-accent/25 bg-surface-2/60 p-5">
       <Field label="Nome" required>
         <input className={inputClass} value={form.nome} onChange={set('nome')} placeholder="Ex: Bleu de Chanel EDP" />
       </Field>
@@ -183,7 +183,7 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
             </option>
           ))}
         </select>
-        <span className="mt-1 block text-xs text-neutral-600">
+        <span className="mt-1 block text-xs text-text-muted">
           É essa família que decide quando esse perfume vira sugestão pra um clima/ocasião.
         </span>
       </Field>
@@ -194,7 +194,7 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       <div className="flex gap-2 pt-1">
-        <button type="submit" className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+        <button type="submit" className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90">
           Salvar
         </button>
         {onDelete && (
@@ -202,7 +202,7 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
             Remover
           </button>
         )}
-        <button type="button" onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+        <button type="button" onClick={onCancel} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
           Cancelar
         </button>
       </div>
@@ -251,21 +251,21 @@ function SneakerImportPanel({ onImport, onCancel }) {
 
   if (parsed) {
     return (
-      <div className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-        <p className="text-sm font-semibold text-neutral-100">{parsed.length} tênis encontrados</p>
-        <p className="text-xs text-neutral-500">Confere as cores antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
+      <div className="space-y-4 rounded-2xl border border-border bg-surface-2/60 p-5">
+        <p className="text-sm font-semibold text-text">{parsed.length} tênis encontrados</p>
+        <p className="text-xs text-text-muted">Confere as cores antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
         <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
           {parsed.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-2.5">
+            <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-2.5">
               <span
-                className="h-6 w-6 shrink-0 rounded-full ring-1 ring-white/20"
+                className="h-6 w-6 shrink-0 rounded-full ring-1 ring-border"
                 style={{
                   background: item.hexes.length > 1 ? `conic-gradient(${item.hexes[0]} 0% 50%, ${item.hexes[1]} 50% 100%)` : item.hexes[0],
                 }}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-neutral-100">{item.nome}</p>
-                <p className="truncate text-[11px] text-neutral-500">
+                <p className="truncate text-xs font-semibold text-text">{item.nome}</p>
+                <p className="truncate text-[11px] text-text-muted">
                   {colorComboLabel(item.hexes)}
                   {item.marca ? ` · ${item.marca}` : ''}
                 </p>
@@ -276,11 +276,11 @@ function SneakerImportPanel({ onImport, onCancel }) {
         <div className="flex gap-2 pt-1">
           <button
             onClick={() => onImport(parsed)}
-            className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
           >
             Importar {parsed.length} tênis
           </button>
-          <button onClick={() => setParsed(null)} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+          <button onClick={() => setParsed(null)} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
             Voltar
           </button>
         </div>
@@ -289,10 +289,10 @@ function SneakerImportPanel({ onImport, onCancel }) {
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+    <div className="space-y-4 rounded-2xl border border-border bg-surface-2/60 p-5">
       <div>
-        <p className="text-sm font-semibold text-neutral-100">Importar lista de tênis</p>
-        <p className="mt-1 text-xs text-neutral-500">
+        <p className="text-sm font-semibold text-text">Importar lista de tênis</p>
+        <p className="mt-1 text-xs text-text-muted">
           Cola um array JSON com nome e cor de cada tênis — a cor é traduzida pra paleta do app automaticamente.
         </p>
       </div>
@@ -305,10 +305,10 @@ function SneakerImportPanel({ onImport, onCancel }) {
       />
       {error && <p className="text-xs text-red-400">{error}</p>}
       <div className="flex gap-2">
-        <button onClick={handleParse} className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300">
+        <button onClick={handleParse} className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90">
           Ler lista
         </button>
-        <button onClick={onCancel} className="rounded-full border border-white/10 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10">
+        <button onClick={onCancel} className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3">
           Cancelar
         </button>
       </div>
@@ -318,11 +318,11 @@ function SneakerImportPanel({ onImport, onCancel }) {
 
 function SneakerRow({ sneaker, onEdit }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-2/60 p-3">
       <ColorSwatch hexes={sneaker.hexes} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-neutral-100">{sneaker.nome}</p>
-        <p className="truncate text-xs text-neutral-500">
+        <p className="truncate text-sm font-semibold text-text">{sneaker.nome}</p>
+        <p className="truncate text-xs text-text-muted">
           {colorComboLabel(sneaker.hexes)}
           {sneaker.marca ? ` · ${sneaker.marca}` : ''} · {sneaker.tipo}
         </p>
@@ -336,13 +336,13 @@ function SneakerRow({ sneaker, onEdit }) {
 // preferência escrita à mão no código); ver src/lib/userStyleProfile.js.
 function StyleInsightsPanel({ insights }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-      <p className="text-sm font-semibold text-neutral-100">Seu estilo</p>
-      <p className="mt-1 text-xs text-neutral-500">Calculado a partir das suas escolhas e feedback — não é uma configuração manual.</p>
+    <div className="rounded-2xl border border-border bg-surface-2/60 p-5">
+      <p className="text-sm font-semibold text-text">Seu estilo</p>
+      <p className="mt-1 text-xs text-text-muted">Calculado a partir das suas escolhas e feedback — não é uma configuração manual.</p>
       <ul className="mt-4 space-y-2.5">
         {insights.map((text, i) => (
-          <li key={i} className="flex gap-2.5 text-sm text-neutral-300">
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+          <li key={i} className="flex gap-2.5 text-sm text-text-muted">
+            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
             {text}
           </li>
         ))}
@@ -353,16 +353,16 @@ function StyleInsightsPanel({ insights }) {
 
 function PerfumeRow({ perfume, onEdit }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral-900/60 p-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
-        <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-2/60 p-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10">
+        <svg className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 2h6M10 2v3.3c0 .5-.2 1-.55 1.37L7.1 9.2A3 3 0 006 11.4V20a2 2 0 002 2h8a2 2 0 002-2v-8.6a3 3 0 00-1.1-2.2L14.55 6.7A2 2 0 0114 5.3V2" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M7.2 13.5h9.6" />
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-neutral-100">{perfume.nome}</p>
-        <p className="truncate text-xs text-neutral-500">
+        <p className="truncate text-sm font-semibold text-text">{perfume.nome}</p>
+        <p className="truncate text-xs text-text-muted">
           {perfume.marca ? `${perfume.marca} · ` : ''}
           {perfume.familia}
         </p>
@@ -399,7 +399,7 @@ export default function WardrobePanel({
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
       {onBack && (
-        <button onClick={onBack} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 hover:text-neutral-100">
+        <button onClick={onBack} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -407,8 +407,8 @@ export default function WardrobePanel({
         </button>
       )}
 
-      <h1 className="text-lg font-bold text-neutral-50">Guarda-roupa</h1>
-      <p className="mt-1 text-sm text-neutral-400">
+      <h1 className="text-lg font-bold text-text">Guarda-roupa</h1>
+      <p className="mt-1 text-sm text-text-muted">
         Cadastra o que você realmente tem — assim as sugestões de tênis e perfume apontam pras suas próprias coisas.
       </p>
 
@@ -475,19 +475,19 @@ export default function WardrobePanel({
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditingSneaker('new')}
-                  className="flex-1 rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+                  className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
                 >
                   + Adicionar tênis
                 </button>
                 <button
                   onClick={() => setImportingSneakers(true)}
-                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-white/10"
+                  className="rounded-full border border-border bg-surface-2 px-4 py-2.5 text-sm font-medium text-text-muted transition hover:bg-surface-3"
                 >
                   Importar lista
                 </button>
               </div>
               {sneakers.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
                   Nenhum tênis cadastrado ainda.
                 </div>
               ) : (
@@ -519,12 +519,12 @@ export default function WardrobePanel({
           <div className="space-y-3">
             <button
               onClick={() => setEditingPerfume('new')}
-              className="w-full rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+              className="w-full rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-bone transition hover:opacity-90"
             >
               + Adicionar perfume
             </button>
             {perfumes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
                 Nenhum perfume cadastrado ainda.
               </div>
             ) : (

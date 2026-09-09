@@ -48,7 +48,7 @@ export default function BackupPanel({ onBack, onExport, onImportFile, onResetCol
     <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4">
       <button
         onClick={onBack}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 hover:text-neutral-100"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -56,8 +56,8 @@ export default function BackupPanel({ onBack, onExport, onImportFile, onResetCol
         Voltar
       </button>
 
-      <h1 className="text-lg font-bold text-neutral-50">Dados e backup</h1>
-      <p className="mt-1 text-sm text-neutral-400">
+      <h1 className="text-lg font-bold text-text">Dados e backup</h1>
+      <p className="mt-1 text-sm text-text-muted">
         Tudo fica só no seu aparelho — {watchCount} {watchCount === 1 ? 'relógio' : 'relógios'} na coleção agora.
         Sem backup, limpar os dados do navegador ou trocar de aparelho apaga tudo.
       </p>
@@ -69,32 +69,32 @@ export default function BackupPanel({ onBack, onExport, onImportFile, onResetCol
       )}
 
       <div className="mt-4 space-y-3">
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-          <h2 className="text-sm font-semibold text-neutral-100">Exportar backup</h2>
-          <p className="mt-1 text-xs text-neutral-500">Baixa um arquivo .json com coleção, favoritos e histórico.</p>
+        <div className="rounded-2xl border border-border bg-surface-2/60 p-5">
+          <h2 className="text-sm font-semibold text-text">Exportar backup</h2>
+          <p className="mt-1 text-xs text-text-muted">Baixa um arquivo .json com coleção, favoritos e histórico.</p>
           <button
             onClick={handleExport}
-            className="mt-3 rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="mt-3 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-bone transition hover:opacity-90"
           >
             Baixar backup
           </button>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-          <h2 className="text-sm font-semibold text-neutral-100">Importar backup</h2>
-          <p className="mt-1 text-xs text-neutral-500">Restaura a partir de um arquivo exportado daqui. Substitui os dados atuais.</p>
+        <div className="rounded-2xl border border-border bg-surface-2/60 p-5">
+          <h2 className="text-sm font-semibold text-text">Importar backup</h2>
+          <p className="mt-1 text-xs text-text-muted">Restaura a partir de um arquivo exportado daqui. Substitui os dados atuais.</p>
           <button
             onClick={handleImportClick}
-            className="mt-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-white/10"
+            className="mt-3 rounded-full border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-3"
           >
             Escolher arquivo
           </button>
           <input ref={fileInputRef} type="file" accept="application/json" onChange={handleFileChange} className="hidden" />
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-          <h2 className="text-sm font-semibold text-neutral-100">Restaurar coleção original</h2>
-          <p className="mt-1 text-xs text-neutral-500">Volta pros 23 relógios padrão, descartando suas edições.</p>
+        <div className="rounded-2xl border border-border bg-surface-2/60 p-5">
+          <h2 className="text-sm font-semibold text-text">Restaurar coleção original</h2>
+          <p className="mt-1 text-xs text-text-muted">Volta pros 23 relógios padrão, descartando suas edições.</p>
           <button
             onClick={handleReset}
             className="mt-3 rounded-full border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/10"

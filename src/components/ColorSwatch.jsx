@@ -4,7 +4,7 @@ export default function ColorSwatch({ hexes, size = 'md' }) {
   if (hexes.length === 1) {
     return (
       <div
-        className={`${dims} shrink-0 rounded-full ring-1 ring-white/10`}
+        className={`${dims} shrink-0 rounded-full ring-1 ring-border`}
         style={{ background: hexes[0] }}
       />
     )
@@ -14,7 +14,7 @@ export default function ColorSwatch({ hexes, size = 'md' }) {
 
   return (
     <div
-      className={`${dims} shrink-0 rounded-full ring-1 ring-white/10`}
+      className={`${dims} shrink-0 rounded-full ring-1 ring-border`}
       style={{ background: `conic-gradient(${stops})` }}
     />
   )

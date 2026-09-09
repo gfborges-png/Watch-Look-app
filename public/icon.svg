@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#0a0a0b"/>
-  <g transform="translate(256,256)">
-    <circle r="150" fill="none" stroke="#f2c11a" stroke-width="18"/>
-    <circle r="150" fill="none" stroke="#f2c11a" stroke-width="18" opacity="0.35" transform="rotate(45)"/>
-    <rect x="-14" y="-40" width="28" height="16" rx="4" fill="#f2c11a"/>
-    <rect x="-14" y="24" width="28" height="16" rx="4" fill="#f2c11a"/>
-    <line x1="0" y1="0" x2="0" y2="-92" stroke="#f5f3ee" stroke-width="16" stroke-linecap="round"/>
-    <line x1="0" y1="0" x2="66" y2="30" stroke="#f5f3ee" stroke-width="16" stroke-linecap="round"/>
-    <circle r="14" fill="#f5f3ee"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .bg { fill: #F8F6F2; }
+    .fg { fill: none; stroke: #0F0F0F; stroke-width: 5.5; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0F0F0F; }
+      .fg { stroke: #F8F6F2; }
+    }
+  </style>
+  <rect width="64" height="64" rx="14" class="bg"/>
+  <circle cx="26.5" cy="32" r="11.5" class="fg"/>
+  <circle cx="37.5" cy="32" r="11.5" class="fg"/>
 </svg>

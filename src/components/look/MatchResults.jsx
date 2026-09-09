@@ -20,25 +20,25 @@ const DISLIKE_REASONS = [
 function MatchExplanation({ subScores, reasons }) {
   const entries = Object.entries(subScores).filter(([, v]) => v != null)
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs">
+    <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs">
       {entries.length > 0 && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-400">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-text-muted">
           {entries.map(([key, v]) => (
             <span key={key}>
-              {SUBSCORE_LABELS[key]}: <span className="font-semibold text-neutral-200">{v}</span>
+              {SUBSCORE_LABELS[key]}: <span className="font-semibold text-text">{v}</span>
             </span>
           ))}
         </div>
       )}
       {reasons.length > 0 && (
-        <ul className="mt-2 space-y-1 text-neutral-400">
+        <ul className="mt-2 space-y-1 text-text-muted">
           {reasons.map((r) => (
             <li key={r}>• {r[0].toUpperCase() + r.slice(1)}</li>
           ))}
         </ul>
       )}
       {entries.length === 0 && reasons.length === 0 && (
-        <p className="text-neutral-500">Com mais dados (clima, ocasião, histórico de uso) esse match fica mais preciso.</p>
+        <p className="text-text-muted">Com mais dados (clima, ocasião, histórico de uso) esse match fica mais preciso.</p>
       )}
     </div>
   )
@@ -63,7 +63,7 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
 
   if (state === 'done') {
     const label = ratingDone === 'love' ? '❤️ Ficou perfeito — anotado' : ratingDone === 'like' ? '👍 Anotado' : '👎 Anotado'
-    return <span className="text-[11px] text-neutral-500">{label}</span>
+    return <span className="text-[11px] text-text-muted">{label}</span>
   }
 
   if (state === 'asking') {
@@ -73,12 +73,12 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
           <button
             key={r.id}
             onClick={() => submit('dislike', r.id)}
-            className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-neutral-400 transition hover:bg-white/10"
+            className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-surface-3"
           >
             {r.label}
           </button>
         ))}
-        <button onClick={() => submit('dislike', null)} className="text-[10px] text-neutral-600 hover:text-neutral-400">
+        <button onClick={() => submit('dislike', null)} className="text-[10px] text-text-muted hover:text-text">
           pular
         </button>
       </div>
@@ -87,13 +87,13 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
 
   return (
     <div className="flex items-center gap-0.5">
-      <button onClick={() => submit('like')} aria-label="Boa sugestão" title="Boa sugestão" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+      <button onClick={() => submit('like')} aria-label="Boa sugestão" title="Boa sugestão" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
         👍
       </button>
-      <button onClick={() => submit('love')} aria-label="Ficou perfeito" title="Ficou perfeito" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+      <button onClick={() => submit('love')} aria-label="Ficou perfeito" title="Ficou perfeito" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
         ❤️
       </button>
-      <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-1 text-sm transition hover:bg-white/10">
+      <button onClick={() => setState('asking')} aria-label="Não usaria" title="Não usaria" className="rounded-full p-1 text-sm transition hover:bg-surface-3">
         👎
       </button>
     </div>
@@ -120,17 +120,17 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
   }, e o perfume funciona bem${contextLabel ? ` pra ocasião de ${contextLabel.toLowerCase()}` : ''}.`
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs">
+    <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-neutral-500">Tênis</span>
-        <span className="text-neutral-200">{sneaker ? sneaker.nome : 'Tênis branco'}</span>
+        <span className="text-text-muted">Tênis</span>
+        <span className="text-text">{sneaker ? sneaker.nome : 'Tênis branco'}</span>
       </div>
       <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="text-neutral-500">Perfume</span>
+        <span className="text-text-muted">Perfume</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-neutral-200">{perfumeLabel}</span>
+          <span className="text-text">{perfumeLabel}</span>
           {perfumes.length > 0 && (
-            <button onClick={() => setPickerOpen((v) => !v)} className="text-[10px] font-medium text-amber-400 hover:underline">
+            <button onClick={() => setPickerOpen((v) => !v)} className="text-[10px] font-medium text-accent hover:underline">
               trocar
             </button>
           )}
@@ -143,7 +143,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
             setOverrideId(e.target.value || null)
             setPickerOpen(false)
           }}
-          className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-neutral-100 focus:border-amber-400/60 focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none"
         >
           <option value="">Sugestão automática ({suggestion.owned[0]?.nome ?? suggestion.familia})</option>
           {perfumes.map((p) => (
@@ -153,7 +153,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes }) {
           ))}
         </select>
       )}
-      <p className="mt-2 text-[11px] leading-relaxed text-neutral-500">{justification}</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-text-muted">{justification}</p>
     </div>
   )
 }
@@ -174,8 +174,8 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
       />
       <ResultBundle watch={watch} weatherBias={weatherBias} context={context} sneakers={sneakers} perfumes={perfumes} />
       <div className="flex items-center justify-between gap-2 px-1">
-        <button onClick={() => setExpanded((v) => !v)} className="text-[11px] font-medium text-neutral-500 transition hover:text-neutral-300">
-          {expanded ? 'Ocultar motivos' : 'Por que escolhi este?'} · <span className="text-amber-400">{band.label}</span>
+        <button onClick={() => setExpanded((v) => !v)} className="text-[11px] font-medium text-text-muted transition hover:text-text">
+          {expanded ? 'Ocultar motivos' : 'Por que escolhi este?'} · <span className="text-accent">{band.label}</span>
         </button>
         <FeedbackButtons result={result} context={context} onLogFeedback={onLogFeedback} />
       </div>
@@ -187,7 +187,7 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
 export default function MatchResults({ results, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes }) {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs text-text-muted">
         {results.length} {results.length === 1 ? 'resultado' : 'resultados'}, do que mais pro que menos combina
       </p>
       {results.map((result) => (

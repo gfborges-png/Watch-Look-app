@@ -43,7 +43,7 @@ export default function LookMatcher({
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">1. O que você está usando</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">1. O que você está usando</p>
         <LookInputSection
           outfit={outfit}
           onOutfitChange={onOutfitChange}
@@ -55,7 +55,7 @@ export default function LookMatcher({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">2. Contexto do dia</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">2. Contexto do dia</p>
         <div className="space-y-3">
           <WeatherOccasionPanel weather={weather} onFetchWeather={onFetchWeather} context={context} onContextChange={onContextChange} />
           <PerfumeRecommendation weatherBias={weatherBias} context={context} ownedPerfumes={perfumes} />
@@ -63,13 +63,13 @@ export default function LookMatcher({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">3. Relógios que combinam</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">3. Relógios que combinam</p>
         {!hasSelection ? (
-          <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
             Escolha a cor de pelo menos uma peça pra ver quais relógios combinam.
           </div>
         ) : topResults.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-neutral-500">
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
             Nenhum match forte com esse look. Tenta um mostrador neutro (preto, branco ou prata) — combina com qualquer combinação.
           </div>
         ) : (
@@ -88,7 +88,7 @@ export default function LookMatcher({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">4. Sua escolha real</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">4. Sua escolha real</p>
         <ChoiceFeedback watches={watches} results={results} topResults={topResults} context={context} onLogChoice={onLogChoice} />
       </div>
     </div>

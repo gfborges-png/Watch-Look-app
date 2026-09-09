@@ -28,15 +28,15 @@ export default function ChoiceFeedback({ watches, results, topResults, context, 
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
-      <p className="text-xs text-neutral-500">
+    <div className="rounded-2xl border border-border bg-surface-2/60 p-4">
+      <p className="text-xs text-text-muted">
         Escolheu outro relógio, mesmo sem eu ter sugerido? Conta pra mim — uso isso pra calibrar as próximas sugestões.
       </p>
       <select
         id={selectId}
         value={selectedId}
         onChange={handleChange}
-        className="mt-3 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-neutral-100 focus:border-amber-400/60 focus:outline-none"
+        className="mt-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent focus:outline-none"
       >
         <option value="">Selecione um relógio da coleção...</option>
         {sorted.map((w) => (
@@ -49,20 +49,20 @@ export default function ChoiceFeedback({ watches, results, topResults, context, 
       {entry && (
         <div className="mt-3 space-y-2">
           <div className="flex items-center gap-2">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-amber-400" style={{ width: `${entry.match}%` }} />
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-3">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${entry.match}%` }} />
             </div>
-            <span className="text-xs font-semibold tabular-nums text-neutral-400">
+            <span className="text-xs font-semibold tabular-nums text-text-muted">
               {entry.match} — {entry.band.label}
             </span>
           </div>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-text-muted">
             {wasSuggested ? 'Estava entre os sugeridos.' : 'Fora do top sugerido — anotado, isso pesa mais no aprendizado.'}
             {entry.reasons[0] && ` ${entry.reasons[0][0].toUpperCase()}${entry.reasons[0].slice(1)}.`}
           </p>
           <button
             onClick={handleLog}
-            className="w-full rounded-full bg-amber-400 px-3 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="w-full rounded-full bg-accent px-3 py-2 text-xs font-semibold text-bone transition hover:opacity-90"
           >
             {logged ? '✓ Registrado' : 'Registrar essa escolha'}
           </button>
