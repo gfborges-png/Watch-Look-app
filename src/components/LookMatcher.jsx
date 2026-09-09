@@ -217,19 +217,60 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
   )
 }
 
-function PerfumePanel({ weatherBias, context }) {
+function PerfumePanel({ weatherBias, context, onContextChange }) {
   const p = useMemo(() => suggestPerfume({ weatherBias, context }), [weatherBias, context])
   return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
-      <p className="text-sm font-semibold text-neutral-100">Perfume sugerido</p>
-      <p className="mt-1 text-xs text-neutral-400">
-        <span className="font-medium text-amber-400">{p.familia}</span> — {p.descritores.join(', ')}
-      </p>
-      <p className="mt-2 text-xs text-neutral-500">{p.porque}</p>
-      <p className="mt-1 text-xs text-neutral-500">
-        {p.intensidade}
-        {p.evitar ? ` · ${p.evitar}` : ''}
-      </p>
+    <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-neutral-900/70 to-neutral-900/30 p-4">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
+          <svg className="h-4.5 w-4.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 2h6M10 2v3.3c0 .5-.2 1-.55 1.37L7.1 9.2A3 3 0 006 11.4V20a2 2 0 002 2h8a2 2 0 002-2v-8.6a3 3 0 00-1.1-2.2L14.55 6.7A2 2 0 0114 5.3V2" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.2 13.5h9.6" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-neutral-100">Perfume sugerido</p>
+          <p className="text-[11px] text-neutral-500">por clima e ocasião</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        {CONTEXTS.map((ctx) => (
+          <Chip key={ctx.id} active={context === ctx.id} onClick={() => onContextChange(ctx.id)}>
+            {ctx.label}
+          </Chip>
+        ))}
+      </div>
+
+      <p className="mt-4 text-lg font-bold leading-tight text-amber-400">{p.familia}</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {p.descritores.map((d) => (
+          <span key={d} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-neutral-300">
+            {d}
+          </span>
+        ))}
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-neutral-400">{p.porque}</p>
+
+      <div className="mt-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Referências reais</p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {p.referencias.map((r) => (
+            <span
+              key={r}
+              className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300"
+            >
+              {r}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-xl bg-black/30 p-3 text-xs text-neutral-400">
+        <p>{p.intensidade}</p>
+        {p.evitar && <p className="mt-1 text-neutral-500">{p.evitar}</p>}
+      </div>
     </div>
   )
 }
@@ -279,18 +320,7 @@ export default function LookMatcher({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">Ocasião</p>
-        <div className="flex gap-2">
-          {CONTEXTS.map((ctx) => (
-            <Chip key={ctx.id} active={context === ctx.id} onClick={() => onContextChange(ctx.id)}>
-              {ctx.label}
-            </Chip>
-          ))}
-        </div>
-      </div>
-
-      <PerfumePanel weatherBias={weatherBias} context={context} />
+      <PerfumePanel weatherBias={weatherBias} context={context} onContextChange={onContextChange} />
 
       <div>
         {!hasSelection ? (

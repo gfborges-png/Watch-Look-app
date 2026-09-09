@@ -129,11 +129,20 @@ export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorit
                   <LookPiece label="Calça" value={look.bottom} />
                   <LookPiece label="Tênis/sapato" value={look.tenis} />
                   <LookPiece label="Camada extra" value={look.camadaExtra} />
-                  <LookPiece label="Perfume" value={`${perfume.familia} (${perfume.descritores.slice(0, 2).join(', ')})`} />
                 </div>
                 <p className="mt-3 rounded-xl bg-black/30 p-3 text-xs leading-relaxed text-neutral-400">
                   {look.porque}
                 </p>
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3">
+                  <svg className="h-4 w-4 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 2h6M10 2v3.3c0 .5-.2 1-.55 1.37L7.1 9.2A3 3 0 006 11.4V20a2 2 0 002 2h8a2 2 0 002-2v-8.6a3 3 0 00-1.1-2.2L14.55 6.7A2 2 0 0114 5.3V2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.2 13.5h9.6" />
+                  </svg>
+                  <p className="min-w-0 text-xs text-neutral-300">
+                    <span className="font-semibold text-amber-400">{perfume.familia}</span>
+                    <span className="text-neutral-500"> — {perfume.descritores.slice(0, 2).join(', ')} · ref: {perfume.referencias[0]}</span>
+                  </p>
+                </div>
               </div>
             )
           })}
