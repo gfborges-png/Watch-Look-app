@@ -1,6 +1,7 @@
 import ColorSwatch from './ColorSwatch.jsx'
 import { COLOR_LABELS, generateLooks } from '../lib/outfitEngine.js'
 import { daysSince } from '../lib/storage.js'
+import { suggestPerfume } from '../lib/perfumeEngine.js'
 
 function LookPiece({ label, value }) {
   if (!value) return null
@@ -10,6 +11,14 @@ function LookPiece({ label, value }) {
       <span className="text-right text-sm text-neutral-200">{value}</span>
     </div>
   )
+}
+
+// Sem clima ao vivo aqui (isso só existe em Look → Relógio) — a ocasião de
+// cada bloco de look já basta pra dar um perfil de perfume coerente.
+function contextoToOcasiao(contexto) {
+  if (contexto.startsWith('Trabalho')) return 'trabalho'
+  if (contexto.startsWith('Casual')) return 'casual'
+  return 'fimDeSemana'
 }
 
 function lastWornLabel(dateStr) {
@@ -108,22 +117,26 @@ export default function WatchDetail({ watch, onBack, isFavorite, onToggleFavorit
         </p>
 
         <div className="mt-4 space-y-4">
-          {looks.map((look) => (
-            <div key={look.contexto} className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-neutral-50">{look.contexto}</h3>
+          {looks.map((look) => {
+            const perfume = suggestPerfume({ weatherBias: null, context: contextoToOcasiao(look.contexto) })
+            return (
+              <div key={look.contexto} className="rounded-2xl border border-white/10 bg-neutral-900/60 p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-neutral-50">{look.contexto}</h3>
+                </div>
+                <div className="mt-3">
+                  <LookPiece label="Camisa/camiseta" value={look.top} />
+                  <LookPiece label="Calça" value={look.bottom} />
+                  <LookPiece label="Tênis/sapato" value={look.tenis} />
+                  <LookPiece label="Camada extra" value={look.camadaExtra} />
+                  <LookPiece label="Perfume" value={`${perfume.familia} (${perfume.descritores.slice(0, 2).join(', ')})`} />
+                </div>
+                <p className="mt-3 rounded-xl bg-black/30 p-3 text-xs leading-relaxed text-neutral-400">
+                  {look.porque}
+                </p>
               </div>
-              <div className="mt-3">
-                <LookPiece label="Camisa/camiseta" value={look.top} />
-                <LookPiece label="Calça" value={look.bottom} />
-                <LookPiece label="Tênis/sapato" value={look.tenis} />
-                <LookPiece label="Camada extra" value={look.camadaExtra} />
-              </div>
-              <p className="mt-3 rounded-xl bg-black/30 p-3 text-xs leading-relaxed text-neutral-400">
-                {look.porque}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
     </div>

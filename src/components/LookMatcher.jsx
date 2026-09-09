@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import { LOOK_COLORS, CONTEXTS, GARMENTS, matchWatchesToLook } from '../lib/matchEngine.js'
 import { paletteGroup } from '../lib/outfitEngine.js'
 import { detectDominantColorId } from '../lib/colorDetect.js'
+import { suggestPerfume } from '../lib/perfumeEngine.js'
 import { Chip } from './FilterBar.jsx'
 import WatchCard from './WatchCard.jsx'
 
@@ -216,6 +217,23 @@ function ChoiceLogger({ watches, results, topResults, context, onLogChoice }) {
   )
 }
 
+function PerfumePanel({ weatherBias, context }) {
+  const p = useMemo(() => suggestPerfume({ weatherBias, context }), [weatherBias, context])
+  return (
+    <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
+      <p className="text-sm font-semibold text-neutral-100">Perfume sugerido</p>
+      <p className="mt-1 text-xs text-neutral-400">
+        <span className="font-medium text-amber-400">{p.familia}</span> — {p.descritores.join(', ')}
+      </p>
+      <p className="mt-2 text-xs text-neutral-500">{p.porque}</p>
+      <p className="mt-1 text-xs text-neutral-500">
+        {p.intensidade}
+        {p.evitar ? ` · ${p.evitar}` : ''}
+      </p>
+    </div>
+  )
+}
+
 export default function LookMatcher({
   watches,
   onSelectWatch,
@@ -271,6 +289,8 @@ export default function LookMatcher({
           ))}
         </div>
       </div>
+
+      <PerfumePanel weatherBias={weatherBias} context={context} />
 
       <div>
         {!hasSelection ? (
