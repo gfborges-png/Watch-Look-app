@@ -113,6 +113,11 @@ describe('addPerfumes — importação em lote', () => {
     expect(getPerfumes()).toHaveLength(3)
   })
 
+  it('preserva o campo notas de cada perfume importado', () => {
+    addPerfumes([{ nome: 'Bleu de Chanel', marca: 'Chanel', familia: 'Aromático limpo', notas: 'vetiver, cedro, âmbar seco' }])
+    expect(getPerfumes()[0].notas).toBe('vetiver, cedro, âmbar seco')
+  })
+
   it('gera ids únicos mesmo quando dois nomes do lote colidem (slug igual)', () => {
     addPerfumes([
       { nome: 'Bleu de Chanel', marca: 'Chanel EDT', familia: 'Aromático limpo', notas: '' },

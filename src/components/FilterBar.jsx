@@ -94,7 +94,7 @@ export default function FilterBar({
           ))}
         </select>
         <select value={materialFilter} onChange={(e) => onMaterialChange(e.target.value)} className={selectClass} aria-label="Filtrar por material da pulseira">
-          <option value="todos">Toda pulseira</option>
+          <option value="todos">Todas as pulseiras</option>
           {BRACELET_MATERIALS.map((m) => (
             <option key={m.id} value={m.id}>
               {m.label}

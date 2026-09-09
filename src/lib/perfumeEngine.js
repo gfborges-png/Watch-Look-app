@@ -107,7 +107,10 @@ export function matchFamilyName(text) {
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário
 // (src/lib/storage.js) — quando um deles bate com a família sugerida,
 // entra em `owned` pra aparecer como sugestão primária, na frente das
-// referências genéricas.
+// referências genéricas. Quando a pessoa tem mais de um perfume da
+// mesma família, `owned` vem ordenado por rankOwnedPerfumes — as notas
+// de cada um (ver notesWeatherFit) desempatam a favor do que combina
+// mais com o clima de hoje, em vez de só pegar o primeiro cadastrado.
 export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
   const profile = OCCASION_PROFILES[context] ?? OCCASION_PROFILES[DEFAULT_OCCASION]
 
@@ -115,7 +118,8 @@ export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
   if (weatherBias === 'quente') climaNota = 'Dia quente — prefira a versão mais leve (EDT) dessa família.'
   else if (weatherBias === 'frio') climaNota = 'Dia frio — pode ir na versão mais concentrada (EDP/Parfum) sem medo.'
 
-  const owned = ownedPerfumes.filter((p) => p.familia === profile.familia)
+  const matchingFamily = ownedPerfumes.filter((p) => p.familia === profile.familia)
+  const owned = rankOwnedPerfumes(matchingFamily, { contextId: context, weatherBias }).map((r) => r.perfume)
   return { ...profile, climaNota, owned }
 }
 
@@ -141,6 +145,51 @@ const FAMILY_WEATHER_FIT = {
 
 const FRAGRANCE_WEIGHTS = { ocasiao: 70, clima: 30 }
 
+// Notas (texto livre, cadastradas por perfume) que sinalizam o lado
+// fresco/leve (bom pra dias quentes) ou denso/quente (bom pra dias
+// frios) de uma fragrância específica — refina o FAMILY_WEATHER_FIT
+// genérico da família com o frasco real que a pessoa tem: duas pessoas
+// com um "Aromático limpo" cada podem ter notas bem diferentes, e o
+// clima de hoje deveria favorecer a mais leve, não tratar as duas como
+// idênticas só por família. Cobertura best-effort (PT/EN), não uma
+// lista fechada de toda nota de perfumaria que existe.
+const FRESH_NOTE_WORDS = [
+  'bergamota', 'limão', 'limao', 'laranja', 'toranja', 'grapefruit', 'lima', 'yuzu',
+  'cítrico', 'citrico', 'citrus', 'aquático', 'aquatico', 'marinho', 'marine',
+  'menta', 'hortelã', 'hortela', 'mint', 'verde', 'green', 'lavanda', 'lavender',
+  'chá verde', 'cha verde', 'green tea', 'pepino', 'cucumber', 'melancia', 'watermelon', 'toranja',
+]
+const WARM_NOTE_WORDS = [
+  'baunilha', 'vanilla', 'âmbar', 'ambar', 'amber', 'oud', 'incenso', 'incense',
+  'especiaria', 'especiarias', 'canela', 'cinnamon', 'cravo', 'clove', 'cacau', 'cocoa',
+  'chocolate', 'couro', 'leather', 'tabaco', 'tobacco', 'patchouli', 'almíscar', 'almiscar', 'musk',
+  'sândalo', 'sandalo', 'sandalwood', 'noz-moscada', 'noz moscada', 'nutmeg', 'fava tonka', 'tonka',
+]
+
+function normalizeNotesText(text) {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+}
+
+// Conta quantas palavras de nota fresca vs quente aparecem no texto
+// livre de `notas` — null se não reconhecer nenhuma (o chamador cai no
+// valor da família, sem regressão pra quem não preencheu notas ainda).
+// Quando reconhece, devolve um score 0-100 por weatherBias: puramente
+// fresco satura em quente=100/frio=40, puramente quente em frio=100/
+// quente=40 — nunca zero, porque "não é o ideal" não é "não serve".
+function notesWeatherFit(notas) {
+  if (!notas) return null
+  const text = normalizeNotesText(notas)
+  const freshCount = FRESH_NOTE_WORDS.filter((w) => text.includes(normalizeNotesText(w))).length
+  const warmCount = WARM_NOTE_WORDS.filter((w) => text.includes(normalizeNotesText(w))).length
+  const total = freshCount + warmCount
+  if (total === 0) return null
+  const freshShare = freshCount / total
+  return {
+    quente: Math.round(40 + freshShare * 60),
+    frio: Math.round(40 + (1 - freshShare) * 60),
+  }
+}
+
 function fragranceOcasiaoSubScore(perfume, contextId) {
   const nativeOccasion = FAMILY_NATIVE_OCCASION[perfume.familia]
   if (!nativeOccasion || !contextId) return { value: null, reasons: [] }
@@ -152,10 +201,27 @@ function fragranceOcasiaoSubScore(perfume, contextId) {
 
 function fragranceClimaSubScore(perfume, weatherBias) {
   if (!weatherBias || weatherBias === 'ameno') return { value: null, reasons: [] }
-  const value = FAMILY_WEATHER_FIT[perfume.familia]?.[weatherBias]
-  if (value == null) return { value: null, reasons: [] }
+  const familyValue = FAMILY_WEATHER_FIT[perfume.familia]?.[weatherBias]
+  const notesFit = notesWeatherFit(perfume.notas)
+  const notesValue = notesFit?.[weatherBias]
+
+  if (notesValue == null && familyValue == null) return { value: null, reasons: [] }
+
+  // Notas refletem o frasco específico que a pessoa cadastrou — pesam
+  // mais que a média genérica da família, mas não a ignoram por
+  // completo (as notas listadas quase nunca contam a fragrância
+  // inteira, só o que a pessoa lembrou de anotar).
+  const value =
+    notesValue != null && familyValue != null
+      ? Math.round(notesValue * 0.65 + familyValue * 0.35)
+      : (notesValue ?? familyValue)
+
   const reasons = []
-  if (value >= 85) reasons.push(weatherBias === 'quente' ? 'família leve, combina com dia quente' : 'família com mais corpo, combina com dia frio')
+  if (notesValue != null && notesValue >= 80) {
+    reasons.push(weatherBias === 'quente' ? 'notas frescas nesse perfume combinam com dia quente' : 'notas densas nesse perfume combinam com dia frio')
+  } else if (value >= 85) {
+    reasons.push(weatherBias === 'quente' ? 'família leve, combina com dia quente' : 'família com mais corpo, combina com dia frio')
+  }
   return { value, reasons }
 }
 

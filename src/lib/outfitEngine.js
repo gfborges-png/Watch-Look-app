@@ -180,3 +180,70 @@ export function generateLooks(watch) {
 
   return looks
 }
+
+// Trabalho/Casual/Fim de semana já têm um look dedicado em generateLooks
+// (posições fixas — o antigo casamento por prefixo de label era frágil
+// e caía silenciosamente pro look de Trabalho pra qualquer ocasião fora
+// dessas 3). Índice, não texto, então não quebra se o rótulo mudar.
+const CURATED_LOOK_INDEX = { trabalho: 0, casual: 1, fimDeSemana: 2 }
+
+// Vocabulário de peça pras 5 ocasiões que generateLooks não cobre —
+// GARMENT, não cor: a cor ainda vem da paleta do mostrador (pal), mas o
+// TIPO de peça é definido pela ocasião. Bug real que isso corrige: sem
+// isso, "Treino" caía no fallback de Trabalho e sugeria camisa social/
+// de linho — nunca certo pra suar a camisa (literalmente) numa academia.
+const EXTRA_OCCASION_LOOKS = {
+  reuniaoImportante: (pal) => ({
+    contexto: 'Reunião importante',
+    top: pal.tops[2] ?? pal.tops[0],
+    bottom: pal.bottoms[0],
+    tenis: pal.shoesDress,
+    camadaExtra: pal.layers[0],
+    porque: `${pal.regra} Reunião de peso pede o registro mais formal da paleta — blazer e sapato, sem tênis.`,
+  }),
+  treino: (pal) => ({
+    contexto: 'Treino',
+    top: `Camiseta dry-fit ${pal.cores[0]}`,
+    bottom: 'Bermuda ou legging de treino',
+    tenis: 'Tênis de treino',
+    camadaExtra: null,
+    porque: 'Treino pede tecido técnico que respira e liberdade de movimento — sem alfaiataria, sem camada extra, por mais que a cor combine.',
+  }),
+  jantarRomantico: (pal) => ({
+    contexto: 'Jantar romântico',
+    top: pal.tops[2] ?? pal.tops[0],
+    bottom: pal.bottoms[0],
+    tenis: pal.shoesDress,
+    camadaExtra: null,
+    porque: `${pal.regra} Clima íntimo pede o registro mais elegante da paleta, sem camada extra que esfrie o visual.`,
+  }),
+  festa: (pal) => ({
+    contexto: 'Festa',
+    top: pal.tops[1],
+    bottom: pal.bottoms[2] ?? pal.bottoms[0],
+    tenis: pal.shoesBold,
+    camadaExtra: null,
+    porque: `${pal.regra} Fim de noite pede o lado mais ousado da paleta — sem medo do tênis statement.`,
+  }),
+  casamento: (pal) => ({
+    contexto: 'Casamento',
+    top: pal.tops[2] ?? pal.tops[0],
+    bottom: pal.bottoms[0],
+    tenis: pal.shoesDress,
+    camadaExtra: pal.layers[0],
+    porque: `${pal.regra} Ocasião de peso e o dia inteiro de duração pedem o registro mais formal, com blazer.`,
+  }),
+}
+
+// Look pra QUALQUER uma das 8 ocasiões de matchEngine.CONTEXTS — usado
+// pela Home/Montar (dailyRecommendation.js), que precisa de resposta
+// certa pra todas, ao contrário do preview de 3 looks de generateLooks
+// (esse continua só ilustrativo, na tela de detalhe do relógio).
+export function lookForOccasion(watch, contextId) {
+  if (contextId in CURATED_LOOK_INDEX) {
+    return generateLooks(watch)[CURATED_LOOK_INDEX[contextId]]
+  }
+  const pal = PALETTES[paletteGroup(watch.cor)]
+  const build = EXTRA_OCCASION_LOOKS[contextId]
+  return build ? build(pal) : generateLooks(watch)[0]
+}

@@ -5,13 +5,14 @@
 // ranqueado só pelas dimensões que não dependem de peças de roupa
 // (ocasião, clima, rotação, preferência pessoal — o motor já redistribui
 // os pesos quando cor/estilo não estão disponíveis, então o score
-// continua honesto). O look sugerido em si vem de outfitEngine.generateLooks,
-// que já escolhe peças na paleta do relógio por construção — por isso
+// continua honesto). O look sugerido em si vem de outfitEngine.lookForOccasion,
+// que já escolhe peças na paleta E no vocabulário certo pra ocasião
+// (treino nunca vira camisa social só porque a cor combinaria) — por isso
 // "cores harmonizam" entra como motivo garantido, mesmo sem um score
 // numérico de cor pra essa combinação específica.
-import { CONTEXTS, DEFAULT_OUTFIT, LOOK_COLORS } from './matchEngine.js'
+import { DEFAULT_OUTFIT, LOOK_COLORS } from './matchEngine.js'
 import { recommendWatchesForLook } from './recommendationEngine.js'
-import { generateLooks, paletteGroup } from './outfitEngine.js'
+import { lookForOccasion, paletteGroup } from './outfitEngine.js'
 import { suggestPerfume } from './perfumeEngine.js'
 import { closestLookColorId } from './colorDetect.js'
 import { getWatchDimensions } from './watchModel.js'
@@ -42,12 +43,6 @@ export function pickOwnedSneakerForGroup(sneakers, group) {
   )
 }
 
-function lookForContext(watch, contextId) {
-  const looks = generateLooks(watch)
-  const label = CONTEXTS.find((c) => c.id === contextId)?.label ?? ''
-  return looks.find((l) => l.contexto.toLowerCase().startsWith(label.toLowerCase())) ?? looks[0]
-}
-
 // Gera até `count` candidatos pra hoje, do melhor pro "quero variar" —
 // cada um já com relógio, look, tênis e perfume sugeridos, score e
 // motivos prontos pra exibir.
@@ -60,7 +55,7 @@ export function buildTodayCandidates(watches, opts = {}) {
   return ranked.slice(0, Math.max(count, 1)).map((result) => {
     const { watch } = result
     const group = paletteGroup(watch.cor)
-    const look = lookForContext(watch, contextId)
+    const look = lookForOccasion(watch, contextId)
     const sneaker = pickOwnedSneakerForGroup(sneakers, group)
     const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes })
 

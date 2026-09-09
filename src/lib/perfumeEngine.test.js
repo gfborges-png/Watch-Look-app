@@ -34,6 +34,19 @@ describe('suggestPerfume', () => {
     expect(p.owned).toHaveLength(1)
     expect(p.owned[0].nome).toBe('Meu Perfume')
   })
+
+  it('com dois perfumes da mesma família, `owned` vem ordenado pelas notas mais adequadas ao clima de hoje', () => {
+    const p = suggestPerfume({
+      weatherBias: 'quente',
+      context: 'trabalho',
+      ownedPerfumes: [
+        { id: 'p1', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha, couro' },
+        { id: 'p2', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão, notas aquáticas' },
+      ],
+    })
+    expect(p.owned[0].nome).toBe('Fresco')
+    expect(p.owned[1].nome).toBe('Denso')
+  })
 })
 
 describe('rankOwnedPerfumes — FragranceScore explicável', () => {
@@ -82,6 +95,38 @@ describe('rankOwnedPerfumes — FragranceScore explicável', () => {
     for (let i = 1; i < results.length; i++) {
       expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
     }
+  })
+})
+
+describe('notas refinando o sub-score de clima (rankOwnedPerfumes)', () => {
+  it('notas frescas/cítricas pontuam mais alto que notas densas/amadeiradas num dia quente, mesma família', () => {
+    const results = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha, couro' },
+        { id: 'p2', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão, notas aquáticas' },
+      ],
+      { weatherBias: 'quente' },
+    )
+    const fresco = results.find((r) => r.perfume.nome === 'Fresco')
+    const denso = results.find((r) => r.perfume.nome === 'Denso')
+    expect(fresco.match).toBeGreaterThan(denso.match)
+  })
+
+  it('a mesma nota inverte a preferência no frio (o denso passa a pontuar mais)', () => {
+    const notasFrescas = { id: 'p1', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão' }
+    const notasDensas = { id: 'p2', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha' }
+    const [frescoNoFrio] = rankOwnedPerfumes([notasFrescas], { weatherBias: 'frio' })
+    const [densoNoFrio] = rankOwnedPerfumes([notasDensas], { weatherBias: 'frio' })
+    expect(densoNoFrio.match).toBeGreaterThan(frescoNoFrio.match)
+  })
+
+  it('sem notas reconhecidas, cai no valor da família (mesmo comportamento de antes, sem regressão)', () => {
+    const semNotas = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }], { weatherBias: 'quente' })[0]
+    const notaIrreconhecivel = rankOwnedPerfumes(
+      [{ id: 'p1', nome: 'X', familia: 'Aromático limpo', notas: 'algo bem genérico' }],
+      { weatherBias: 'quente' },
+    )[0]
+    expect(notaIrreconhecivel.match).toBe(semNotas.match)
   })
 })
 

@@ -191,6 +191,11 @@ function PerfumeForm({ initial, onSave, onCancel, onDelete }) {
       </Field>
       <Field label="Notas">
         <input className={inputClass} value={form.notas} onChange={set('notas')} placeholder="Ex: bergamota, cedro, almíscar (opcional)" />
+        <span className="mt-1 block text-xs text-text-muted">
+          Ajuda a refinar pro clima do dia — notas frescas/cítricas (bergamota, limão) pesam pra dias quentes; notas
+          densas/amadeiradas (âmbar, baunilha, couro) pesam pra dias frios. Se você tiver mais de um perfume da mesma
+          família, isso decide qual aparece primeiro.
+        </span>
       </Field>
 
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -362,7 +367,7 @@ function PerfumeImportPanel({ onImport, onCancel }) {
     return (
       <div className="space-y-4 rounded-2xl border border-accent/25 bg-surface-2/60 p-5">
         <p className="text-sm font-semibold text-text">{parsed.length} perfumes encontrados</p>
-        <p className="text-xs text-text-muted">Confere a família olfativa antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
+        <p className="text-xs text-text-muted">Confere a família olfativa e as notas antes de importar — dá pra ajustar qualquer um depois, individualmente.</p>
         <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
           {parsed.map((item, i) => (
             <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-2.5">
@@ -377,6 +382,7 @@ function PerfumeImportPanel({ onImport, onCancel }) {
                   {item.marca ? `${item.marca} · ` : ''}
                   {item.familia}
                 </p>
+                {item.notas && <p className="truncate text-[10px] text-text-muted/80">{item.notas}</p>}
               </div>
             </div>
           ))}
@@ -401,15 +407,16 @@ function PerfumeImportPanel({ onImport, onCancel }) {
       <div>
         <p className="text-sm font-semibold text-text">Importar lista de perfumes</p>
         <p className="mt-1 text-xs text-text-muted">
-          Cola um array JSON com nome (e opcionalmente marca/família/notas) de cada perfume — a família em texto
-          é reconhecida quando bate com uma das famílias que o app já usa.
+          Cola um array JSON com nome (e opcionalmente marca/família/notas) de cada perfume — a família em texto é
+          reconhecida quando bate com uma das famílias que o app já usa, e as notas ajudam a escolher qual perfume
+          combina mais com o clima do dia, quando você tiver mais de um da mesma família.
         </p>
       </div>
       <textarea
         value={raw}
         onChange={(e) => setRaw(e.target.value)}
         rows={8}
-        placeholder='[{"nome": "Bleu de Chanel EDP", "marca": "Chanel", "familia": "Amadeirado executivo"}, ...]'
+        placeholder='[{"nome": "Bleu de Chanel EDP", "marca": "Chanel", "familia": "Amadeirado executivo", "notas": "vetiver, cedro, âmbar seco"}, ...]'
         className={`${inputClass} font-mono text-xs`}
       />
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -475,6 +482,7 @@ function PerfumeRow({ perfume, onEdit }) {
           {perfume.marca ? `${perfume.marca} · ` : ''}
           {perfume.familia}
         </p>
+        {perfume.notas && <p className="truncate text-[11px] text-text-muted/80">{perfume.notas}</p>}
       </div>
       <EditIconButton onClick={onEdit} label={`Editar ${perfume.nome}`} />
     </div>
