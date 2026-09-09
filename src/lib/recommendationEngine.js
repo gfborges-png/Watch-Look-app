@@ -16,6 +16,9 @@ import { paletteGroup } from './outfitEngine.js'
 import { GROUP_LABEL, colorDistance, netVibe, coloredActiveGarments, activeGarments } from './matchEngine.js'
 import { getWatchDimensions } from './watchModel.js'
 import { rotationScore, usageStats } from './rotationEngine.js'
+import { OCCASION_DIMENSIONS as OCCASION_PROFILES, OCCASION_LABELS } from './occasionDimensions.js'
+import { scorePersonalPreference } from './preferenceScore.js'
+import { combineWeightedScore } from './scoreCombine.js'
 
 const WEIGHTS = { cor: 35, ocasiao: 20, estilo: 15, clima: 10, rotacao: 10, preferencia: 10 }
 
@@ -59,33 +62,9 @@ function colorSubScore(watch, coloredGarments) {
   return { value: Math.round(weightedSum / weightTotal), reasons }
 }
 
-// Perfil-alvo de cada ocasião nas 3 dimensões que o watchModel já deriva
-// pra cada relógio (formalidade, esportividade, "statement level") — o
-// score é o quão perto o relógio chega desse alvo, não uma lista de
-// if/else por ocasião. Adicionar uma ocasião nova é só adicionar uma
-// linha aqui.
-const OCCASION_PROFILES = {
-  trabalho: { formality: 80, sportiness: 20, statement: 25 },
-  reuniaoImportante: { formality: 95, sportiness: 5, statement: 15 },
-  casual: { formality: 45, sportiness: 45, statement: 40 },
-  treino: { formality: 5, sportiness: 95, statement: 30 },
-  fimDeSemana: { formality: 35, sportiness: 50, statement: 65 },
-  jantarRomantico: { formality: 75, sportiness: 15, statement: 45 },
-  festa: { formality: 35, sportiness: 30, statement: 80 },
-  casamento: { formality: 90, sportiness: 10, statement: 35 },
-}
-
-const OCCASION_LABELS = Object.fromEntries([
-  ['trabalho', 'o trabalho'],
-  ['reuniaoImportante', 'uma reunião importante'],
-  ['casual', 'o dia a dia casual'],
-  ['treino', 'o treino'],
-  ['fimDeSemana', 'o fim de semana'],
-  ['jantarRomantico', 'um jantar romântico'],
-  ['festa', 'uma festa'],
-  ['casamento', 'um casamento'],
-])
-
+// Score é o quão perto o relógio chega do perfil-alvo da ocasião (ver
+// occasionDimensions.js, compartilhado com tênis e perfume), não uma
+// lista de if/else por ocasião.
 function occasionSubScore(watchDims, contextId) {
   const profile = OCCASION_PROFILES[contextId]
   if (!profile) return { value: null, reasons: [] }
@@ -140,29 +119,6 @@ function rotationSubScore(watchId, history) {
   return { value, reasons }
 }
 
-function preferenceSubScore(group, personalBias) {
-  const bias = personalBias?.[group]
-  if (bias == null || Object.keys(personalBias).length === 0) return { value: null, reasons: [] }
-  const value = Math.round(Math.max(0, Math.min(100, 60 + bias * 13)))
-  const reasons = []
-  if (bias > 0.4) reasons.push('combina com o seu padrão de escolhas anteriores')
-  else if (bias < -0.4) reasons.push('foge um pouco do que você costuma escolher')
-  return { value, reasons }
-}
-
-function combineScore(subScores) {
-  let weightedSum = 0
-  let totalWeight = 0
-  for (const key of Object.keys(WEIGHTS)) {
-    const v = subScores[key]
-    if (v == null) continue
-    weightedSum += v * WEIGHTS[key]
-    totalWeight += WEIGHTS[key]
-  }
-  if (totalWeight === 0) return 50
-  return Math.round(weightedSum / totalWeight)
-}
-
 // Recebe o outfit (peça por peça), o contexto e sinais extras opcionais
 // (`weatherBias` 'quente'|'frio'|'ameno'|null vindo do clima do dia;
 // `history` bruto de uso pro cálculo de rotação; `personalBias` por grupo
@@ -183,7 +139,7 @@ export function recommendWatchesForLook(watches, outfit, contextId, opts = {}) {
     const estilo = formalitySubScore(dims, garments)
     const clima = weatherSubScore(watch, weatherBias)
     const rotacao = rotationSubScore(watch.id, history)
-    const preferencia = preferenceSubScore(group, personalBias)
+    const preferencia = scorePersonalPreference(group, personalBias)
 
     const subScores = {
       cor: cor.value,
@@ -193,7 +149,7 @@ export function recommendWatchesForLook(watches, outfit, contextId, opts = {}) {
       rotacao: rotacao.value,
       preferencia: preferencia.value,
     }
-    const match = combineScore(subScores)
+    const match = combineWeightedScore(subScores, WEIGHTS)
 
     let reasons = [...cor.reasons, ...ocasiao.reasons, ...estilo.reasons, ...clima.reasons, ...rotacao.reasons, ...preferencia.reasons]
     if (reasons.length === 0 && group === 'neutro') reasons = ['mostrador neutro combina com qualquer look']

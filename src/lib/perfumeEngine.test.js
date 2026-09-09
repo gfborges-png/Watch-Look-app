@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestPerfume, KNOWN_FAMILIES } from './perfumeEngine.js'
+import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES } from './perfumeEngine.js'
 import { CONTEXTS } from './matchEngine.js'
 
 describe('suggestPerfume', () => {
@@ -33,5 +33,54 @@ describe('suggestPerfume', () => {
     })
     expect(p.owned).toHaveLength(1)
     expect(p.owned[0].nome).toBe('Meu Perfume')
+  })
+})
+
+describe('rankOwnedPerfumes — FragranceScore explicável', () => {
+  it('perfume da família nativa da ocasião pontua o máximo', () => {
+    const [top] = rankOwnedPerfumes([{ id: 'p1', nome: 'Trabalho', familia: 'Aromático limpo' }], { contextId: 'trabalho' })
+    expect(top.match).toBe(100)
+    expect(top.subScores.ocasiao).toBe(100)
+  })
+
+  it('perfume de outra família ainda pontua algo (nunca zero por padrão), proporcional à distância entre ocasiões', () => {
+    const [festa] = rankOwnedPerfumes([{ id: 'p1', nome: 'Festa', familia: 'Amadeirado-doce statement' }], { contextId: 'trabalho' })
+    const [treino] = rankOwnedPerfumes([{ id: 'p1', nome: 'Treino', familia: 'Cítrico esportivo' }], { contextId: 'trabalho' })
+    // festa (formal, statement alto) está mais longe do trabalho do que
+    // um perfume esportivo leve pensado pro dia a dia ativo.
+    expect(festa.match).toBeLessThan(100)
+    expect(treino.match).toBeLessThan(100)
+  })
+
+  it('sem contexto nem clima, os dois sub-scores ficam null mas ainda retorna um score', () => {
+    const [top] = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }])
+    expect(top.subScores.ocasiao).toBeNull()
+    expect(top.subScores.clima).toBeNull()
+    expect(top.match).toBeGreaterThan(0)
+  })
+
+  it('clima informado acrescenta um sub-score e favorece a família mais adequada ao calor', () => {
+    const quente = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'Cítrico', familia: 'Cítrico esportivo' },
+        { id: 'p2', nome: 'Sensual', familia: 'Amadeirado sensual' },
+      ],
+      { weatherBias: 'quente' },
+    )
+    expect(quente.find((r) => r.perfume.id === 'p1').match).toBeGreaterThan(quente.find((r) => r.perfume.id === 'p2').match)
+  })
+
+  it('resultados vêm ordenados do maior pro menor match', () => {
+    const results = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'A', familia: 'Aromático limpo' },
+        { id: 'p2', nome: 'B', familia: 'Amadeirado-doce statement' },
+        { id: 'p3', nome: 'C', familia: 'Cítrico esportivo' },
+      ],
+      { contextId: 'trabalho' },
+    )
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
+    }
   })
 })

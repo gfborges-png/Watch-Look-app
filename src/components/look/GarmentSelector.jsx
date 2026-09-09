@@ -205,15 +205,15 @@ function GarmentSection({ garment, piece, onChange, sneakers, suggestedSneaker }
 // depois que a anterior estiver preenchida (progressive disclosure),
 // pra não jogar 4 cards cheios de controles na tela de uma vez. Derivado
 // direto do outfit a cada render — sem estado próprio, sem efeito.
-export default function GarmentSelector({ outfit, onOutfitChange, sneakers, context }) {
+export default function GarmentSelector({ outfit, onOutfitChange, sneakers, context, weatherBias, personalBias }) {
   const revealed = visibleGarmentKeys(outfit)
   const visibleGarments = GARMENTS.filter((g) => revealed.includes(g.key))
 
   const suggestedSneaker = useMemo(() => {
     if (!sneakers || sneakers.length === 0) return null
     const others = coloredActiveGarments(outfit).filter((g) => g.key !== 'calcado')
-    return pickBestSneakerForGarments(sneakers, others, context)
-  }, [sneakers, outfit, context])
+    return pickBestSneakerForGarments(sneakers, others, context, { weatherBias, personalBias })
+  }, [sneakers, outfit, context, weatherBias, personalBias])
 
   const handleGarmentChange = (key, next) => {
     let nextOutfit = { ...outfit, [key]: next }
@@ -222,7 +222,7 @@ export default function GarmentSelector({ outfit, onOutfitChange, sneakers, cont
     // clique pra algo que já dá pra inferir da própria coleção.
     if (key === 'calca' && next.colorId && !outfit.calcado?.modelo && sneakers && sneakers.length > 0) {
       const others = coloredActiveGarments(nextOutfit).filter((g) => g.key !== 'calcado')
-      const best = pickBestSneakerForGarments(sneakers, others, context)
+      const best = pickBestSneakerForGarments(sneakers, others, context, { weatherBias, personalBias })
       if (best) {
         nextOutfit = {
           ...nextOutfit,

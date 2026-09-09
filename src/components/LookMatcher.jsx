@@ -44,7 +44,14 @@ export default function LookMatcher({
     <div className="space-y-5">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">1. O que você está usando</p>
-        <LookInputSection outfit={outfit} onOutfitChange={onOutfitChange} sneakers={sneakers} context={context} />
+        <LookInputSection
+          outfit={outfit}
+          onOutfitChange={onOutfitChange}
+          sneakers={sneakers}
+          context={context}
+          weatherBias={weatherBias}
+          personalBias={bias}
+        />
       </div>
 
       <div>

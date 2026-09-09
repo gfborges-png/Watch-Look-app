@@ -9,6 +9,9 @@
 // diferentes, mesmo no mesmo dia); o clima só ajusta a concentração
 // recomendada (EDT mais leve num dia quente, pode ir na versão mais
 // forte num dia frio), não muda a família.
+import { occasionDistance } from './occasionDimensions.js'
+import { combineWeightedScore } from './scoreCombine.js'
+
 const OCCASION_PROFILES = {
   trabalho: {
     familia: 'Aromático limpo',
@@ -98,4 +101,65 @@ export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
 
   const owned = ownedPerfumes.filter((p) => p.familia === profile.familia)
   return { ...profile, climaNota, owned }
+}
+
+// Cada família aqui tem exatamente uma ocasião "nativa" (a chave de
+// OCCASION_PROFILES que a recomenda) — usado pra saber quão longe a
+// família de um perfume cadastrado está da ocasião do dia, em vez de só
+// filtrar por igualdade exata.
+const FAMILY_NATIVE_OCCASION = Object.fromEntries(Object.entries(OCCASION_PROFILES).map(([occasionId, profile]) => [profile.familia, occasionId]))
+
+// Combina os dois amadeirados-especiados; ainda com sensações de calor/
+// frio bem diferentes na prática (um mais leve, um mais denso), então a
+// nota de clima os trata separado apesar de "próximos" em ocasião.
+const FAMILY_WEATHER_FIT = {
+  'Aromático limpo': { quente: 85, frio: 55 },
+  'Amadeirado executivo': { quente: 50, frio: 80 },
+  'Aromático-amadeirado': { quente: 65, frio: 65 },
+  'Cítrico esportivo': { quente: 95, frio: 35 },
+  'Amadeirado-especiado leve': { quente: 55, frio: 75 },
+  'Amadeirado sensual': { quente: 35, frio: 85 },
+  'Amadeirado-doce statement': { quente: 30, frio: 85 },
+  'Amadeirado-especiado elegante': { quente: 45, frio: 80 },
+}
+
+const FRAGRANCE_WEIGHTS = { ocasiao: 70, clima: 30 }
+
+function fragranceOcasiaoSubScore(perfume, contextId) {
+  const nativeOccasion = FAMILY_NATIVE_OCCASION[perfume.familia]
+  if (!nativeOccasion || !contextId) return { value: null, reasons: [] }
+  if (nativeOccasion === contextId) return { value: 100, reasons: ['família pensada exatamente pra essa ocasião'] }
+  const value = Math.round(Math.max(0, 100 - occasionDistance(nativeOccasion, contextId)))
+  const reasons = value >= 70 ? ['família próxima do que essa ocasião pede'] : []
+  return { value, reasons }
+}
+
+function fragranceClimaSubScore(perfume, weatherBias) {
+  if (!weatherBias || weatherBias === 'ameno') return { value: null, reasons: [] }
+  const value = FAMILY_WEATHER_FIT[perfume.familia]?.[weatherBias]
+  if (value == null) return { value: null, reasons: [] }
+  const reasons = []
+  if (value >= 85) reasons.push(weatherBias === 'quente' ? 'família leve, combina com dia quente' : 'família com mais corpo, combina com dia frio')
+  return { value, reasons }
+}
+
+// FragranceScore — pontua CADA perfume cadastrado (não só filtra por
+// família exata) contra ocasião + clima, com peso redistribuído quando
+// um dos dois não está disponível. Horário/sazonalidade/histórico/
+// rotação (citados na especificação) ficam de fora por enquanto — não
+// existe registro de "qual perfume você usou quando" no app ainda, e é
+// melhor omitir a dimensão do que fingir um dado que não existe.
+// Complementa suggestPerfume (que decide A família certa pra ocasião);
+// isto aqui ordena o que você JÁ TEM contra qualquer ocasião/clima dados.
+export function rankOwnedPerfumes(ownedPerfumes, { contextId = null, weatherBias = null } = {}) {
+  return ownedPerfumes
+    .map((perfume) => {
+      const ocasiao = fragranceOcasiaoSubScore(perfume, contextId)
+      const clima = fragranceClimaSubScore(perfume, weatherBias)
+      const subScores = { ocasiao: ocasiao.value, clima: clima.value }
+      const match = combineWeightedScore(subScores, FRAGRANCE_WEIGHTS, 60)
+      const reasons = [...new Set([...ocasiao.reasons, ...clima.reasons])]
+      return { perfume, match, subScores, reasons }
+    })
+    .sort((a, b) => b.match - a.match)
 }
