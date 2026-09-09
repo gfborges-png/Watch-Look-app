@@ -30,15 +30,22 @@ import {
 } from './lib/storage.js'
 import { getWeatherForCurrentLocation } from './lib/weather.js'
 import WatchCard from './components/WatchCard.jsx'
-import FilterBar, { Chip } from './components/FilterBar.jsx'
+import FilterBar from './components/FilterBar.jsx'
 import WatchDetail from './components/WatchDetail.jsx'
 import LookMatcher from './components/LookMatcher.jsx'
 import WatchForm from './components/WatchForm.jsx'
 import BackupPanel from './components/BackupPanel.jsx'
 import WardrobePanel from './components/WardrobePanel.jsx'
+import TodayScreen from './components/TodayScreen.jsx'
+import BottomNav from './components/BottomNav.jsx'
+
+const TAB_SUBTITLE = {
+  colecao: 'Escolha um relógio da coleção e veja sugestões de look combinando.',
+  montar: 'Diga as cores do seu look e veja qual relógio da coleção combina.',
+}
 
 function App() {
-  const [mode, setMode] = useState('colecao') // 'colecao' | 'look'
+  const [tab, setTab] = useState('hoje') // 'hoje' | 'colecao' | 'montar' | 'guardaroupa'
   const [query, setQuery] = useState('')
   const [colorFilter, setColorFilter] = useState('todos')
   const [styleFilter, setStyleFilter] = useState('todos')
@@ -46,7 +53,6 @@ function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [formTarget, setFormTarget] = useState(null) // null | 'new' | watchId
   const [showBackup, setShowBackup] = useState(false)
-  const [showWardrobe, setShowWardrobe] = useState(false)
   const [lookOutfit, setLookOutfit] = useState(DEFAULT_OUTFIT)
   const [lookContext, setLookContext] = useState('casual')
   const [collection, setCollection] = useState(() => getCollection())
@@ -140,24 +146,6 @@ function App() {
     )
   }
 
-  if (showWardrobe) {
-    return (
-      <div className="min-h-screen bg-neutral-950 text-neutral-100">
-        <WardrobePanel
-          onBack={() => setShowWardrobe(false)}
-          sneakers={sneakers}
-          perfumes={perfumes}
-          onAddSneaker={handleAddSneaker}
-          onUpdateSneaker={handleUpdateSneaker}
-          onDeleteSneaker={handleDeleteSneaker}
-          onAddPerfume={handleAddPerfume}
-          onUpdatePerfume={handleUpdatePerfume}
-          onDeletePerfume={handleDeletePerfume}
-        />
-      </div>
-    )
-  }
-
   if (showBackup) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100">
@@ -190,7 +178,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 pb-20 md:pb-0">
       <header className="sticky top-0 z-10 border-b border-white/5 bg-neutral-950/90 px-4 pb-4 pt-6 backdrop-blur">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-start justify-between gap-3">
@@ -198,23 +186,9 @@ function App() {
               <h1 className="text-xl font-bold tracking-tight">
                 Watch <span className="text-amber-400">&amp;</span> Look
               </h1>
-              <p className="mt-1 text-sm text-neutral-400">
-                {mode === 'colecao'
-                  ? 'Escolha um relógio da coleção e veja sugestões de look combinando.'
-                  : 'Diga as cores do seu look e veja qual relógio da coleção combina.'}
-              </p>
+              {TAB_SUBTITLE[tab] && <p className="mt-1 text-sm text-neutral-400">{TAB_SUBTITLE[tab]}</p>}
             </div>
-            <div className="flex shrink-0 gap-2">
-              <button
-                onClick={() => setShowWardrobe(true)}
-                aria-label="Guarda-roupa"
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-neutral-400 transition hover:bg-white/10 hover:text-neutral-100"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="4.5" r="1.5" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v2.5M3.5 20.5L12 8.5l8.5 12M7 15.5h10" />
-                </svg>
-              </button>
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={() => setShowBackup(true)}
                 aria-label="Dados e backup"
@@ -228,28 +202,7 @@ function App() {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2">
-            <Chip active={mode === 'colecao'} onClick={() => setMode('colecao')}>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="12" r="7.5" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.3l2.2 1.5" />
-                  <path strokeLinecap="round" d="M10 2h4M10 22h4" />
-                </svg>
-                Relógio → Look
-              </span>
-            </Chip>
-            <Chip active={mode === 'look'} onClick={() => setMode('look')}>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 4L4 7l2.5 2.5L8 8v12h8V8l1.5 1.5L20 7l-4-3-2 2h-4l-2-2z" />
-                </svg>
-                Look → Relógio
-              </span>
-            </Chip>
-          </div>
-
-          {mode === 'colecao' && (
+          {tab === 'colecao' && (
             <div className="mt-4">
               <FilterBar
                 query={query}
@@ -266,8 +219,26 @@ function App() {
         </div>
       </header>
 
+      <BottomNav active={tab} onChange={setTab} />
+
       <main className="mx-auto max-w-2xl px-4 py-5">
-        {mode === 'look' ? (
+        {tab === 'hoje' && (
+          <TodayScreen
+            watches={collection}
+            weather={weather}
+            onFetchWeather={handleFetchWeather}
+            history={history}
+            bias={bias}
+            sneakers={sneakers}
+            perfumes={perfumes}
+            onLogWornToday={handleLogWornToday}
+            onLogFeedback={handleLogFeedback}
+            onGoToMontar={() => setTab('montar')}
+            onGoToColecao={() => setTab('colecao')}
+          />
+        )}
+
+        {tab === 'montar' && (
           <LookMatcher
             watches={collection}
             onSelectWatch={setSelectedId}
@@ -286,7 +257,22 @@ function App() {
             sneakers={sneakers}
             perfumes={perfumes}
           />
-        ) : (
+        )}
+
+        {tab === 'guardaroupa' && (
+          <WardrobePanel
+            sneakers={sneakers}
+            perfumes={perfumes}
+            onAddSneaker={handleAddSneaker}
+            onUpdateSneaker={handleUpdateSneaker}
+            onDeleteSneaker={handleDeleteSneaker}
+            onAddPerfume={handleAddPerfume}
+            onUpdatePerfume={handleUpdatePerfume}
+            onDeletePerfume={handleDeletePerfume}
+          />
+        )}
+
+        {tab === 'colecao' && (
           <>
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs text-neutral-500">
