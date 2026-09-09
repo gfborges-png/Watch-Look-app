@@ -182,6 +182,7 @@ export default function TodayScreen({
           </span>
         )}
         {weather.status === 'loading' && <span className="text-text-muted">Buscando clima...</span>}
+        {weather.status === 'error' && <span className="text-text-muted">Não conseguimos atualizar o clima agora — seu MOODE segue sem ele.</span>}
         {(weather.status === 'idle' || weather.status === 'error') && (
           <button onClick={onFetchWeather} className="font-medium text-accent hover:underline">
             Usar clima de hoje

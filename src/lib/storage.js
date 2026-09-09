@@ -209,6 +209,7 @@ export function exportData() {
     exportedAt: new Date().toISOString(),
     collection: getCollection(),
     favorites: getFavorites(),
+    favoriteLooks: getFavoriteLooks(),
     history: getHistory(),
     choices: getChoices(),
     feedback: getFeedback(),
@@ -228,6 +229,7 @@ function normalizeBackup(data) {
   return {
     collection: Array.isArray(data.collection) ? data.collection : [],
     favorites: Array.isArray(data.favorites) ? data.favorites : [],
+    favoriteLooks: Array.isArray(data.favoriteLooks) ? data.favoriteLooks : [],
     history: Array.isArray(data.history) ? data.history : [],
     choices: Array.isArray(data.choices) ? data.choices : [],
     feedback: Array.isArray(data.feedback) ? data.feedback : [],
@@ -258,6 +260,7 @@ export function importData(data) {
   const normalized = normalizeBackup(data)
   saveCollection(normalized.collection)
   storageAdapter.set('favorites', normalized.favorites)
+  storageAdapter.set('favoriteLooks', normalized.favoriteLooks)
   storageAdapter.set('history', normalized.history)
   storageAdapter.set('choices', normalized.choices)
   storageAdapter.set('feedback', normalized.feedback)
@@ -274,6 +277,28 @@ export function toggleFavorite(watchId) {
   const favorites = getFavorites()
   const next = favorites.includes(watchId) ? favorites.filter((id) => id !== watchId) : [...favorites, watchId]
   storageAdapter.set('favorites', next)
+  return next
+}
+
+// "Moodes Favoritos" — favoritar o CONJUNTO usado num dia (relógio +
+// ocasião + score), não só um item isolado (isso já existe acima, por
+// watchId). Id estável watchId+data, então favoritar/desfavoritar a
+// mesma entrada do histórico nunca duplica.
+export function getFavoriteLooks() {
+  return storageAdapter.get('favoriteLooks', [])
+}
+
+export function isFavoriteLook(watchId, date) {
+  return getFavoriteLooks().some((f) => f.watchId === watchId && f.date === date)
+}
+
+export function toggleFavoriteLook({ watchId, date, context, score }) {
+  const favorites = getFavoriteLooks()
+  const exists = favorites.some((f) => f.watchId === watchId && f.date === date)
+  const next = exists
+    ? favorites.filter((f) => !(f.watchId === watchId && f.date === date))
+    : [{ watchId, date, context, score, favoritedAt: new Date().toISOString() }, ...favorites]
+  storageAdapter.set('favoriteLooks', next)
   return next
 }
 

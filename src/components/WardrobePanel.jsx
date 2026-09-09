@@ -549,8 +549,9 @@ export default function WardrobePanel({
                 </button>
               </div>
               {sneakers.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
-                  Nenhum tênis cadastrado ainda.
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text">Ainda sem tênis</p>
+                  <p className="mt-1.5 text-sm text-text-muted">Adicione seus pares para deixar seus MOODEs mais completos.</p>
                 </div>
               ) : (
                 sneakers.map((s) => <SneakerRow key={s.id} sneaker={s} onEdit={() => setEditingSneaker(s.id)} />)
@@ -586,8 +587,9 @@ export default function WardrobePanel({
               + Adicionar perfume
             </button>
             {perfumes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
-                Nenhum perfume cadastrado ainda.
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text">Ainda sem perfumes</p>
+                <p className="mt-1.5 text-sm text-text-muted">Seu perfume também muda o MOODE.</p>
               </div>
             ) : (
               perfumes.map((p) => <PerfumeRow key={p.id} perfume={p} onEdit={() => setEditingPerfume(p.id)} />)

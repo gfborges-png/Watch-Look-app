@@ -259,6 +259,8 @@ function App() {
             history={history}
             feedback={rec.feedback}
             collection={collection}
+            favoriteLooks={rec.favoriteLooks}
+            onToggleFavoriteLook={(entry) => rec.toggleFavoriteLook({ watchId: entry.watch.id, date: entry.date, context: entry.context, score: entry.score })}
             onUseAgain={(entry) => {
               logWornToday(entry.watch.id)
               logFeedback({

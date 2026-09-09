@@ -1,52 +1,73 @@
-# Watch & Look
+# MOODE
 
-Seu personal stylist pessoal, baseado na sua própria coleção. Abre o app e,
-em poucos segundos, responde: **qual relógio, tênis e perfume eu devo usar
-hoje com esse look?**
+**Dress your mood.**
+
+Seu personal stylist diário, baseado no seu próprio guarda-roupa. Abre o
+app e, em poucos segundos, responde: **o que eu devo vestir e usar hoje?**
 
 100% local — sem backend, sem conta, sem enviar nada pra lugar nenhum. Tudo
 roda no navegador e fica salvo só no seu aparelho.
 
+## Brand
+
+**MOODE** — de *MOOD + MODE*: a união entre humor/contexto/momento e
+estilo/moda/forma de se apresentar.
+
+O símbolo da marca são dois círculos interligados — um representa você, o
+outro representa o momento; a interseção é o seu MOODE. `M[⧉]DE`, com o
+símbolo substituindo os dois "O" do nome (`src/components/brand/`).
+
+Paleta neutra editorial — Bone `#F8F6F2`, Ink `#0F0F0F`, Warm Gray
+`#A7A39B`, Muted Olive `#6B705F` — com accents contextuais discretos
+(trabalho, fim de semana, jantar, ousado) só em botões/seleção/destaques
+pontuais. Tipografia mistura sans-serif (Inter, UI) com serif editorial
+(Fraunces, headlines) — ver tokens em `src/index.css`. A tecnologia fica
+nos bastidores: a interface fala como um stylist, nunca como "algoritmo"
+ou "IA".
+
 ## Proposta
 
-O app deixou de ser só uma ferramenta de combinação relógio↔look pra virar
-um assistente de vestuário pessoal:
-
-- **Hoje** — a tela inicial. Sem precisar informar nada, sugere um look
-  completo (relógio + roupa + tênis + perfume) pro dia, com score
-  explicado e a opção de pedir outra sugestão ou variar.
-- **Coleção** — seus relógios, com filtros (cor, tipo, marca, material da
-  pulseira, favoritos) e ordenação (nome, melhor pra hoje, mais/menos
-  usados, recência), mais uma seção de relógios esquecidos na caixa.
-- **Montar** — o fluxo original: descreve um look (por foto ou manual) e
-  vê quais relógios da coleção combinam, cada um com tênis e perfume
-  sugeridos junto.
-- **Guarda-roupa** — cadastro de tênis e perfumes que você realmente tem,
-  pra sugestão apontar pras suas próprias coisas em vez de referências
+- **Hoje** — a tela inicial, "Seu MOODE de hoje". Sem precisar informar
+  nada, sugere um look completo (relógio + roupa + tênis + perfume) pro
+  dia, com score explicado, ação de travar uma peça específica ("lock
+  item") e ajustes rápidos (Mais casual/sofisticado/ousado, Quero variar).
+- **Guarda-roupa** — Relógios (com filtros, ordenação e "esquecidos na
+  caixa"), Tênis, Perfumes e um resumo do seu estilo, tudo cadastrado por
+  você — pra sugestão apontar pras suas próprias coisas, não referências
   genéricas.
+- **Montar** — descreve um look (por foto ou manual) e vê quais relógios
+  combinam, cada um com tênis e perfume sugeridos junto. Também é onde
+  "Montar um MOODE com isso" (a partir do detalhe de qualquer relógio)
+  trava um item específico e monta o resto em volta dele.
+- **Histórico** — "Meus Moodes": cada dia que você usou um look vira um
+  registro, com "Usar de novo", "Criar variação" e a opção de favoritar o
+  conjunto do dia inteiro (não só um item isolado).
 
 ## Funcionalidades
 
-- Sugestão diária ("Look do Dia") com 3 níveis — melhor escolha,
-  alternativa, e uma opção pra variar.
-- Score de match **absoluto** (0–100, não mais relativo ao melhor
-  resultado do momento), com faixas de interpretação (Excelente / Muito
-  bom / Bom / Funciona / Eu evitaria) e sub-scores explicáveis (cor,
-  ocasião, estilo, clima, rotação, preferência pessoal).
-- Feedback pós-sugestão (👍 boa sugestão / ❤️ ficou perfeito / 👎 não
-  usaria, com motivo opcional) que retroalimenta a preferência aprendida.
-- Rotação da coleção: favorece relógios parados há mais tempo (quando
-  também combinam com o look) e sinaliza os "esquecidos na caixa".
-- Clima do dia (Open-Meteo, sem chave) influencia relógio e perfume.
-- Detecção de cor por foto — de uma peça isolada, ou do look inteiro de
-  uma vez (com confirmação antes de aplicar) — tudo processado no
-  navegador via canvas, a imagem nunca sai do aparelho.
-- Catálogo de tênis e perfumes, favoritos, histórico de uso, edição
-  completa da coleção, backup/restauração (JSON versionado).
+- Sugestão diária editorial, com ações de ajuste (mais casual/sofisticado/
+  ousado, variar) que reordenam candidatos já ranqueados — nunca inventam
+  um resultado pior só pra obedecer o botão.
+- Scores explicáveis e **absolutos** (0–100), com faixas de interpretação
+  (Excelente / Muito bom / Bom / Funciona / Eu evitaria) para relógio,
+  tênis e perfume — cada um com sub-scores próprios (ver tabelas abaixo).
+- "Lock item": trava qualquer peça (relógio, tênis ou perfume) e o resto
+  do look se recalcula em volta dela — na Home, no Montar e a partir do
+  detalhe de um relógio.
+- `UserStyleProfile`: preferência pessoal sempre **calculada** a partir de
+  escolhas/feedback reais — nunca uma regra hardcoded no código.
+- Feedback pós-sugestão ("Foi um bom MOODE?" 👍/❤️/👎, com motivo
+  opcional) que retroalimenta a preferência aprendida.
+- Rotação da coleção: favorece relógios parados há mais tempo e sinaliza
+  os "esquecidos na caixa".
+- Clima do dia (Open-Meteo, sem chave) influencia relógio, tênis e
+  perfume.
+- Detecção de cor por foto, processada 100% no navegador via canvas — a
+  imagem nunca sai do aparelho.
+- Catálogo de tênis e perfumes, favoritos por item e por MOODE do dia,
+  histórico de uso, backup/restauração (JSON versionado).
 - PWA instalável (iOS/Android/desktop), funciona offline depois do
-  primeiro carregamento.
-- Navegação por abas adaptativa: barra fixa embaixo no mobile, fileira de
-  abas no topo no desktop.
+  primeiro carregamento; claro e escuro via `prefers-color-scheme`.
 
 ## Arquitetura
 
@@ -54,55 +75,74 @@ um assistente de vestuário pessoal:
 src/
   data/watches.js           coleção padrão (23 relógios)
   lib/
-    matchEngine.js           primitivos de domínio: cores, peças, formalidade do look
-    watchModel.js            dimensões estendidas do relógio, DERIVADAS (tipo, formalidade,
-                              esportividade, statement level, material da pulseira...)
-    recommendationEngine.js  motor de score v2 — absoluto, com sub-scores e explicações
+    matchEngine.js           primitivos de domínio: cores, peças, contextos, formalidade
+    watchModel.js            dimensões do relógio DERIVADAS (tipo, formalidade, esportividade...)
+    occasionDimensions.js    perfil-alvo por ocasião — fonte única p/ relógio, tênis e perfume
+    scoreCombine.js          média ponderada com redistribuição de peso ausente
+    preferenceScore.js       sub-score de preferência aprendida, reaproveitado por relógio/tênis
+    recommendationEngine.js  StylingScore do relógio — absoluto, com sub-scores e explicações
+    sneakerMatch.js          SneakerScore (harmonia/ocasião/estilo/clima/preferência)
+    perfumeEngine.js         família de perfume por ocasião + FragranceScore do catálogo próprio
     rotationEngine.js        rotação de uso (último uso, frequência 7/30/90d, esquecidos)
-    dailyRecommendation.js   monta o "Look do Dia" (Hoje)
+    dailyRecommendation.js   monta "Seu MOODE de hoje" + ações de ajuste (pickAdjustedIndex)
+    moodeHistory.js          junta history+feedback em "Meus Moodes"
+    userStyleProfile.js      preferência pessoal DERIVADA de escolhas/feedback (nunca hardcoded)
+    localProfile.js          registro mínimo de perfil local (sem login)
     collectionSort.js        ordenação da coleção
     outfitEngine.js          regras de combinação de cor (relógio → look) + filtros/estilos
-    perfumeEngine.js         matriz clima×ocasião → família de perfume
+    colorNameMatch.js        texto livre de cor → paleta do app (import de tênis, flat-lay da Home)
     colorDetect.js           detecção de cor por foto (canvas, cliente)
     weather.js                clima do dia (Open-Meteo)
     storage.js                toda a persistência (ver "Armazenamento")
+    storageAdapter.js         interface get/set/remove escopada por perfil, sobre db.js
     db.js                     camada fina sobre localStorage
   hooks/                      useWatchCollection, useWardrobe, useRecommendationHistory,
-                               useWeather, usePreferences — estado extraído de App.jsx
+                               useWeather, usePreferences, useLocalProfile, useUserStyleProfile
   components/
+    brand/                    MoodeSymbol, MoodeLogo
+    ds/                       BottomSheet, SwitchMoode — componentes de design system reutilizáveis
     look/                     LookMatcher dividido por responsabilidade (entrada do look,
                                foto, clima/ocasião, perfume, resultados, feedback)
-    TodayScreen.jsx            tela Hoje
+    TodayScreen.jsx            "Seu MOODE de hoje"
+    MeusMoodesScreen.jsx       histórico ("Meus Moodes") + Moodes favoritos
     BottomNav.jsx               navegação por abas (mobile + desktop)
-    WardrobePanel.jsx           catálogo de tênis/perfumes
+    WardrobePanel.jsx           Relógios/Tênis/Perfumes/Seu estilo
     WatchCard, WatchDetail, WatchForm, FilterBar, BackupPanel, ForgottenWatches, ColorSwatch
   App.jsx                      roteamento entre abas + telas modais (form, detalhe, backup)
 ```
 
 Sem framework de estado global — tudo é `useState` + hooks próprios lendo/escrevendo
-em `storage.js`. Sem backend: qualquer "inteligência" é regra determinística ou
-heurística local, nunca uma chamada de API de IA.
+em `storage.js`, que por sua vez fala só com `storageAdapter.js` (nunca localStorage
+direto) — a mesma interface que uma futura versão com conta/backend implementaria,
+sem reescrever o resto do app. Sem IA: qualquer "inteligência" é regra determinística
+ou heurística local.
 
 ## Modelo de recomendação
 
-O score de compatibilidade de um relógio pra um look é a média ponderada de
-6 sub-scores, cada um 0–100:
+Três motores de score, todos seguindo o mesmo padrão: média ponderada de
+sub-scores 0–100, cada um explicável, com peso redistribuído (nunca
+inventado) quando um sub-score não tem dado disponível.
+
+**StylingScore** (relógio):
 
 | Dimensão | Peso | O que mede |
 |---|---|---|
 | Cor | 35% | Compatibilidade cromática entre as peças e o mostrador |
-| Ocasião | 20% | Adequação do estilo do relógio ao contexto (trabalho/casual/fim de semana) |
+| Ocasião | 20% | Adequação do estilo do relógio ao contexto |
 | Estilo/Formalidade | 15% | Formalidade do relógio vs. formalidade agregada do look |
 | Clima | 10% | Clima do dia puxando pra mostradores mais claros/quentes |
-| Rotação | 10% | Favorece relógios parados há mais tempo, sem penalizar demais uso pontual |
+| Rotação | 10% | Favorece relógios parados há mais tempo |
 | Preferência pessoal | 10% | Aprendida de escolhas manuais + feedback (❤️/👍/👎) |
 
-Quando um sub-score não tem dado disponível (sem clima buscado, sem
-histórico, outfit sem peça colorida...), ele é **excluído** e o peso
-redistribuído entre os demais — a recomendação nunca é bloqueada por
-falta de dado, só fica com uma base menor.
+**SneakerScore** (tênis): harmonia com as roupas 40% · ocasião 20% ·
+estilo/formalidade 15% · clima 10% · preferência pessoal 15%.
 
-Faixas de interpretação do score final:
+**FragranceScore** (perfume, sobre o catálogo cadastrado): ocasião 70% ·
+clima 30% — um perfume "nativo" de outra ocasião nunca zera, pontua pela
+proximidade real entre as duas ocasiões (`occasionDimensions.js`).
+
+Faixas de interpretação (as mesmas pras três, contextualizadas na
+interface — nunca um "Match" genérico):
 
 | Faixa | Rótulo |
 |---|---|
@@ -113,43 +153,20 @@ Faixas de interpretação do score final:
 | < 60 | Eu evitaria |
 
 As dimensões estendidas do relógio (tipo, formalidade, esportividade,
-"statement level", material da pulseira) não exigem recadastrar nada:
-são **derivadas** sob demanda dos campos que já existem (estilo, nome,
-pulseira) — ver `src/lib/watchModel.js`. Um relógio antigo continua
-funcionando sem tocar em nada; se algum dia ganhar um valor explícito
-salvo, esse valor sempre tem prioridade sobre o derivado.
+"statement level") não exigem recadastrar nada: são **derivadas** sob
+demanda dos campos que já existem — ver `src/lib/watchModel.js`.
 
 ## Armazenamento
 
-Tudo em `localStorage`, através de uma camada fina (`src/lib/db.js`) que
-isola o app do detalhe de onde/como persiste — trocar para IndexedDB no
-futuro, se o volume de dados justificar, mexe só nessa camada.
+Tudo em `localStorage`, sempre escopado por perfil (`storageAdapter.js`
+→ `db.js`) — hoje só existe um perfil local, sem tela de conta, mas a
+mesma interface já suporta uma futura troca por um `userId` autenticado
+sem reescrever nada do resto do app.
 
-Chaves: coleção de relógios, favoritos, histórico de uso, escolhas
-manuais, feedback pós-sugestão, tênis, perfumes, itens de guarda-roupa
-genéricos (categoria preparada para roupas/óculos no futuro, ainda sem
-UI).
-
-**Backup** (Dados e backup → Exportar/Importar) gera um JSON versionado:
-
-```json
-{
-  "app": "watch-look",
-  "version": 2,
-  "exportedAt": "2026-09-09T12:00:00.000Z",
-  "collection": [],
-  "favorites": [],
-  "history": [],
-  "choices": [],
-  "feedback": [],
-  "wardrobe": { "sneakers": [], "perfumes": [], "items": [] }
-}
-```
-
-A importação valida o arquivo antes de tocar em qualquer dado (rejeita
-JSON inválido ou sem coleção reconhecível, sem corromper o estado atual)
-e aceita tanto esse formato quanto backups v1 antigos (tênis/perfumes
-soltos na raiz, sem `feedback`).
+**Backup** (Dados e backup → Exportar/Importar) gera um JSON versionado,
+com validação antes de tocar em qualquer dado (rejeita JSON inválido ou
+sem coleção reconhecível, sem corromper o estado atual) e aceita tanto o
+formato atual quanto backups mais antigos.
 
 ## Como rodar
 
@@ -163,20 +180,19 @@ npm run lint      # oxlint
 ## Como testar
 
 ```bash
-npm test          # Vitest — motor de recomendação, rotação, storage
+npm test          # Vitest
 ```
 
-41 testes cobrindo compatibilidade de cor, formalidade, ocasião, clima,
-rotação, preferência pessoal e o cálculo de score absoluto, com cenários
-usando relógios reais da coleção (ex: camisa branca + calça bege +
-contexto trabalho + relógio dress deve pontuar alto; o mesmo look com um
-relógio esportivo statement deve ser penalizado; um relógio parado há 30
-dias deve levar vantagem de rotação sobre o mesmo relógio usado ontem).
-Os testes verificam comportamento esperado, não números mágicos exatos —
-a regra pode ser recalibrada sem quebrar a suíte à toa.
+94 testes cobrindo os três motores de score (relógio/tênis/perfume),
+rotação, storage/migração de dados, preferência aprendida (`UserStyleProfile`),
+ações de ajuste da Home, histórico/Moodes favoritos e reconhecimento de
+cor em texto livre — com cenários usando dados realistas (ex: camisa
+branca + calça bege + trabalho + relógio dress deve pontuar alto; o
+mesmo look com um relógio esportivo statement deve ser penalizado).
+Os testes verificam comportamento esperado, não números mágicos exatos.
 
 Ambiente Node puro (sem jsdom): `src/test-setup.js` instala um polyfill
-de `localStorage` em memória só pros testes que tocam `storage.js`.
+de `localStorage` em memória.
 
 ## Deploy
 
@@ -186,13 +202,15 @@ GitHub Pages, via `.github/workflows/deploy.yml` — dispara em push pra
 ## Roadmap (deixado deliberadamente fora desta versão)
 
 - Migrar o catálogo de tênis/perfumes pro modelo genérico de item de
-  guarda-roupa (hoje coexistem: a arquitetura já suporta, a migração de
-  dado real do usuário foi adiada por risco/benefício).
+  guarda-roupa (a arquitetura já suporta; a migração de dado real do
+  usuário foi adiada por risco/benefício).
 - Reconhecimento de peça de roupa por visão computacional real (hoje é
   uma estimativa por zonas da foto, deixado assim de propósito — ver
   `colorDetect.js` — em vez de fingir precisão que não existe).
 - Cadastro de mais categorias de guarda-roupa (camisa, calça, jaqueta,
   óculos) com formulário dedicado.
-- Nome da cidade no card do clima (exigiria geocoding reverso, hoje só
-  mostra temperatura/descrição).
-- IndexedDB, se o volume de dados algum dia justificar.
+- Onboarding (estilo, cores favoritas, cidade, rotina) — arquitetura
+  preparada, sem UI ainda.
+- Conta/autenticação, sincronização entre aparelhos, IA aplicada de
+  verdade — nada disso implementado nesta etapa; o produto é
+  local-first e fashion-first de propósito.

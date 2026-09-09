@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { personalBias, daysSince, lastWornDate, exportData, importData, getCollection } from './storage.js'
+import { personalBias, daysSince, lastWornDate, exportData, importData, getCollection, getFavoriteLooks, isFavoriteLook, toggleFavoriteLook } from './storage.js'
 
 describe('personalBias', () => {
   it('sem dado suficiente (menos de 4 sinais) não aplica viés', () => {
@@ -50,6 +50,40 @@ describe('daysSince / lastWornDate', () => {
     ]
     expect(lastWornDate('b', history)).toBe('2024-02-01')
     expect(lastWornDate('c', history)).toBeNull()
+  })
+})
+
+describe('Moodes Favoritos (favoriteLooks)', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('favorita um Moode (relógio+data), e desfavorita ao chamar de novo (toggle)', () => {
+    const entry = { watchId: 'w1', date: '2026-09-08', context: 'trabalho', score: 87 }
+    expect(isFavoriteLook('w1', '2026-09-08')).toBe(false)
+
+    toggleFavoriteLook(entry)
+    expect(isFavoriteLook('w1', '2026-09-08')).toBe(true)
+    expect(getFavoriteLooks()).toHaveLength(1)
+
+    toggleFavoriteLook(entry)
+    expect(isFavoriteLook('w1', '2026-09-08')).toBe(false)
+    expect(getFavoriteLooks()).toHaveLength(0)
+  })
+
+  it('favoritar o mesmo relógio em dias diferentes cria entradas separadas', () => {
+    toggleFavoriteLook({ watchId: 'w1', date: '2026-09-08', context: 'trabalho', score: 87 })
+    toggleFavoriteLook({ watchId: 'w1', date: '2026-09-09', context: 'casual', score: 80 })
+    expect(getFavoriteLooks()).toHaveLength(2)
+  })
+
+  it('entra e sai do backup (exportData/importData)', () => {
+    toggleFavoriteLook({ watchId: 'w1', date: '2026-09-08', context: 'trabalho', score: 87 })
+    const data = exportData()
+    expect(data.favoriteLooks).toHaveLength(1)
+
+    localStorage.clear()
+    importData(data)
+    expect(getFavoriteLooks()).toHaveLength(1)
+    expect(isFavoriteLook('w1', '2026-09-08')).toBe(true)
   })
 })
 
