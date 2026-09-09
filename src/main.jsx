@@ -20,9 +20,11 @@ if ('serviceWorker' in navigator) {
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return
-      // Apps standalone no iOS não checam atualização de service worker
-      // sozinhos — forçamos isso sempre que o app volta a ficar em primeiro
-      // plano, pra nunca ficar preso numa versão velha/quebrada.
+      // 'visibilitychange' só dispara numa transição background->foreground
+      // — um app aberto do zero (ícone tocado com o processo já morto)
+      // nunca passa por essa transição nesta sessão, então a checagem de
+      // atualização também precisa rodar já na abertura, não só depois.
+      registration.update()
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') registration.update()
       })
