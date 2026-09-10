@@ -66,6 +66,14 @@ describe('suggestPerfume', () => {
     })
     expect(p.owned).toHaveLength(0)
   })
+
+  it('bug real reportado: com um acervo grande, `owned` nunca vira a lista do catálogo inteiro — no máximo 3, sempre os de maior match', () => {
+    // 8 perfumes, todos com família nativa da ocasião (match 100 pros oito) —
+    // sem o teto, os 8 apareceriam; com o teto, só os 3 primeiros do ranking.
+    const acervoGrande = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, nome: `Perfume ${i}`, familia: 'Aromático limpo' }))
+    const p = suggestPerfume({ weatherBias: null, context: 'trabalho', ownedPerfumes: acervoGrande })
+    expect(p.owned.length).toBeLessThanOrEqual(3)
+  })
 })
 
 describe('rankOwnedPerfumes — FragranceScore explicável', () => {

@@ -173,6 +173,15 @@ export function notasFromImportItem(item) {
 // próximo o bastante da ocasião de hoje pra valer a pena sugerir.
 const FRAGRANCE_RELEVANCE_FLOOR = 55
 
+// Máximo de perfumes do acervo mostrados como "Da sua coleção" (mesma
+// ideia do `max` de pickAccessoriesForLook) — bug real reportado: com um
+// acervo maior, o piso de relevância sozinho deixava passar quase todo
+// mundo, e "Da sua coleção" virava uma lista do catálogo inteiro em vez
+// de uma sugestão enxuta. O piso ainda decide QUEM é relevante o
+// bastante; isso aqui só limita QUANTOS aparecem, sempre os de maior
+// match primeiro (rankOwnedPerfumes já ordena).
+const FRAGRANCE_OWNED_MAX = 3
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null — só vira uma nota de
 // ajuste na concentração, não muda a família. context: um dos ids de
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário
@@ -197,6 +206,7 @@ export function suggestPerfume({ weatherBias, context, ownedPerfumes = [], histo
 
   const owned = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias, history })
     .filter((r) => r.match >= FRAGRANCE_RELEVANCE_FLOOR)
+    .slice(0, FRAGRANCE_OWNED_MAX)
     .map((r) => r.perfume)
   return { ...profile, climaNota, owned }
 }
