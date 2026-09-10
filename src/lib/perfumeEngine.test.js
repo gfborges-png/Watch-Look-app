@@ -1,0 +1,297 @@
+import { describe, it, expect } from 'vitest'
+import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName, guessFamilyFromText, notasFromImportItem } from './perfumeEngine.js'
+import { CONTEXTS } from './matchEngine.js'
+import { daysAgoStr } from './test-helpers.js'
+
+describe('suggestPerfume', () => {
+  it('toda ocasião de matchEngine.CONTEXTS tem um perfil de perfume completo', () => {
+    for (const ctx of CONTEXTS) {
+      const p = suggestPerfume({ weatherBias: null, context: ctx.id, ownedPerfumes: [] })
+      expect(p.familia, `contexto "${ctx.id}" sem família`).toBeTruthy()
+      expect(p.descritores.length).toBeGreaterThan(0)
+      expect(p.referencias.length).toBeGreaterThan(0)
+      expect(p.intensidade).toBeTruthy()
+      expect(KNOWN_FAMILIES).toContain(p.familia)
+    }
+  })
+
+  it('clima quente/frio vira nota de ajuste, não muda a família', () => {
+    const semClima = suggestPerfume({ weatherBias: null, context: 'trabalho' })
+    const quente = suggestPerfume({ weatherBias: 'quente', context: 'trabalho' })
+    const frio = suggestPerfume({ weatherBias: 'frio', context: 'trabalho' })
+    expect(quente.familia).toBe(semClima.familia)
+    expect(frio.familia).toBe(semClima.familia)
+    expect(quente.climaNota).toBeTruthy()
+    expect(frio.climaNota).toBeTruthy()
+    expect(semClima.climaNota).toBeFalsy()
+  })
+
+  it('perfume cadastrado do usuário aparece em `owned` quando a família bate', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'trabalho',
+      ownedPerfumes: [{ id: 'p1', nome: 'Meu Perfume', familia: 'Aromático limpo' }],
+    })
+    expect(p.owned).toHaveLength(1)
+    expect(p.owned[0].nome).toBe('Meu Perfume')
+  })
+
+  it('bug real reportado: sugestão vira uma escolha única (`pick`) entre acervo e referência, não duas listas soltas', () => {
+    // Família exata (match 100) — forte o bastante pra liderar sobre a referência genérica.
+    const comMatchForte = suggestPerfume({
+      weatherBias: null,
+      context: 'trabalho',
+      ownedPerfumes: [{ id: 'p1', nome: 'Meu Perfume', familia: 'Aromático limpo' }],
+    })
+    expect(comMatchForte.pick).toEqual({ source: 'acervo', nome: 'Meu Perfume', perfume: comMatchForte.owned[0] })
+
+    // Sem nenhum perfume cadastrado, a referência de nicho/árabe da ocasião lidera.
+    const semAcervo = suggestPerfume({ weatherBias: null, context: 'trabalho', ownedPerfumes: [] })
+    expect(semAcervo.pick).toEqual({ source: 'referencia', nome: semAcervo.referencias[0] })
+
+    // Match "relevante mas não forte" (67 — acima do piso de 55, abaixo do
+    // piso de liderança de 70: treino puro pra um contexto casual, ver
+    // occasionDistance('treino','casual') = |5-45|*.5+|30-40|*.3+|95-45|*.2 = 33)
+    // ainda aparece em `owned`, mas não vira `pick` — a referência lidera.
+    const matchMediano = suggestPerfume({
+      weatherBias: null,
+      context: 'casual',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume de treino', familia: 'Cítrico esportivo' }],
+    })
+    expect(matchMediano.owned.map((o) => o.nome)).toContain('Perfume de treino')
+    expect(matchMediano.pick.source).toBe('referencia')
+  })
+
+  it('`outrasOpcoes` nunca repete o nome que já virou `pick`, e prioriza o resto do acervo antes das referências genéricas', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'trabalho',
+      ownedPerfumes: [
+        { id: 'p1', nome: 'Perfume A', familia: 'Aromático limpo' },
+        { id: 'p2', nome: 'Perfume B', familia: 'Aromático limpo' },
+      ],
+    })
+    expect(p.outrasOpcoes).not.toContain(p.pick.nome)
+    // Os dois têm o mesmo match (mesma família nativa exata) — o que não
+    // virou pick deve aparecer em outrasOpcoes antes das referências.
+    const outroNomeDoAcervo = p.owned.map((o) => o.nome).find((n) => n !== p.pick.nome)
+    expect(p.outrasOpcoes).toContain(outroNomeDoAcervo)
+  })
+
+  it('com dois perfumes da mesma família, `owned` vem ordenado pelas notas mais adequadas ao clima de hoje', () => {
+    const p = suggestPerfume({
+      weatherBias: 'quente',
+      context: 'trabalho',
+      ownedPerfumes: [
+        { id: 'p1', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha, couro' },
+        { id: 'p2', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão, notas aquáticas' },
+      ],
+    })
+    expect(p.owned[0].nome).toBe('Fresco')
+    expect(p.owned[1].nome).toBe('Denso')
+  })
+
+  it('bug real reportado: perfume cadastrado com família de OUTRA ocasião ainda aparece em `owned` se a ocasião de hoje for próxima o bastante (não só na igualdade exata) — família importada raramente bate na risca com as 8 internas', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'fimDeSemana',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume do trabalho', familia: 'Aromático limpo' }],
+    })
+    expect(p.owned.map((o) => o.nome)).toContain('Perfume do trabalho')
+  })
+
+  it('mas some de `owned` quando a ocasião é longe demais da família cadastrada (nunca sugere qualquer coisa só pra preencher)', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'treino',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume do trabalho', familia: 'Aromático limpo' }],
+    })
+    expect(p.owned).toHaveLength(0)
+  })
+
+  it('bug real reportado: com um acervo grande, `owned` nunca vira a lista do catálogo inteiro — no máximo 3, sempre os de maior match', () => {
+    // 8 perfumes, todos com família nativa da ocasião (match 100 pros oito) —
+    // sem o teto, os 8 apareceriam; com o teto, só os 3 primeiros do ranking.
+    const acervoGrande = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, nome: `Perfume ${i}`, familia: 'Aromático limpo' }))
+    const p = suggestPerfume({ weatherBias: null, context: 'trabalho', ownedPerfumes: acervoGrande })
+    expect(p.owned.length).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('rankOwnedPerfumes — FragranceScore explicável', () => {
+  it('perfume da família nativa da ocasião pontua o máximo', () => {
+    const [top] = rankOwnedPerfumes([{ id: 'p1', nome: 'Trabalho', familia: 'Aromático limpo' }], { contextId: 'trabalho' })
+    expect(top.match).toBe(100)
+    expect(top.subScores.ocasiao).toBe(100)
+  })
+
+  it('perfume de outra família ainda pontua algo (nunca zero por padrão), proporcional à distância entre ocasiões', () => {
+    const [festa] = rankOwnedPerfumes([{ id: 'p1', nome: 'Festa', familia: 'Amadeirado-doce statement' }], { contextId: 'trabalho' })
+    const [treino] = rankOwnedPerfumes([{ id: 'p1', nome: 'Treino', familia: 'Cítrico esportivo' }], { contextId: 'trabalho' })
+    // festa (formal, statement alto) está mais longe do trabalho do que
+    // um perfume esportivo leve pensado pro dia a dia ativo.
+    expect(festa.match).toBeLessThan(100)
+    expect(treino.match).toBeLessThan(100)
+  })
+
+  it('sem contexto nem clima, os dois sub-scores ficam null mas ainda retorna um score', () => {
+    const [top] = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }])
+    expect(top.subScores.ocasiao).toBeNull()
+    expect(top.subScores.clima).toBeNull()
+    expect(top.match).toBeGreaterThan(0)
+  })
+
+  it('clima informado acrescenta um sub-score e favorece a família mais adequada ao calor', () => {
+    const quente = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'Cítrico', familia: 'Cítrico esportivo' },
+        { id: 'p2', nome: 'Sensual', familia: 'Amadeirado sensual' },
+      ],
+      { weatherBias: 'quente' },
+    )
+    expect(quente.find((r) => r.perfume.id === 'p1').match).toBeGreaterThan(quente.find((r) => r.perfume.id === 'p2').match)
+  })
+
+  it('resultados vêm ordenados do maior pro menor match', () => {
+    const results = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'A', familia: 'Aromático limpo' },
+        { id: 'p2', nome: 'B', familia: 'Amadeirado-doce statement' },
+        { id: 'p3', nome: 'C', familia: 'Cítrico esportivo' },
+      ],
+      { contextId: 'trabalho' },
+    )
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
+    }
+  })
+
+  it('bug real reportado ("sugestões repetidas"): sem histórico o sub-score de rotação fica null; com histórico, o perfume usado ontem perde do parado há 30+ dias (mesma família nos dois)', () => {
+    const semHistorico = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }])[0]
+    expect(semHistorico.subScores.rotacao).toBeNull()
+
+    const historico = [
+      { watchId: 'w1', perfumeId: 'p1', date: daysAgoStr(1) },
+      { watchId: 'w1', perfumeId: 'p2', date: daysAgoStr(35) },
+    ]
+    const usadoOntem = rankOwnedPerfumes([{ id: 'p1', nome: 'Usado ontem', familia: 'Aromático limpo' }], { history: historico })[0]
+    const paradoHa35 = rankOwnedPerfumes([{ id: 'p2', nome: 'Parado há 35', familia: 'Aromático limpo' }], { history: historico })[0]
+    expect(paradoHa35.subScores.rotacao).toBeGreaterThan(usadoOntem.subScores.rotacao)
+    expect(paradoHa35.match).toBeGreaterThan(usadoOntem.match)
+  })
+})
+
+describe('notas refinando o sub-score de clima (rankOwnedPerfumes)', () => {
+  it('notas frescas/cítricas pontuam mais alto que notas densas/amadeiradas num dia quente, mesma família', () => {
+    const results = rankOwnedPerfumes(
+      [
+        { id: 'p1', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha, couro' },
+        { id: 'p2', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão, notas aquáticas' },
+      ],
+      { weatherBias: 'quente' },
+    )
+    const fresco = results.find((r) => r.perfume.nome === 'Fresco')
+    const denso = results.find((r) => r.perfume.nome === 'Denso')
+    expect(fresco.match).toBeGreaterThan(denso.match)
+  })
+
+  it('a mesma nota inverte a preferência no frio (o denso passa a pontuar mais)', () => {
+    const notasFrescas = { id: 'p1', nome: 'Fresco', familia: 'Aromático limpo', notas: 'bergamota, limão' }
+    const notasDensas = { id: 'p2', nome: 'Denso', familia: 'Aromático limpo', notas: 'âmbar, baunilha' }
+    const [frescoNoFrio] = rankOwnedPerfumes([notasFrescas], { weatherBias: 'frio' })
+    const [densoNoFrio] = rankOwnedPerfumes([notasDensas], { weatherBias: 'frio' })
+    expect(densoNoFrio.match).toBeGreaterThan(frescoNoFrio.match)
+  })
+
+  it('sem notas reconhecidas, cai no valor da família (mesmo comportamento de antes, sem regressão)', () => {
+    const semNotas = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }], { weatherBias: 'quente' })[0]
+    const notaIrreconhecivel = rankOwnedPerfumes(
+      [{ id: 'p1', nome: 'X', familia: 'Aromático limpo', notas: 'algo bem genérico' }],
+      { weatherBias: 'quente' },
+    )[0]
+    expect(notaIrreconhecivel.match).toBe(semNotas.match)
+  })
+})
+
+describe('notasFromImportItem — importação em lote de perfumes', () => {
+  it('usa o campo `notas` direto quando existe', () => {
+    expect(notasFromImportItem({ notas: 'bergamota, cedro' })).toBe('bergamota, cedro')
+  })
+
+  it('sem `notas`, junta a pirâmide olfativa (saída/coração/fundo) — bug real: bancos de perfume exportam assim, não como um campo "notas" único', () => {
+    const item = { saida: 'Toranja, cânhamo', coracao: 'Absinto, cravo, sálvia', fundo: 'Fava tonka, cedro, couro' }
+    expect(notasFromImportItem(item)).toBe('Toranja, cânhamo, Absinto, cravo, sálvia, Fava tonka, cedro, couro')
+  })
+
+  it('aceita as variantes em inglês (top/heart/base) e sem acento (saida/coracao)', () => {
+    expect(notasFromImportItem({ top: 'citrus', heart: 'jasmine', base: 'musk' })).toBe('citrus, jasmine, musk')
+  })
+
+  it('ignora camada marcada como "—" ou "-" (sem essa nota) em vez de incluir o traço literal', () => {
+    expect(notasFromImportItem({ saida: '—', coracao: 'Íris', fundo: 'Sândalo, almíscar' })).toBe('Íris, Sândalo, almíscar')
+  })
+
+  it('sem nenhum campo de nota, devolve string vazia (nunca undefined/null)', () => {
+    expect(notasFromImportItem({})).toBe('')
+    expect(notasFromImportItem(undefined)).toBe('')
+  })
+})
+
+describe('matchFamilyName — importação em lote de perfumes', () => {
+  it('bate uma família conhecida ignorando maiúscula/acento', () => {
+    expect(matchFamilyName(KNOWN_FAMILIES[0].toUpperCase())).toBe(KNOWN_FAMILIES[0])
+  })
+
+  it('sem texto ou sem família reconhecida, devolve null (não chuta uma família parecida)', () => {
+    expect(matchFamilyName(null)).toBeNull()
+    expect(matchFamilyName(undefined)).toBeNull()
+    expect(matchFamilyName('')).toBeNull()
+    expect(matchFamilyName('Família que não existe')).toBeNull()
+  })
+})
+
+describe('guessFamilyFromText — aproximação por palavra-chave (fallback de importação)', () => {
+  it('bate exato quando a família já é uma das KNOWN_FAMILIES (mesmo comportamento de matchFamilyName)', () => {
+    expect(guessFamilyFromText(KNOWN_FAMILIES[3])).toBe(KNOWN_FAMILIES[3])
+  })
+
+  it('nunca devolve null — sem texto ou sem nenhum sinal reconhecível, cai na primeira família conhecida', () => {
+    expect(guessFamilyFromText(null)).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText(undefined)).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText('')).toBe(KNOWN_FAMILIES[0])
+    expect(guessFamilyFromText('xyz123')).toBe(KNOWN_FAMILIES[0])
+  })
+
+  it('bug real reportado: perfumes importados com família de banco de dados real (ex: "Amadeirado Aquático", "Fresco Aromático (fougère)") não caem todos na mesma família por padrão', () => {
+    const familias = [
+      'Amadeirado Aromático',
+      'Âmbar Couro Amadeirado',
+      'Amadeirado Floral',
+      'Cítrico Amadeirado',
+      'Fresco Aromático (fougère)',
+      'Aquático Amadeirado',
+      'Aquático Aromático',
+      'Amadeirado Aquático',
+      'Fougère Aromático',
+    ].map(guessFamilyFromText)
+    // Nem tudo cai na mesma família — o texto real de cada uma influencia o resultado.
+    expect(new Set(familias).size).toBeGreaterThan(1)
+    for (const f of familias) expect(KNOWN_FAMILIES).toContain(f)
+  })
+
+  it('"couro"/"oud" aproxima pra Amadeirado sensual', () => {
+    expect(guessFamilyFromText('Âmbar Couro Amadeirado')).toBe('Amadeirado sensual')
+  })
+
+  it('"cítrico"/"aquático" aproxima pra Cítrico esportivo', () => {
+    expect(guessFamilyFromText('Aquático Aromático')).toBe('Cítrico esportivo')
+  })
+
+  it('"fougère"/"fresco" aproxima pra Aromático limpo', () => {
+    expect(guessFamilyFromText('Fresco Aromático (fougère)')).toBe('Aromático limpo')
+  })
+
+  it('"doce"/"baunilha"/"tabaco" aproxima pra Amadeirado-doce statement', () => {
+    expect(guessFamilyFromText('Oriental Doce Baunilhado')).toBe('Amadeirado-doce statement')
+  })
+})
