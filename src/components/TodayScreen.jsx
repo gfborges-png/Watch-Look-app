@@ -203,7 +203,7 @@ export default function TodayScreen({
   const lockedPerfume = lockedPerfumeId ? perfumes.find((p) => p.id === lockedPerfumeId) : null
   const effectiveSneakerName = lockedSneaker?.nome ?? (candidate.sneaker ? candidate.sneaker.nome : candidate.look.tenis)
   const effectiveSneakerHexes = lockedSneaker?.hexes ?? candidate.sneaker?.hexes ?? null
-  const effectivePerfumeName = lockedPerfume?.nome ?? candidate.perfume.owned[0]?.nome ?? candidate.perfume.familia
+  const effectivePerfumeName = lockedPerfume?.nome ?? candidate.perfume.pick.nome
   // As frases de "look" (candidate.look.top/bottom) são texto puro, sem
   // objeto de cor — extrai a cor real mencionada no texto em vez de
   // inventar uma imagem ou usar um ícone genérico enganoso. Lookup
@@ -214,7 +214,7 @@ export default function TodayScreen({
 
   const handleUseLook = () => {
     const sneakerId = lockedSneaker?.id ?? candidate.sneaker?.id ?? null
-    const perfumeId = lockedPerfume?.id ?? candidate.perfume.owned[0]?.id ?? null
+    const perfumeId = lockedPerfume?.id ?? candidate.perfume.pick.perfume?.id ?? null
     onLogWornToday(candidate.watch.id, { sneakerId, perfumeId })
     onLogFeedback({
       watchId: candidate.watch.id,
@@ -301,7 +301,7 @@ export default function TodayScreen({
         swapOptions={perfumes}
         onSwap={setLockedPerfumeId}
         onReset={() => setLockedPerfumeId(null)}
-        references={candidate.perfume.referencias}
+        references={candidate.perfume.outrasOpcoes}
       />
 
       <div className="border-t border-border pt-4">

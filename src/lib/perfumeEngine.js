@@ -182,6 +182,12 @@ const FRAGRANCE_RELEVANCE_FLOOR = 55
 // match primeiro (rankOwnedPerfumes já ordena).
 const FRAGRANCE_OWNED_MAX = 3
 
+// Piso pra `owned` virar a sugestão PRINCIPAL (`pick`), não só aparecer
+// listado — acima do piso de relevância (55): um perfume do acervo só
+// "ganha" da referência de nicho/árabe curada pra ocasião quando é um
+// match forte de verdade, não só "relevante o bastante pra não sumir".
+const FRAGRANCE_OWNED_LEAD_THRESHOLD = 70
+
 // weatherBias: 'quente' | 'frio' | 'ameno' | null — só vira uma nota de
 // ajuste na concentração, não muda a família. context: um dos ids de
 // matchEngine.CONTEXTS. ownedPerfumes: catálogo cadastrado pelo usuário
@@ -197,6 +203,15 @@ const FRAGRANCE_OWNED_MAX = 3
 // bastante pra aparecer, só não em primeiro lugar. Quando a pessoa tem
 // mais de um perfume relevante, `owned` vem ordenado por match — as
 // notas de cada um (ver notesWeatherFit) também entram na conta.
+//
+// `pick` é a escolha única entre acervo e referência de nicho/árabe —
+// bug real reportado: mostrar as duas listas sempre juntas (acervo
+// inteiro + referências fixas) não parecia uma sugestão de verdade, só
+// duas listas soltas. Regra: o acervo só lidera quando o match é forte
+// (>= FRAGRANCE_OWNED_LEAD_THRESHOLD); sem isso, a referência curada pra
+// ocasião (sempre nicho/árabe/tradicional, nunca mainstream — ver
+// OCCASION_PROFILES) lidera. `outrasOpcoes` traz o que sobrou (até 2),
+// nunca repetindo o nome que já virou `pick`.
 export function suggestPerfume({ weatherBias, context, ownedPerfumes = [], history = [] }) {
   const profile = OCCASION_PROFILES[context] ?? OCCASION_PROFILES[DEFAULT_OCCASION]
 
@@ -204,11 +219,23 @@ export function suggestPerfume({ weatherBias, context, ownedPerfumes = [], histo
   if (weatherBias === 'quente') climaNota = 'Dia quente — prefira a versão mais leve (EDT) dessa família.'
   else if (weatherBias === 'frio') climaNota = 'Dia frio — pode ir na versão mais concentrada (EDP/Parfum) sem medo.'
 
-  const owned = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias, history })
-    .filter((r) => r.match >= FRAGRANCE_RELEVANCE_FLOOR)
-    .slice(0, FRAGRANCE_OWNED_MAX)
-    .map((r) => r.perfume)
-  return { ...profile, climaNota, owned }
+  const ranked = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias, history })
+  const owned = ranked.filter((r) => r.match >= FRAGRANCE_RELEVANCE_FLOOR).slice(0, FRAGRANCE_OWNED_MAX).map((r) => r.perfume)
+
+  const bestOwned = ranked[0]
+  const pick =
+    bestOwned && bestOwned.match >= FRAGRANCE_OWNED_LEAD_THRESHOLD
+      ? { source: 'acervo', nome: bestOwned.perfume.nome, perfume: bestOwned.perfume }
+      : { source: 'referencia', nome: profile.referencias[0] }
+  // Prioriza o que sobrou do próprio acervo (coisa real que a pessoa tem)
+  // antes de completar com as referências genéricas — nunca repete o
+  // nome que já virou `pick`.
+  const outrasOpcoes = [
+    ...owned.filter((p) => p.id !== pick.perfume?.id).map((p) => p.nome),
+    ...profile.referencias.filter((r) => r !== pick.nome),
+  ].slice(0, 2)
+
+  return { ...profile, climaNota, owned, pick, outrasOpcoes }
 }
 
 // Cada família aqui tem exatamente uma ocasião "nativa" (a chave de

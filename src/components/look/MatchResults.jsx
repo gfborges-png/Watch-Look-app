@@ -129,7 +129,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
     [weatherBias, context, perfumes, history],
   )
   const overridden = overrideId ? perfumes.find((p) => p.id === overrideId) : null
-  const perfumeLabel = overridden?.nome ?? suggestion.owned[0]?.nome ?? suggestion.familia
+  const perfumeLabel = overridden?.nome ?? suggestion.pick.nome
 
   // Cor de referência pro match de acessório: o relógio + as peças do
   // look que já têm cor resolvida (não só o relógio) — quanto mais
@@ -178,8 +178,8 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
           )}
         </div>
       </div>
-      {suggestion.referencias.length > 0 && (
-        <p className="mt-0.5 truncate text-right text-[10px] text-text-muted/70">Outras opções: {suggestion.referencias.slice(0, 2).join(' · ')}</p>
+      {suggestion.outrasOpcoes.length > 0 && (
+        <p className="mt-0.5 truncate text-right text-[10px] text-text-muted/70">Outras opções: {suggestion.outrasOpcoes.join(' · ')}</p>
       )}
       {pickerOpen && (
         <select
@@ -190,7 +190,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
           }}
           className="mt-2 w-full rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <option value="">Sugestão automática ({suggestion.owned[0]?.nome ?? suggestion.familia})</option>
+          <option value="">Sugestão automática ({suggestion.pick.nome})</option>
           {perfumes.map((p) => (
             <option key={p.id} value={p.id}>
               {p.nome}

@@ -36,6 +36,48 @@ describe('suggestPerfume', () => {
     expect(p.owned[0].nome).toBe('Meu Perfume')
   })
 
+  it('bug real reportado: sugestão vira uma escolha única (`pick`) entre acervo e referência, não duas listas soltas', () => {
+    // Família exata (match 100) — forte o bastante pra liderar sobre a referência genérica.
+    const comMatchForte = suggestPerfume({
+      weatherBias: null,
+      context: 'trabalho',
+      ownedPerfumes: [{ id: 'p1', nome: 'Meu Perfume', familia: 'Aromático limpo' }],
+    })
+    expect(comMatchForte.pick).toEqual({ source: 'acervo', nome: 'Meu Perfume', perfume: comMatchForte.owned[0] })
+
+    // Sem nenhum perfume cadastrado, a referência de nicho/árabe da ocasião lidera.
+    const semAcervo = suggestPerfume({ weatherBias: null, context: 'trabalho', ownedPerfumes: [] })
+    expect(semAcervo.pick).toEqual({ source: 'referencia', nome: semAcervo.referencias[0] })
+
+    // Match "relevante mas não forte" (67 — acima do piso de 55, abaixo do
+    // piso de liderança de 70: treino puro pra um contexto casual, ver
+    // occasionDistance('treino','casual') = |5-45|*.5+|30-40|*.3+|95-45|*.2 = 33)
+    // ainda aparece em `owned`, mas não vira `pick` — a referência lidera.
+    const matchMediano = suggestPerfume({
+      weatherBias: null,
+      context: 'casual',
+      ownedPerfumes: [{ id: 'p1', nome: 'Perfume de treino', familia: 'Cítrico esportivo' }],
+    })
+    expect(matchMediano.owned.map((o) => o.nome)).toContain('Perfume de treino')
+    expect(matchMediano.pick.source).toBe('referencia')
+  })
+
+  it('`outrasOpcoes` nunca repete o nome que já virou `pick`, e prioriza o resto do acervo antes das referências genéricas', () => {
+    const p = suggestPerfume({
+      weatherBias: null,
+      context: 'trabalho',
+      ownedPerfumes: [
+        { id: 'p1', nome: 'Perfume A', familia: 'Aromático limpo' },
+        { id: 'p2', nome: 'Perfume B', familia: 'Aromático limpo' },
+      ],
+    })
+    expect(p.outrasOpcoes).not.toContain(p.pick.nome)
+    // Os dois têm o mesmo match (mesma família nativa exata) — o que não
+    // virou pick deve aparecer em outrasOpcoes antes das referências.
+    const outroNomeDoAcervo = p.owned.map((o) => o.nome).find((n) => n !== p.pick.nome)
+    expect(p.outrasOpcoes).toContain(outroNomeDoAcervo)
+  })
+
   it('com dois perfumes da mesma família, `owned` vem ordenado pelas notas mais adequadas ao clima de hoje', () => {
     const p = suggestPerfume({
       weatherBias: 'quente',

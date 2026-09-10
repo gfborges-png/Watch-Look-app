@@ -18,8 +18,8 @@ export default function PerfumeRecommendation({ weatherBias, context, ownedPerfu
         </div>
       </div>
 
-      <p className="mt-4 text-lg font-bold leading-tight text-accent">{p.familia}</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <p className="mt-4 text-[11px] uppercase tracking-wide text-text-muted">{p.familia}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
         {p.descritores.map((d) => (
           <span key={d} className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[11px] text-text-muted">
             {d}
@@ -29,32 +29,14 @@ export default function PerfumeRecommendation({ weatherBias, context, ownedPerfu
 
       <p className="mt-3 text-xs leading-relaxed text-text-muted">{p.porque}</p>
 
-      {p.owned.length > 0 && (
-        <div className="mt-3 rounded-xl border border-accent/35 bg-accent/10 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">Da sua coleção</p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {p.owned.map((o) => (
-              <span key={o.id} className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-bone">
-                {o.nome}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">Referências reais</p>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {p.referencias.map((r) => (
-            <span
-              key={r}
-              className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent"
-            >
-              {r}
-            </span>
-          ))}
-        </div>
+      <div className="mt-3 rounded-xl border border-accent/35 bg-accent/10 p-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-accent">
+          {p.pick.source === 'acervo' ? 'Sugestão · da sua coleção' : 'Sugestão · referência de nicho/árabe'}
+        </p>
+        <p className="mt-1 text-lg font-bold leading-tight text-text">{p.pick.nome}</p>
       </div>
+
+      {p.outrasOpcoes.length > 0 && <p className="mt-2 text-[11px] text-text-muted">Outras opções: {p.outrasOpcoes.join(' · ')}</p>}
 
       <div className="mt-3 rounded-xl bg-surface-2 p-3 text-xs text-text-muted">
         <p>{p.intensidade}</p>

@@ -166,6 +166,14 @@ item parado há mais tempo), reaproveitando o mesmo histórico —
 escolhidos por match puro toda vez — o mesmo contexto/vibe sempre
 sugeria o mesmo item, o que virava "sugestões repetidas" na prática.
 
+**Escolha única de perfume (`pick`)**: `suggestPerfume` não devolve mais
+duas listas soltas (acervo inteiro + referências fixas) — decide UMA
+sugestão entre o que você tem e a referência de nicho/árabe curada pra
+ocasião. O acervo só lidera (`pick.source === 'acervo'`) quando o match
+é forte (FragranceScore ≥ 70); abaixo disso, a referência lidera. O
+resto (do próprio acervo primeiro, depois referências) vira
+`outrasOpcoes`, no máximo 2, nunca repetindo o nome já escolhido.
+
 **AccessoryScore** (acessório, sempre opcional): formalidade 32% ·
 relação com o relógio 30% · cor 23% · material 15%. Nunca aparece se o
 acessório tem `watchCompatibility="não"` e há relógio no resultado
@@ -234,7 +242,7 @@ npm run lint      # oxlint
 npm test          # Vitest
 ```
 
-187 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
+190 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
 acessório), rotação, storage/migração de dados e backup versionado
 (v1→v4, inclusive rejeição de item malformado em qualquer categoria),
 preferência aprendida (`UserStyleProfile`), ações de ajuste da Home
