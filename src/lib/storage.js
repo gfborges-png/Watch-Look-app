@@ -403,16 +403,26 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function logWornToday(watchId) {
+// `extra` opcionalmente registra qual tênis/perfume foi usado junto do
+// relógio nesse dia ({ sneakerId, perfumeId }) — alimenta a rotação de
+// tênis/perfume (ver rotationEngine.js), do mesmo jeito que o relógio já
+// usa esse histórico. Campos ausentes/nulos não entram na entrada (evita
+// poluir o registro com `sneakerId: null` quando não há tênis cadastrado).
+export function logWornToday(watchId, extra = {}) {
   const today = todayStr()
+  const clean = Object.fromEntries(Object.entries(extra).filter(([, v]) => v != null))
   const history = getHistory().filter((h) => !(h.watchId === watchId && h.date === today))
-  const next = [{ watchId, date: today }, ...history].slice(0, HISTORY_LIMIT)
+  const next = [{ watchId, date: today, ...clean }, ...history].slice(0, HISTORY_LIMIT)
   storageAdapter.set('history', next)
   return next
 }
 
-export function lastWornDate(watchId, history) {
-  const entry = history.find((h) => h.watchId === watchId)
+// `idKey` deixa essa função (e as de rotationEngine.js que a chamam)
+// genéricas por categoria — 'watchId' (padrão) pro relógio, 'sneakerId'
+// pro tênis, 'perfumeId' pro perfume — mesmo array de histórico, uma
+// entrada por dia cobrindo o que foi usado.
+export function lastWornDate(id, history, idKey = 'watchId') {
+  const entry = history.find((h) => h[idKey] === id)
   return entry ? entry.date : null
 }
 

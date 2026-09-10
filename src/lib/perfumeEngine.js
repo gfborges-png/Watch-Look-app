@@ -16,6 +16,7 @@
 // forte num dia frio), não muda a família.
 import { occasionDistance } from './occasionDimensions.js'
 import { combineWeightedScore } from './scoreCombine.js'
+import { rotationScore, usageStats } from './rotationEngine.js'
 
 const OCCASION_PROFILES = {
   trabalho: {
@@ -187,14 +188,14 @@ const FRAGRANCE_RELEVANCE_FLOOR = 55
 // bastante pra aparecer, só não em primeiro lugar. Quando a pessoa tem
 // mais de um perfume relevante, `owned` vem ordenado por match — as
 // notas de cada um (ver notesWeatherFit) também entram na conta.
-export function suggestPerfume({ weatherBias, context, ownedPerfumes = [] }) {
+export function suggestPerfume({ weatherBias, context, ownedPerfumes = [], history = [] }) {
   const profile = OCCASION_PROFILES[context] ?? OCCASION_PROFILES[DEFAULT_OCCASION]
 
   let climaNota = null
   if (weatherBias === 'quente') climaNota = 'Dia quente — prefira a versão mais leve (EDT) dessa família.'
   else if (weatherBias === 'frio') climaNota = 'Dia frio — pode ir na versão mais concentrada (EDP/Parfum) sem medo.'
 
-  const owned = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias })
+  const owned = rankOwnedPerfumes(ownedPerfumes, { contextId: context, weatherBias, history })
     .filter((r) => r.match >= FRAGRANCE_RELEVANCE_FLOOR)
     .map((r) => r.perfume)
   return { ...profile, climaNota, owned }
@@ -220,7 +221,7 @@ const FAMILY_WEATHER_FIT = {
   'Amadeirado-especiado elegante': { quente: 45, frio: 80 },
 }
 
-const FRAGRANCE_WEIGHTS = { ocasiao: 70, clima: 30 }
+const FRAGRANCE_WEIGHTS = { ocasiao: 55, clima: 25, rotacao: 20 }
 
 // Notas (texto livre, cadastradas por perfume) que sinalizam o lado
 // fresco/leve (bom pra dias quentes) ou denso/quente (bom pra dias
@@ -302,22 +303,37 @@ function fragranceClimaSubScore(perfume, weatherBias) {
   return { value, reasons }
 }
 
+// Mesmo raciocínio do rotationSubScore do relógio/tênis: favorece o
+// perfume parado há mais tempo, pra a sugestão não repetir sempre o
+// mesmo campeão de FragranceScore quando ocasião/clima não mudam de um
+// dia pro outro. Sem histórico passado, fica null (peso redistribuído).
+function fragranceRotacaoSubScore(perfumeId, history) {
+  if (!history || history.length === 0) return { value: null, reasons: [] }
+  const value = rotationScore(perfumeId, history, 'perfumeId')
+  const reasons = []
+  const { daysSinceWorn } = usageStats(perfumeId, history, 'perfumeId')
+  if (daysSinceWorn !== Infinity && daysSinceWorn <= 2) reasons.push('você já usou esse perfume nos últimos dias — que tal variar?')
+  return { value, reasons }
+}
+
 // FragranceScore — pontua CADA perfume cadastrado (não só filtra por
-// família exata) contra ocasião + clima, com peso redistribuído quando
-// um dos dois não está disponível. Horário/sazonalidade/histórico/
-// rotação (citados na especificação) ficam de fora por enquanto — não
-// existe registro de "qual perfume você usou quando" no app ainda, e é
-// melhor omitir a dimensão do que fingir um dado que não existe.
+// família exata) contra ocasião + clima + rotação, com peso
+// redistribuído quando algum desses três não está disponível. `history`
+// reaproveita o mesmo array do relógio/tênis (storage.logWornToday grava
+// perfumeId junto, quando há um perfume na jogada) — sem isso, a
+// dimensão de rotação simplesmente não entra na conta, não é fingida.
 // Complementa suggestPerfume (que decide A família certa pra ocasião);
-// isto aqui ordena o que você JÁ TEM contra qualquer ocasião/clima dados.
-export function rankOwnedPerfumes(ownedPerfumes, { contextId = null, weatherBias = null } = {}) {
+// isto aqui ordena o que você JÁ TEM contra qualquer ocasião/clima/
+// histórico dados.
+export function rankOwnedPerfumes(ownedPerfumes, { contextId = null, weatherBias = null, history = [] } = {}) {
   return ownedPerfumes
     .map((perfume) => {
       const ocasiao = fragranceOcasiaoSubScore(perfume, contextId)
       const clima = fragranceClimaSubScore(perfume, weatherBias)
-      const subScores = { ocasiao: ocasiao.value, clima: clima.value }
+      const rotacao = fragranceRotacaoSubScore(perfume.id, history)
+      const subScores = { ocasiao: ocasiao.value, clima: clima.value, rotacao: rotacao.value }
       const match = combineWeightedScore(subScores, FRAGRANCE_WEIGHTS, 60)
-      const reasons = [...new Set([...ocasiao.reasons, ...clima.reasons])]
+      const reasons = [...new Set([...ocasiao.reasons, ...clima.reasons, ...rotacao.reasons])]
       return { perfume, match, subScores, reasons }
     })
     .sort((a, b) => b.match - a.match)

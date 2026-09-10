@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { pickBestSneakerForGarments, scoreSneakersForLook } from './sneakerMatch.js'
 import { LOOK_COLORS } from './matchEngine.js'
+import { daysAgoStr } from './test-helpers.js'
 
 const hexFor = (id) => LOOK_COLORS.find((c) => c.id === id).hex
 
@@ -86,5 +87,19 @@ describe('scoreSneakersForLook — SneakerScore explicável', () => {
     const semVibe = scoreSneakersForLook([sapatoSocialPreto], { coloredGarments: [calcaPreta], contextId: 'trabalho' })[0]
     const relaxado = scoreSneakersForLook([sapatoSocialPreto], { coloredGarments: [calcaPreta], contextId: 'trabalho', vibeId: 'relaxado' })[0]
     expect(relaxado.subScores.ocasiao).toBeLessThan(semVibe.subScores.ocasiao)
+  })
+
+  it('bug real reportado ("sugestões repetidas"): sem histórico, sub-score de rotação fica null; com histórico, o tênis usado ontem perde do parado há 30+ dias', () => {
+    const semHistorico = scoreSneakersForLook([tenisPreto], {})[0]
+    expect(semHistorico.subScores.rotacao).toBeNull()
+
+    const historico = [
+      { watchId: 'w1', sneakerId: 'preto', date: daysAgoStr(1) },
+      { watchId: 'w1', sneakerId: 'branco', date: daysAgoStr(35) },
+    ]
+    const usadoOntem = scoreSneakersForLook([tenisPreto], { history: historico })[0]
+    const paradoHa35 = scoreSneakersForLook([tenisBranco], { history: historico })[0]
+    expect(paradoHa35.subScores.rotacao).toBeGreaterThan(usadoOntem.subScores.rotacao)
+    expect(paradoHa35.match).toBeGreaterThan(usadoOntem.match)
   })
 })

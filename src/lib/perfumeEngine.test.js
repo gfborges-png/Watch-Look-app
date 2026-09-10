@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { suggestPerfume, rankOwnedPerfumes, KNOWN_FAMILIES, matchFamilyName, guessFamilyFromText, notasFromImportItem } from './perfumeEngine.js'
 import { CONTEXTS } from './matchEngine.js'
+import { daysAgoStr } from './test-helpers.js'
 
 describe('suggestPerfume', () => {
   it('toda ocasião de matchEngine.CONTEXTS tem um perfil de perfume completo', () => {
@@ -113,6 +114,20 @@ describe('rankOwnedPerfumes — FragranceScore explicável', () => {
     for (let i = 1; i < results.length; i++) {
       expect(results[i - 1].match).toBeGreaterThanOrEqual(results[i].match)
     }
+  })
+
+  it('bug real reportado ("sugestões repetidas"): sem histórico o sub-score de rotação fica null; com histórico, o perfume usado ontem perde do parado há 30+ dias (mesma família nos dois)', () => {
+    const semHistorico = rankOwnedPerfumes([{ id: 'p1', nome: 'X', familia: 'Aromático limpo' }])[0]
+    expect(semHistorico.subScores.rotacao).toBeNull()
+
+    const historico = [
+      { watchId: 'w1', perfumeId: 'p1', date: daysAgoStr(1) },
+      { watchId: 'w1', perfumeId: 'p2', date: daysAgoStr(35) },
+    ]
+    const usadoOntem = rankOwnedPerfumes([{ id: 'p1', nome: 'Usado ontem', familia: 'Aromático limpo' }], { history: historico })[0]
+    const paradoHa35 = rankOwnedPerfumes([{ id: 'p2', nome: 'Parado há 35', familia: 'Aromático limpo' }], { history: historico })[0]
+    expect(paradoHa35.subScores.rotacao).toBeGreaterThan(usadoOntem.subScores.rotacao)
+    expect(paradoHa35.match).toBeGreaterThan(usadoOntem.match)
   })
 })
 

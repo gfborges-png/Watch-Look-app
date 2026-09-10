@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { suggestPerfume } from '../../lib/perfumeEngine.js'
 
-export default function PerfumeRecommendation({ weatherBias, context, ownedPerfumes }) {
-  const p = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes }), [weatherBias, context, ownedPerfumes])
+export default function PerfumeRecommendation({ weatherBias, context, ownedPerfumes, history }) {
+  const p = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes, history }), [weatherBias, context, ownedPerfumes, history])
   return (
     <div className="rounded-2xl border border-accent/25 bg-gradient-to-br from-surface-2/70 to-surface-2/30 p-4">
       <div className="flex items-center gap-2.5">

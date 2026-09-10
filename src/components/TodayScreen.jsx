@@ -213,7 +213,9 @@ export default function TodayScreen({
   const bottomHexes = matchColorNameToHexes(candidate.look.bottom, 2)
 
   const handleUseLook = () => {
-    onLogWornToday(candidate.watch.id)
+    const sneakerId = lockedSneaker?.id ?? candidate.sneaker?.id ?? null
+    const perfumeId = lockedPerfume?.id ?? candidate.perfume.owned[0]?.id ?? null
+    onLogWornToday(candidate.watch.id, { sneakerId, perfumeId })
     onLogFeedback({
       watchId: candidate.watch.id,
       group: candidate.group,

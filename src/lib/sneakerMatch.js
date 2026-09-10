@@ -1,26 +1,27 @@
 // SneakerScore — mesmo padrão de motor do relógio (recommendationEngine):
 // média ponderada de sub-scores 0-100, cada um explicável, com peso
 // redistribuído quando um dado não está disponível.
-//   ocasião 31% · estilo/formalidade 24% · harmonia com as roupas 20% ·
-//   preferência pessoal 15% · clima 10%
+//   ocasião 28% · estilo/formalidade 22% · harmonia com as roupas 18% ·
+//   preferência pessoal 13% · clima 9% · rotação 10%
 //
-// Harmonia de cor não é mais o fator dominante — um tênis casual que só
+// Harmonia de cor não é o fator dominante — um tênis casual que só
 // combina na cor não deveria vencer um mais formal quando a ocasião pede
 // formalidade (bug real: "reunião importante" sugerindo um Jordan
 // puramente por combinar de cor com o resto do look).
 //
 // "Preferência pessoal" aqui reaproveita o mesmo grupo de paleta (quente/
-// frio/terroso/neutro) que o relógio já usa — ainda não existe registro
-// de "uso" por tênis (só relógio tem "vou usar hoje" hoje), então a
-// dimensão de rotação de fato fica de fora por enquanto: melhor omitir
-// (e redistribuir peso) do que fingir um dado que não existe.
+// frio/terroso/neutro) que o relógio já usa. "Rotação" reaproveita o
+// mesmo histórico do relógio (storage.logWornToday grava sneakerId
+// junto, quando há um tênis na jogada) — sem histórico passado, o
+// sub-score fica null e o peso é redistribuído, igual a qualquer outro.
 import { LOOK_COLORS, colorDistance, netVibe } from './matchEngine.js'
 import { closestLookColorId } from './colorDetect.js'
 import { OCCASION_DIMENSIONS, occasionProfileWithVibe } from './occasionDimensions.js'
 import { scorePersonalPreference } from './preferenceScore.js'
+import { rotationScore, usageStats } from './rotationEngine.js'
 import { combineWeightedScore } from './scoreCombine.js'
 
-const WEIGHTS = { harmonia: 20, ocasiao: 31, estilo: 24, clima: 10, preferencia: 15 }
+const WEIGHTS = { harmonia: 18, ocasiao: 28, estilo: 22, clima: 9, preferencia: 13, rotacao: 10 }
 
 // Formalidade relativa de cada tipo de calçado (GARMENTS.calcado.tipos).
 const TIPO_FORMALITY = { 'Sapato social': 90, Loafer: 70, Bota: 45, Tênis: 25 }
@@ -95,13 +96,25 @@ function preferenciaSubScore(sneaker, personalBias) {
   return scorePersonalPreference(sneakerColorGroup(sneaker), personalBias)
 }
 
+// Mesmo raciocínio do rotationSubScore do relógio: favorece o tênis
+// parado há mais tempo, pra "Hoje" não sugerir sempre o mesmo campeão
+// de score quando o contexto/vibe não muda de um dia pro outro.
+function rotacaoSubScore(sneaker, history) {
+  if (!history || history.length === 0) return { value: null, reasons: [] }
+  const value = rotationScore(sneaker.id, history, 'sneakerId')
+  const reasons = []
+  const { daysSinceWorn } = usageStats(sneaker.id, history, 'sneakerId')
+  if (daysSinceWorn !== Infinity && daysSinceWorn <= 2) reasons.push('você já usou esse tênis nos últimos dias — que tal variar?')
+  return { value, reasons }
+}
+
 // Pontua todo o catálogo de tênis contra o look — mesmo formato de
 // retorno do motor de relógio (match/band-ready/subScores/reasons),
 // pronto pra uma futura UI explicável (Fase D) além do "trocar" atual.
 // `garments`: todas as peças ativas (formalidade geral do look);
 // `coloredGarments`: só as com cor resolvida (harmonia cromática).
 export function scoreSneakersForLook(sneakers, opts = {}) {
-  const { coloredGarments = [], garments = coloredGarments, contextId = null, weatherBias = null, personalBias = {}, vibeId = null } = opts
+  const { coloredGarments = [], garments = coloredGarments, contextId = null, weatherBias = null, personalBias = {}, vibeId = null, history = [] } = opts
   return sneakers
     .map((sneaker) => {
       const harmonia = harmoniaSubScore(sneaker, coloredGarments)
@@ -109,10 +122,11 @@ export function scoreSneakersForLook(sneakers, opts = {}) {
       const estilo = estiloSubScore(sneaker, garments)
       const clima = climaSubScore(sneaker, weatherBias)
       const preferencia = preferenciaSubScore(sneaker, personalBias)
+      const rotacao = rotacaoSubScore(sneaker, history)
 
-      const subScores = { harmonia: harmonia.value, ocasiao: ocasiao.value, estilo: estilo.value, clima: clima.value, preferencia: preferencia.value }
+      const subScores = { harmonia: harmonia.value, ocasiao: ocasiao.value, estilo: estilo.value, clima: clima.value, preferencia: preferencia.value, rotacao: rotacao.value }
       const match = combineWeightedScore(subScores, WEIGHTS)
-      const reasons = [...new Set([...harmonia.reasons, ...ocasiao.reasons, ...estilo.reasons, ...clima.reasons, ...preferencia.reasons])]
+      const reasons = [...new Set([...harmonia.reasons, ...ocasiao.reasons, ...estilo.reasons, ...clima.reasons, ...preferencia.reasons, ...rotacao.reasons])]
 
       return { sneaker, match, subScores, reasons }
     })

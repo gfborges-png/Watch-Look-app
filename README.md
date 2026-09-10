@@ -84,7 +84,7 @@ src/
     scoreCombine.js          média ponderada com redistribuição de peso ausente
     preferenceScore.js       sub-score de preferência aprendida, reaproveitado por relógio/tênis
     recommendationEngine.js  StylingScore do relógio — absoluto, com sub-scores e explicações
-    sneakerMatch.js          SneakerScore (harmonia/ocasião/estilo/clima/preferência)
+    sneakerMatch.js          SneakerScore (harmonia/ocasião/estilo/clima/preferência/rotação)
     perfumeEngine.js         família de perfume por ocasião + FragranceScore do catálogo próprio
     accessoryModel.js        taxonomia de acessório (tipo/material/estilo) + formalidade derivada
     accessoryMatch.js        AccessoryScore (cor/material/formalidade/relação com o relógio) — sempre opcional
@@ -147,14 +147,24 @@ combinando não deveria bastar se a ocasião pede outra coisa (ex: um tênis
 casual não devia vencer um sapato social numa reunião importante só
 porque a cor bateu melhor).
 
-**SneakerScore** (tênis): ocasião 31% · estilo/formalidade 24% ·
-harmonia com as roupas (cor) 20% · preferência pessoal 15% · clima 10%.
+**SneakerScore** (tênis): ocasião 28% · estilo/formalidade 22% ·
+harmonia com as roupas (cor) 18% · preferência pessoal 13% · rotação 10% ·
+clima 9%.
 
-**FragranceScore** (perfume, sobre o catálogo cadastrado): ocasião 70% ·
-clima 30% — um perfume "nativo" de outra ocasião nunca zera, pontua pela
-proximidade real entre as duas ocasiões (`occasionDimensions.js`). Notas
-cadastradas (bergamota/cítrico = leve, âmbar/couro = denso) refinam o
-sub-score de clima quando há mais de um perfume da mesma família.
+**FragranceScore** (perfume, sobre o catálogo cadastrado): ocasião 55% ·
+clima 25% · rotação 20% — um perfume "nativo" de outra ocasião nunca
+zera, pontua pela proximidade real entre as duas ocasiões
+(`occasionDimensions.js`). Notas cadastradas (bergamota/cítrico = leve,
+âmbar/couro = denso) refinam o sub-score de clima quando há mais de um
+perfume da mesma família.
+
+**Rotação em tênis e perfume**: mesmo mecanismo do relógio (favorece o
+item parado há mais tempo), reaproveitando o mesmo histórico —
+`logWornToday` grava `sneakerId`/`perfumeId` junto do `watchId` quando
+"Vou usar" é confirmado, e `rotationEngine.js` (agora genérico por
+`idKey`) lê esse mesmo array pros três. Sem isso, tênis/perfume eram
+escolhidos por match puro toda vez — o mesmo contexto/vibe sempre
+sugeria o mesmo item, o que virava "sugestões repetidas" na prática.
 
 **AccessoryScore** (acessório, sempre opcional): formalidade 32% ·
 relação com o relógio 30% · cor 23% · material 15%. Nunca aparece se o
@@ -224,7 +234,7 @@ npm run lint      # oxlint
 npm test          # Vitest
 ```
 
-172 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
+187 testes cobrindo os quatro motores de score (relógio/tênis/perfume/
 acessório), rotação, storage/migração de dados e backup versionado
 (v1→v4, inclusive rejeição de item malformado em qualquer categoria),
 preferência aprendida (`UserStyleProfile`), ações de ajuste da Home

@@ -71,3 +71,22 @@ describe('usageStats', () => {
     expect(stats.uses90).toBe(3)
   })
 })
+
+describe('idKey — mesmo motor de rotação reaproveitado por tênis/perfume', () => {
+  it('rotationScore/usageStats funcionam com "sneakerId"/"perfumeId" no mesmo array de histórico, sem interferir no relógio', () => {
+    const history = [
+      { watchId: 'w1', sneakerId: 's1', perfumeId: 'p1', date: daysAgoStr(1) },
+      { watchId: 'w2', sneakerId: 's2', date: daysAgoStr(35) },
+    ]
+    expect(rotationScore('s1', history, 'sneakerId')).toBeLessThan(40)
+    expect(rotationScore('s2', history, 'sneakerId')).toBeGreaterThan(70)
+    expect(rotationScore('p1', history, 'perfumeId')).toBeLessThan(40)
+    // O watchId da mesma entrada não "vaza" pro sub-score de tênis/perfume de outro item.
+    expect(usageStats('s1', history, 'sneakerId').uses7).toBe(1)
+  })
+
+  it('entrada de histórico sem sneakerId/perfumeId (relógio usado sozinho) não conta como uso de tênis/perfume nenhum', () => {
+    const history = [{ watchId: 'w1', date: daysAgoStr(1) }]
+    expect(usageStats('qualquer', history, 'sneakerId').daysSinceWorn).toBe(Infinity)
+  })
+})

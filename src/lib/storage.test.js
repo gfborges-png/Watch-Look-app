@@ -17,6 +17,8 @@ import {
   addAccessory,
   updateAccessory,
   deleteAccessory,
+  logWornToday,
+  getHistory,
 } from './storage.js'
 
 describe('personalBias', () => {
@@ -68,6 +70,36 @@ describe('daysSince / lastWornDate', () => {
     ]
     expect(lastWornDate('b', history)).toBe('2024-02-01')
     expect(lastWornDate('c', history)).toBeNull()
+  })
+
+  it('lastWornDate com idKey busca por outro campo (sneakerId/perfumeId), no mesmo array', () => {
+    const history = [{ watchId: 'w1', sneakerId: 's1', perfumeId: 'p1', date: '2026-09-08' }]
+    expect(lastWornDate('s1', history, 'sneakerId')).toBe('2026-09-08')
+    expect(lastWornDate('p1', history, 'perfumeId')).toBe('2026-09-08')
+    expect(lastWornDate('w1', history, 'sneakerId')).toBeNull()
+  })
+})
+
+describe('logWornToday — registra tênis/perfume usados junto do relógio', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('sem `extra`, grava só watchId+date (mesmo comportamento de sempre)', () => {
+    logWornToday('w1')
+    expect(getHistory()[0]).toEqual({ watchId: 'w1', date: expect.any(String) })
+  })
+
+  it('com sneakerId/perfumeId em `extra`, os dois entram na mesma entrada do dia', () => {
+    logWornToday('w1', { sneakerId: 's1', perfumeId: 'p1' })
+    const [entry] = getHistory()
+    expect(entry.sneakerId).toBe('s1')
+    expect(entry.perfumeId).toBe('p1')
+  })
+
+  it('campos nulos em `extra` (sem tênis/perfume cadastrado ainda) não poluem a entrada', () => {
+    logWornToday('w1', { sneakerId: null, perfumeId: undefined })
+    const [entry] = getHistory()
+    expect(entry).not.toHaveProperty('sneakerId')
+    expect(entry).not.toHaveProperty('perfumeId')
   })
 })
 

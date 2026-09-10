@@ -31,7 +31,7 @@ export function useRecommendationHistory() {
     choices,
     feedback,
     favoriteLooks,
-    logWornToday: (id) => setHistory(logWornToday(id)),
+    logWornToday: (id, extra) => setHistory(logWornToday(id, extra)),
     logChoice: (entry) => setChoices(logChoice(entry)),
     logFeedback: (entry) => setFeedback(logFeedback(entry)),
     toggleFavoriteLook: (entry) => setFavoriteLooks(toggleFavoriteLook(entry)),

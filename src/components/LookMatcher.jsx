@@ -79,6 +79,7 @@ export default function LookMatcher({
           weatherBias={weatherBias}
           personalBias={bias}
           vibeId={vibeId}
+          history={history}
         />
       </div>
 
@@ -87,7 +88,7 @@ export default function LookMatcher({
         <div className="space-y-3">
           <WeatherOccasionPanel weather={weather} onFetchWeather={onFetchWeather} context={context} onContextChange={onContextChange} />
           <VibePicker vibeId={vibeId} onChange={onVibeChange} />
-          <PerfumeRecommendation weatherBias={weatherBias} context={context} ownedPerfumes={perfumes} />
+          <PerfumeRecommendation weatherBias={weatherBias} context={context} ownedPerfumes={perfumes} history={history} />
         </div>
       </div>
 
@@ -115,6 +116,7 @@ export default function LookMatcher({
             accessories={accessories}
             outfit={outfit}
             vibeId={vibeId}
+            history={history}
           />
         )}
       </div>

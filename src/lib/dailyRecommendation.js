@@ -65,8 +65,8 @@ export function buildTodayCandidates(watches, opts = {}) {
     const { watch } = result
     const group = paletteGroup(watch.cor)
     const look = lookForOccasion(watch, contextId)
-    const sneaker = pickSneakerForWatch(sneakers, watch, contextId, { weatherBias, personalBias, vibeId })
-    const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes })
+    const sneaker = pickSneakerForWatch(sneakers, watch, contextId, { weatherBias, personalBias, vibeId, history })
+    const perfume = suggestPerfume({ weatherBias, context: contextId, ownedPerfumes: perfumes, history })
     // Acessório é sempre opcional — referenceHexes junta o mostrador com
     // a cor das peças já sugeridas pro look de hoje, pra o sub-score de
     // cor comparar contra o conjunto inteiro, não só o relógio isolado.

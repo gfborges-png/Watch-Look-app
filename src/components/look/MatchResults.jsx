@@ -108,7 +108,7 @@ function FeedbackButtons({ result, context, onLogFeedback }) {
 // o perfume deixa de ser um recurso à parte e vira parte do resultado em
 // si. Deixa também escolher manualmente outro perfume da coleção, se a
 // sugestão automática não for a que a pessoa quer usar hoje.
-function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accessories, outfit, vibeId }) {
+function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accessories, outfit, vibeId, history }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [overrideId, setOverrideId] = useState(null)
 
@@ -121,10 +121,13 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
   // social só por bater mais na cor, mesmo pra "Reunião importante".
   const otherGarments = useMemo(() => (outfit ? coloredActiveGarments(outfit).filter((g) => g.key !== 'calcado') : []), [outfit])
   const sneaker = useMemo(
-    () => pickBestSneakerForGarments(sneakers, otherGarments, context, { weatherBias, vibeId }),
-    [sneakers, otherGarments, context, weatherBias, vibeId],
+    () => pickBestSneakerForGarments(sneakers, otherGarments, context, { weatherBias, vibeId, history }),
+    [sneakers, otherGarments, context, weatherBias, vibeId, history],
   )
-  const suggestion = useMemo(() => suggestPerfume({ weatherBias, context, ownedPerfumes: perfumes }), [weatherBias, context, perfumes])
+  const suggestion = useMemo(
+    () => suggestPerfume({ weatherBias, context, ownedPerfumes: perfumes, history }),
+    [weatherBias, context, perfumes, history],
+  )
   const overridden = overrideId ? perfumes.find((p) => p.id === overrideId) : null
   const perfumeLabel = overridden?.nome ?? suggestion.owned[0]?.nome ?? suggestion.familia
 
@@ -201,7 +204,7 @@ function ResultBundle({ watch, weatherBias, context, sneakers, perfumes, accesso
   )
 }
 
-function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit, vibeId }) {
+function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit, vibeId, history }) {
   const [expanded, setExpanded] = useState(false)
   const { watch, match, band, subScores, reasons } = result
 
@@ -215,7 +218,7 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
         isFavorite={favorites.includes(watch.id)}
         onToggleFavorite={() => onToggleFavorite(watch.id)}
       />
-      <ResultBundle watch={watch} weatherBias={weatherBias} context={context} sneakers={sneakers} perfumes={perfumes} accessories={accessories} outfit={outfit} vibeId={vibeId} />
+      <ResultBundle watch={watch} weatherBias={weatherBias} context={context} sneakers={sneakers} perfumes={perfumes} accessories={accessories} outfit={outfit} vibeId={vibeId} history={history} />
       <div className="flex items-center justify-between gap-2 px-1">
         <button onClick={() => setExpanded((v) => !v)} className="text-[11px] font-medium text-text-muted transition hover:text-text">
           {expanded ? 'Ocultar motivos' : 'Por que escolhi este?'} · <span className="text-accent">{band.label}</span>
@@ -227,7 +230,7 @@ function MatchResultCard({ result, context, weatherBias, onSelectWatch, favorite
   )
 }
 
-export default function MatchResults({ results, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit, vibeId }) {
+export default function MatchResults({ results, context, weatherBias, onSelectWatch, favorites, onToggleFavorite, onLogFeedback, sneakers, perfumes, accessories, outfit, vibeId, history }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-text-muted">
@@ -248,6 +251,7 @@ export default function MatchResults({ results, context, weatherBias, onSelectWa
           accessories={accessories}
           outfit={outfit}
           vibeId={vibeId}
+          history={history}
         />
       ))}
     </div>

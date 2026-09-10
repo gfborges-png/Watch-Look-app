@@ -1,32 +1,35 @@
-// Rotação da coleção: com que frequência cada relógio tem sido usado, e
-// há quanto tempo. Alimenta o sub-score "Rotação" do motor de
-// recomendação (favorece relógios parados há mais tempo, dado que o
-// resto do look também combine) e a seção "Esquecidos na caixa".
+// Rotação da coleção: com que frequência cada relógio (ou, via `idKey`,
+// tênis/perfume) tem sido usado, e há quanto tempo. Alimenta o sub-score
+// "Rotação" dos motores de recomendação (favorece itens parados há mais
+// tempo, dado que o resto do look também combine) e a seção "Esquecidos
+// na caixa". `idKey` (padrão 'watchId') é o campo do histórico que
+// identifica o item — 'sneakerId'/'perfumeId' reaproveitam o mesmo
+// array (ver storage.logWornToday) pra rotação de tênis/perfume.
 import { daysSince, lastWornDate } from './storage.js'
 
 export const FORGOTTEN_THRESHOLD_DAYS = 45
 
-export function usesWithin(watchId, history, days) {
-  return history.filter((h) => h.watchId === watchId && daysSince(h.date) <= days).length
+export function usesWithin(id, history, days, idKey = 'watchId') {
+  return history.filter((h) => h[idKey] === id && daysSince(h.date) <= days).length
 }
 
-export function usageStats(watchId, history) {
-  const last = lastWornDate(watchId, history)
+export function usageStats(id, history, idKey = 'watchId') {
+  const last = lastWornDate(id, history, idKey)
   return {
     lastWornDate: last,
     daysSinceWorn: daysSince(last),
-    uses7: usesWithin(watchId, history, 7),
-    uses30: usesWithin(watchId, history, 30),
-    uses90: usesWithin(watchId, history, 90),
+    uses7: usesWithin(id, history, 7, idKey),
+    uses30: usesWithin(id, history, 30, idKey),
+    uses90: usesWithin(id, history, 90, idKey),
   }
 }
 
-// 0-100 — quanto esse relógio está "pedindo" pra ser usado. Parado há
-// mais tempo e pouco frequente puntua alto (bom candidato pra hoje);
-// usado muito recentemente ou com frequência alta nos últimos dias
-// puntua baixo, mesmo que o resto do look combine bem.
-export function rotationScore(watchId, history) {
-  const { daysSinceWorn, uses7, uses30 } = usageStats(watchId, history)
+// 0-100 — quanto esse item está "pedindo" pra ser usado. Parado há mais
+// tempo e pouco frequente pontua alto (bom candidato pra hoje); usado
+// muito recentemente ou com frequência alta nos últimos dias pontua
+// baixo, mesmo que o resto do look combine bem.
+export function rotationScore(id, history, idKey = 'watchId') {
+  const { daysSinceWorn, uses7, uses30 } = usageStats(id, history, idKey)
   let score
   if (daysSinceWorn === Infinity) score = 85 // nunca registrado — vale experimentar, mas não é garantia de combinar
   else if (daysSinceWorn >= 60) score = 95
